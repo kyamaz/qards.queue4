@@ -1,4 +1,5 @@
 import { Card, CardType, CardValue, GameState, Player } from './types';
+import { initializeInitialSelection } from './initialSelection';
 import { v4 as uuidv4 } from 'uuid'; // For unique card IDs
 
 // Helper to generate a specific number of cards of a given type and value
@@ -14,9 +15,9 @@ const generateCards = (type: CardType, value: CardValue, count: number): Card[] 
 export const createDeck = (): Card[] => {
   let deck: Card[] = [];
 
-  // Quantum Bit Cards
-  deck = deck.concat(generateCards(CardType.QUANTUM_BIT, '|+⟩', 4));
-  deck = deck.concat(generateCards(CardType.QUANTUM_BIT, '|-⟩', 4));
+  // Qubit Cards
+  deck = deck.concat(generateCards(CardType.QUBIT, '|+⟩', 4));
+  deck = deck.concat(generateCards(CardType.QUBIT, '|-⟩', 4));
 
   // Gate Cards (7 each for I, X, Z, H, total 28)
   deck = deck.concat(generateCards(CardType.GATE, 'I', 7));
@@ -28,15 +29,15 @@ export const createDeck = (): Card[] => {
   deck = deck.concat(generateCards(CardType.UNITARY, 'U', 8));
 
   // Control Cards (8 total)
-  // For simplicity, we'll use a generic 'C' value for Control cards for now.
-  // This might need refinement if different control card types are introduced.
-  deck = deck.concat(generateCards(CardType.CONTROL, 'C' as CardValue, 8)); // 'C' is a placeholder value
+  deck = deck.concat(generateCards(CardType.CONTROL, 'C' as CardValue, 8));
+
+  // Note: TARGET cards are not added to the deck - they are automatically created when CONTROL cards are played
 
   // Measurement Cards (2 each, total 8)
-  deck = deck.concat(generateCards(CardType.MEASUREMENT, '<0|', 2));
-  deck = deck.concat(generateCards(CardType.MEASUREMENT, '<1|', 2));
-  deck = deck.concat(generateCards(CardType.MEASUREMENT, '<+|', 2));
-  deck = deck.concat(generateCards(CardType.MEASUREMENT, '<-|', 2));
+  deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨0|', 2));
+  deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨1|', 2));
+  deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨+|', 2));
+  deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨-|', 2));
 
 
   return deck;
@@ -58,6 +59,16 @@ export const isValidPlay = (
   targetPosition: number, // Position within the lane (0-indexed)
   currentBoard: GameState['board']
 ): boolean => {
+  // Rule: Position must be non-negative
+  if (targetPosition < 0) {
+    return false;
+  }
+
+  // Rule: Lane index must be valid
+  if (targetLaneIndex < 0 || targetLaneIndex >= currentBoard.lane.length) {
+    return false;
+  }
+
   const lane = currentBoard.lane[targetLaneIndex];
 
   if (!lane) {
@@ -75,9 +86,8 @@ export const isValidPlay = (
   // If placing at the end of the lane (appending)
   if (targetPosition === lane.length) {
     switch (card.type) {
-      case CardType.INITIAL_QUANTUM_BIT: // Fall-through
-      case CardType.QUANTUM_BIT:
-        // Quantum Bit Cards: Can be placed after a Measurement card or initial I gate.
+      case CardType.INITIAL_QUBIT:
+        // Initial Qubit Cards: Can be placed after a Measurement card or initial I gate.
         if (previousCard) {
           if (previousCard.type === CardType.MEASUREMENT) {
             return true;
@@ -88,6 +98,16 @@ export const isValidPlay = (
           return false; // Cannot place after other types of cards
         }
         return false; // Should not happen if I gate is always present
+
+      case CardType.QUBIT:
+        // Qubit Cards: Can ONLY be placed after Measurement cards.
+        if (previousCard) {
+          if (previousCard.type === CardType.MEASUREMENT) {
+            return true;
+          }
+          return false; // Cannot place after any other card types
+        }
+        return false; // Cannot place if no previous card
 
     case CardType.GATE:
       // Gate Cards (I, X, Z, H):
@@ -111,14 +131,21 @@ export const isValidPlay = (
 
     case CardType.MEASUREMENT:
       // Measurement Cards:
-      // - Implied: Can be placed after a Quantum Bit card.
-      if (previousCard && previousCard.type === CardType.QUANTUM_BIT) {
-        return true;
+      // - Can be placed after any card except other Measurement cards.
+      if (previousCard) {
+        if (previousCard.type === CardType.MEASUREMENT) {
+          return false; // Cannot place after another Measurement card
+        }
+        return true; // Can place after any other card type
       }
-      return false; // Cannot place after other types or if no previous card
+      return false; // Cannot place if no previous card
 
     case CardType.CONTROL:
       // This is handled by isValidControlCardPlay, so return false here.
+      return false;
+
+    case CardType.TARGET:
+      // TARGET cards cannot be manually placed - they are auto-generated
       return false;
 
     default:
@@ -127,15 +154,15 @@ export const isValidPlay = (
   } else { // If placing on an existing card or in an empty slot mid-lane
     if (!existingCard) {
       // Placing in an empty slot mid-lane.
-      // For now, we allow any non-control card to be placed here.
-      return card.type !== CardType.CONTROL;
+      // For now, we allow any non-control, non-target card to be placed here.
+      return card.type !== CardType.CONTROL && card.type !== CardType.TARGET;
     }
 
     // Placing ON TOP of an existing card.
     switch (card.type) {
       case CardType.GATE:
-        // Gate Cards: Can be placed on a Unitary card.
-        return existingCard.type === CardType.UNITARY;
+        // Gate Cards: Can be placed on a Unitary card or Target card.
+        return existingCard.type === CardType.UNITARY || existingCard.type === CardType.TARGET;
 
       // Other card types cannot be placed on top of existing cards by default.
       default:
@@ -210,9 +237,35 @@ export const isValidControlCardPlay = (
 
 
 // Initialize the game state
+// Calculate measurement score based on qubit and measurement card compatibility
+export const calculateMeasurementScore = (quantumBitValue: string, measurementValue: string): number => {
+  // Define compatibility scores
+  const compatibilityMatrix: Record<string, Record<string, number>> = {
+    '|0⟩': { '⟨0|': 3, '⟨1|': 0, '⟨+|': 1, '⟨-|': 1 },
+    '|1⟩': { '⟨0|': 0, '⟨1|': 3, '⟨+|': 1, '⟨-|': 1 },
+    '|+⟩': { '⟨0|': 1, '⟨1|': 1, '⟨+|': 3, '⟨-|': 0 },
+    '|-⟩': { '⟨0|': 1, '⟨1|': 1, '⟨+|': 0, '⟨-|': 3 }
+  };
+
+  const score = compatibilityMatrix[quantumBitValue]?.[measurementValue];
+  return score !== undefined ? score : 1;
+};
+
+// Find the qubit card that precedes a measurement card in a lane
+export const findPrecedingQubit = (lane: (Card | null)[], measurementPosition: number): Card | null => {
+  // Look backwards from the measurement position to find the most recent qubit
+  for (let i = measurementPosition - 1; i >= 0; i--) {
+    const card = lane[i];
+    if (card && (card.type === CardType.QUBIT || card.type === CardType.INITIAL_QUBIT)) {
+      return card;
+    }
+  }
+  return null;
+};
+
 export const initializeGame = (playerNames: string[]): GameState => {
-  if (playerNames.length < 3 || playerNames.length > 5) {
-    throw new Error('Player count must be between 3 and 5.');
+  if (playerNames.length < 3 || playerNames.length > 6) {
+    throw new Error('Player count must be between 3 and 6.');
   }
 
   // 1. Create Players
@@ -226,38 +279,33 @@ export const initializeGame = (playerNames: string[]): GameState => {
 
   // 2. Create and distribute Initial State Cards
   let initialCards: Card[] = [
-    ...generateCards(CardType.INITIAL_QUANTUM_BIT, '|0⟩', 3),
-    ...generateCards(CardType.INITIAL_QUANTUM_BIT, '|1⟩', 1),
+    ...generateCards(CardType.INITIAL_QUBIT, '|0⟩', 3),
+    ...generateCards(CardType.INITIAL_QUBIT, '|1⟩', 1),
   ];
   initialCards = shuffleDeck(initialCards);
 
-  let startPlayerId = '';
-  players.forEach((player, index) => {
+  // Distribute INITIAL_QUBIT cards to players randomly
+  players.forEach((player) => {
     const card = initialCards.pop();
     if (card) {
       player.hand.push(card);
-      if (card.value === '|1⟩') {
-        startPlayerId = player.id;
-      }
     }
   });
-  
-  // Fallback if the |1> card was not distributed (e.g., more than 4 players)
-  if (!startPlayerId) {
-    startPlayerId = players[0].id;
-  }
 
   // 3. Prepare the main deck
   let mainDeck = createDeck();
   
-  // 4. Prepare the board with I gates
-  const iCards = mainDeck.filter(card => card.value === 'I');
-  mainDeck = mainDeck.filter(card => card.value !== 'I');
+  // Add any remaining INITIAL_QUBIT cards to the main deck (for 3-player games)
+  if (initialCards.length > 0) {
+    mainDeck = [...mainDeck, ...initialCards];
+    mainDeck = shuffleDeck(mainDeck);
+  }
   
+  // 4. Prepare the empty board (no I gates initially)
   const board: { lane: (Card | null)[][] } = { lane: [] };
   const numLanes = 4;
   for (let i = 0; i < numLanes; i++) {
-    board.lane.push([iCards.pop() || null]);
+    board.lane.push([]); // Start with empty lanes
   }
 
   // 5. Distribute the rest of the main deck
@@ -274,14 +322,251 @@ export const initializeGame = (playerNames: string[]): GameState => {
     }
   }
 
+  // Initialize initial selection state
+  const initialSelectionState = initializeInitialSelection(players);
+
   return {
     players,
     deck: mainDeck,
     board,
-    currentPlayerId: startPlayerId,
+    currentPlayerId: players[0].id, // Temporarily set to first player
     turn: 1,
     measurementCount: 0,
     gameEnded: false,
     turnDirection: 'forward',
+    gamePhase: 'initial_selection',
+    initialSelection: initialSelectionState,
+    unitaryCardsPlayedThisTurn: {},
+  };
+};
+
+// Validate if a control card can be placed at the specified position
+export const isValidControlPlacement = (
+  gameState: GameState,
+  controlLane: number,
+  controlPosition: number
+): boolean => {
+  // Control position must be empty
+  if (gameState.board.lane[controlLane]?.[controlPosition]) {
+    return false;
+  }
+
+  // Control lane must have cards in all preceding positions (no gaps allowed)
+  const controlLaneCards = gameState.board.lane[controlLane];
+  for (let i = 0; i < controlPosition; i++) {
+    if (i >= controlLaneCards.length || controlLaneCards[i] === null) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+// Start the CONTROL-TARGET placement process
+export const startControlTargetPlacement = (
+  gameState: GameState,
+  controlCard: Card,
+  controlLane: number,
+  controlPosition: number
+): GameState => {
+  // Validate control placement before starting
+  if (!isValidControlPlacement(gameState, controlLane, controlPosition)) {
+    throw new Error('Invalid control card placement: gaps detected in preceding positions');
+  }
+
+  return {
+    ...gameState,
+    controlTargetPlacement: {
+      controlCard,
+      controlLane,
+      controlPosition,
+      waitingForTarget: true,
+    },
+  };
+};
+
+// Complete the CONTROL-TARGET placement by placing both cards
+export const completeControlTargetPlacement = (
+  gameState: GameState,
+  targetLane: number
+): GameState => {
+  if (!gameState.controlTargetPlacement || !gameState.controlTargetPlacement.waitingForTarget) {
+    throw new Error('No pending control-target placement');
+  }
+
+  const { controlCard, controlLane, controlPosition } = gameState.controlTargetPlacement;
+
+  // Create TARGET card
+  const targetCard: Card = {
+    id: uuidv4(),
+    type: CardType.TARGET,
+    value: 'T' as CardValue,
+    controlLink: {
+      targetLaneIndex: controlLane, // TARGET points back to CONTROL
+    },
+  };
+
+  // Update CONTROL card with target link
+  const updatedControlCard: Card = {
+    ...controlCard,
+    controlLink: {
+      targetLaneIndex: targetLane,
+    },
+  };
+
+  // Create new board with both cards placed
+  const newBoard = { ...gameState.board };
+  
+  // Ensure lanes exist and have enough positions
+  while (newBoard.lane.length <= Math.max(controlLane, targetLane)) {
+    newBoard.lane.push([]);
+  }
+  
+  while (newBoard.lane[controlLane].length <= controlPosition) {
+    newBoard.lane[controlLane].push(null);
+  }
+  
+  while (newBoard.lane[targetLane].length <= controlPosition) {
+    newBoard.lane[targetLane].push(null);
+  }
+
+  // Place the cards
+  newBoard.lane[controlLane][controlPosition] = updatedControlCard;
+  newBoard.lane[targetLane][controlPosition] = targetCard;
+
+  // Remove card from current player's hand
+  const currentPlayer = gameState.players.find(p => p.id === gameState.currentPlayerId);
+  if (!currentPlayer) {
+    throw new Error('Current player not found');
+  }
+
+  const updatedPlayers = gameState.players.map(player => {
+    if (player.id === gameState.currentPlayerId) {
+      return {
+        ...player,
+        hand: player.hand.filter(card => card.id !== controlCard.id),
+      };
+    }
+    return player;
+  });
+
+  return {
+    ...gameState,
+    board: newBoard,
+    players: updatedPlayers,
+    controlTargetPlacement: undefined, // Clear the pending placement
+  };
+};
+
+// Cancel the CONTROL-TARGET placement
+export const cancelControlTargetPlacement = (gameState: GameState): GameState => {
+  return {
+    ...gameState,
+    controlTargetPlacement: undefined,
+  };
+};
+
+// Validate if a target lane is valid for control placement
+export const isValidTargetLane = (
+  gameState: GameState,
+  targetLane: number
+): boolean => {
+  if (!gameState.controlTargetPlacement || !gameState.controlTargetPlacement.waitingForTarget) {
+    return false;
+  }
+
+  const { controlLane, controlPosition } = gameState.controlTargetPlacement;
+
+  // Target lane must be adjacent to control lane
+  if (Math.abs(controlLane - targetLane) !== 1) {
+    return false;
+  }
+
+  // Target lane must exist
+  if (targetLane < 0 || targetLane >= gameState.board.lane.length) {
+    return false;
+  }
+
+  // Target position must be empty or not exist yet (will be created)
+  if (gameState.board.lane[targetLane].length > controlPosition) {
+    if (gameState.board.lane[targetLane][controlPosition] !== null) {
+      return false;
+    }
+  }
+
+  // Both lanes must have cards in all preceding positions (no gaps allowed)
+  const controlLaneCards = gameState.board.lane[controlLane];
+  const targetLaneCards = gameState.board.lane[targetLane];
+
+  // Check control lane: all positions before controlPosition must be filled
+  for (let i = 0; i < controlPosition; i++) {
+    if (i >= controlLaneCards.length || controlLaneCards[i] === null) {
+      return false;
+    }
+  }
+
+  // Check target lane: all positions before controlPosition must be filled
+  for (let i = 0; i < controlPosition; i++) {
+    if (i >= targetLaneCards.length || targetLaneCards[i] === null) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+
+// Calculate final scores and determine winner
+export const calculateFinalScores = (gameState: GameState): { player: Player; finalScore: number }[] => {
+  return gameState.players.map(player => {
+    const measurementScore = player.score; // Points earned from measurements
+    const handPenalty = player.hand.length; // 1 point deduction per remaining card
+    const finalScore = measurementScore - handPenalty;
+    
+    return {
+      player,
+      finalScore
+    };
+  });
+};
+
+// Determine the winner based on final scores
+export const determineWinner = (gameState: GameState): { winner: Player; finalScores: { player: Player; finalScore: number }[] } => {
+  const finalScores = calculateFinalScores(gameState);
+  
+  // Sort by final score (highest first)
+  const sortedScores = finalScores.sort((a, b) => b.finalScore - a.finalScore);
+  
+  const winner = sortedScores[0].player;
+  
+  return {
+    winner,
+    finalScores: sortedScores
+  };
+};
+
+// Check if a player can play a Unitary card (limit: one per turn)
+export const canPlayUnitaryCard = (gameState: GameState, playerId: string): boolean => {
+  const unitaryCardsPlayed = gameState.unitaryCardsPlayedThisTurn[playerId] || 0;
+  return unitaryCardsPlayed < 1;
+};
+
+// Reset Unitary card counters when advancing to the next turn (full round completed)
+export const resetUnitaryCardCounters = (gameState: GameState): GameState => {
+  return {
+    ...gameState,
+    unitaryCardsPlayedThisTurn: {}
+  };
+};
+
+// Increment Unitary card counter for a player
+export const incrementUnitaryCardCounter = (gameState: GameState, playerId: string): GameState => {
+  const currentCount = gameState.unitaryCardsPlayedThisTurn[playerId] || 0;
+  return {
+    ...gameState,
+    unitaryCardsPlayedThisTurn: {
+      ...gameState.unitaryCardsPlayedThisTurn,
+      [playerId]: currentCount + 1
+    }
   };
 };

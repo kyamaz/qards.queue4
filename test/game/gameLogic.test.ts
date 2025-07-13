@@ -14,7 +14,7 @@ describe('createDeck', () => {
 
   it('should contain specific card types and counts', () => {
     const deck = createDeck();
-    const quantumBitCards = deck.filter(card => card.type === CardType.QUANTUM_BIT);
+    const quantumBitCards = deck.filter(card => card.type === CardType.QUBIT);
     const gateCards = deck.filter(card => card.type === CardType.GATE);
     const unitaryCards = deck.filter(card => card.type === CardType.UNITARY);
     const controlCards = deck.filter(card => card.type === CardType.CONTROL);
@@ -24,7 +24,7 @@ describe('createDeck', () => {
     expect(gateCards.length).toBe(28); // I (7) + X (7) + Z (7) + H (7)
     expect(unitaryCards.length).toBe(8); // U (8)
     expect(controlCards.length).toBe(8); // C (8)
-    expect(measurementCards.length).toBe(8); // <0| (2) + <1| (2) + <+| (2) + <-| (2)
+    expect(measurementCards.length).toBe(8); // ⟨0| (2) + ⟨1| (2) + ⟨+| (2) + ⟨-| (2)
   });
 
   it('should assign unique IDs to each card', () => {
@@ -76,9 +76,9 @@ describe('shuffleDeck', () => {
 });
 
 describe('initializeGame', () => {
-  it('should throw an error if player count is not between 3 and 5', () => {
-    expect(() => initializeGame(['P1', 'P2'])).toThrow('Player count must be between 3 and 5.');
-    expect(() => initializeGame(['P1', 'P2', 'P3', 'P4', 'P5', 'P6'])).toThrow('Player count must be between 3 and 5.');
+  it('should throw an error if player count is not between 3 and 6', () => {
+    expect(() => initializeGame(['P1', 'P2'])).toThrow('Player count must be between 3 and 6.');
+    expect(() => initializeGame(['P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7'])).toThrow('Player count must be between 3 and 6.');
   });
 
   it('should initialize game state correctly for 3 players', () => {
@@ -91,20 +91,21 @@ describe('initializeGame', () => {
     expect(gameState.measurementCount).toBe(0);
     expect(gameState.gameEnded).toBe(false);
     expect(gameState.turnDirection).toBe('forward');
+    expect(gameState.gamePhase).toBe('initial_selection');
+    expect(gameState.initialSelection).toBeDefined();
+    expect(gameState.initialSelection?.currentPlayerIndex).toBe(0);
+    expect(gameState.initialSelection?.phaseComplete).toBe(false);
 
     // Check if players have hands and initial cards are distributed
     const totalCardsInHands = gameState.players.reduce((sum, player) => sum + player.hand.length, 0);
     // Initial cards (3x|0>, 1x|1>) = 4 cards
-    // Main deck (60 cards) - I gates (7) + 4 board I gates = 56 remaining  
-    // Initial cards: 4 (3x|0>, 1x|1>)
-    // Total distributed = 4 initial + 56 remaining = 60 cards, but only 56 go to hands
-    expect(totalCardsInHands).toBe(56);
+    // Main deck (60 cards) = 60 cards total distributed
+    // Total cards in hands = 60 + 4 initial = 64 cards
+    expect(totalCardsInHands).toBe(64);
 
-    // Check if 'I' gates are on the board
+    // Check that board is initially empty (no I gates until after initial selection)
     gameState.board.lane.forEach(lane => {
-      expect(lane.length).toBe(1);
-      expect(lane[0]?.value).toBe('I');
-      expect(lane[0]?.type).toBe(CardType.GATE); // I is a GATE type
+      expect(lane.length).toBe(0);
     });
 
     // Check if a start player is assigned
@@ -123,10 +124,44 @@ describe('initializeGame', () => {
     const minHand = Math.min(...handLengths);
     const maxHand = Math.max(...handLengths);
 
-    // With 58 cards distributed among 4 players, hands should be around 14 or 15.
-    // 58 / 4 = 14.5
-    expect(minHand).toBeGreaterThanOrEqual(14);
-    expect(maxHand).toBeLessThanOrEqual(15);
+    // With 64 cards distributed among 4 players, hands should be around 16.
+    // 64 / 4 = 16
+    expect(minHand).toBeGreaterThanOrEqual(15);
+    expect(maxHand).toBeLessThanOrEqual(17);
+  });
+
+  it('should handle 3-player games correctly', () => {
+    // Create a 3-player game
+    const playerNames = ['P1', 'P2', 'P3'];
+    const gameState = initializeGame(playerNames);
+    
+    expect(gameState.players.length).toBe(3);
+    
+    // Check total cards distributed
+    const totalCardsInHands = gameState.players.reduce((sum, player) => sum + player.hand.length, 0);
+    // All 64 cards should be distributed (60 main deck + 4 INITIAL_QUBIT)
+    expect(totalCardsInHands).toBe(64);
+    
+    // Check that INITIAL_QUBIT cards are distributed
+    const initialQubitCount = gameState.players.reduce((count, player) => {
+      return count + player.hand.filter(card => card.type === CardType.INITIAL_QUBIT).length;
+    }, 0);
+    // All 4 INITIAL_QUBIT cards should be distributed (3 to players initially, 1 via main deck)
+    expect(initialQubitCount).toBe(4);
+    
+    // Check that at least 3 players have an INITIAL_QUBIT card
+    const playersWithInitialQubit = gameState.players.filter(player => 
+      player.hand.some(card => card.type === CardType.INITIAL_QUBIT)
+    ).length;
+    expect(playersWithInitialQubit).toBeGreaterThanOrEqual(3);
+    
+    // Check hand sizes are relatively even
+    const handLengths = gameState.players.map(p => p.hand.length);
+    const minHand = Math.min(...handLengths);
+    const maxHand = Math.max(...handLengths);
+    // 64 / 3 ≈ 21.3, so expect 20-23 cards per player
+    expect(minHand).toBeGreaterThanOrEqual(20);
+    expect(maxHand).toBeLessThanOrEqual(23);
   });
 });
 
@@ -142,40 +177,40 @@ const mockBoard = {
 
 describe('isValidPlay', () => {
   // Test cases for appending cards to a lane
-  it('should allow QUANTUM_BIT after MEASUREMENT', () => {
+  it('should allow QUBIT after MEASUREMENT', () => {
     const boardWithMeasurement = {
       lane: [
-        [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'm1', type: CardType.MEASUREMENT, value: '<0|' }],
+        [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' }],
       ],
     };
-    const quantumBitCard: Card = { id: 'q1', type: CardType.QUANTUM_BIT, value: '|0⟩' };
+    const quantumBitCard: Card = { id: 'q1', type: CardType.QUBIT, value: '|0⟩' };
     expect(isValidPlay(quantumBitCard, 0, 2, boardWithMeasurement)).toBe(true);
   });
 
-  it('should allow QUANTUM_BIT after initial I gate if lane length is 1', () => {
+  it('should allow INITIAL_QUBIT after initial I gate if lane length is 1', () => {
     const boardWithI = {
       lane: [
         [{ id: 'i1', type: CardType.GATE, value: 'I' }],
       ],
     };
-    const quantumBitCard: Card = { id: 'q1', type: CardType.QUANTUM_BIT, value: '|0⟩' };
-    expect(isValidPlay(quantumBitCard, 0, 1, boardWithI)).toBe(true);
+    const initialQubitCard: Card = { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' };
+    expect(isValidPlay(initialQubitCard, 0, 1, boardWithI)).toBe(true);
   });
 
-  it('should not allow QUANTUM_BIT after GATE (other than initial I)', () => {
+  it('should not allow QUBIT after GATE (other than initial I)', () => {
     const boardWithGate = {
       lane: [
         [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'x1', type: CardType.GATE, value: 'X' }],
       ],
     };
-    const quantumBitCard: Card = { id: 'q1', type: CardType.QUANTUM_BIT, value: '|0⟩' };
+    const quantumBitCard: Card = { id: 'q1', type: CardType.QUBIT, value: '|0⟩' };
     expect(isValidPlay(quantumBitCard, 0, 2, boardWithGate)).toBe(false);
   });
 
   it('should not allow GATE after MEASUREMENT', () => {
     const boardWithMeasurement = {
       lane: [
-        [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'm1', type: CardType.MEASUREMENT, value: '<0|' }],
+        [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' }],
       ],
     };
     const gateCard: Card = { id: 'x1', type: CardType.GATE, value: 'X' };
@@ -195,7 +230,7 @@ describe('isValidPlay', () => {
   it('should not allow UNITARY after MEASUREMENT', () => {
     const boardWithMeasurement = {
       lane: [
-        [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'm1', type: CardType.MEASUREMENT, value: '<0|' }],
+        [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' }],
       ],
     };
     const unitaryCard: Card = { id: 'u1', type: CardType.UNITARY, value: 'U' };
@@ -212,24 +247,34 @@ describe('isValidPlay', () => {
     expect(isValidPlay(unitaryCard, 0, 2, boardWithUnitary)).toBe(false);
   });
 
-  it('should allow MEASUREMENT after QUANTUM_BIT', () => {
+  it('should allow MEASUREMENT after QUBIT', () => {
     const boardWithQuantumBit = {
       lane: [
-        [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'q1', type: CardType.QUANTUM_BIT, value: '|0⟩' }],
+        [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'q1', type: CardType.QUBIT, value: '|0⟩' }],
       ],
     };
-    const measurementCard: Card = { id: 'm1', type: CardType.MEASUREMENT, value: '<0|' };
+    const measurementCard: Card = { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' };
     expect(isValidPlay(measurementCard, 0, 2, boardWithQuantumBit)).toBe(true);
   });
 
-  it('should not allow MEASUREMENT after GATE', () => {
+  it('should allow MEASUREMENT after GATE', () => {
     const boardWithGate = {
       lane: [
         [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'x1', type: CardType.GATE, value: 'X' }],
       ],
     };
-    const measurementCard: Card = { id: 'm1', type: CardType.MEASUREMENT, value: '<0|' };
-    expect(isValidPlay(measurementCard, 0, 2, boardWithGate)).toBe(false);
+    const measurementCard: Card = { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' };
+    expect(isValidPlay(measurementCard, 0, 2, boardWithGate)).toBe(true);
+  });
+
+  it('should not allow MEASUREMENT after MEASUREMENT', () => {
+    const boardWithMeasurement = {
+      lane: [
+        [{ id: 'i1', type: CardType.GATE, value: 'I' }, { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' }],
+      ],
+    };
+    const measurementCard: Card = { id: 'm2', type: CardType.MEASUREMENT, value: '⟨1|' };
+    expect(isValidPlay(measurementCard, 0, 2, boardWithMeasurement)).toBe(false);
   });
 
   // Test cases for placing on top of existing cards
@@ -243,13 +288,13 @@ describe('isValidPlay', () => {
     expect(isValidPlay(gateCard, 0, 1, boardWithUnitary)).toBe(true); // Placing on top of U1
   });
 
-  it('should not allow QUANTUM_BIT on top of existing card', () => {
+  it('should not allow QUBIT on top of existing card', () => {
     const boardWithGate = {
       lane: [
         [{ id: 'i1', type: CardType.GATE, value: 'I' }],
       ],
     };
-    const quantumBitCard: Card = { id: 'q1', type: CardType.QUANTUM_BIT, value: '|0⟩' };
+    const quantumBitCard: Card = { id: 'q1', type: CardType.QUBIT, value: '|0⟩' };
     expect(isValidPlay(quantumBitCard, 0, 0, boardWithGate)).toBe(false); // Placing on top of I1
   });
 
@@ -298,10 +343,10 @@ describe('isValidControlCardPlay', () => {
     const boardWithInvalidTarget = {
       lane: [
         [{ id: 'i1', type: CardType.GATE, value: 'I' }],
-        [{ id: 'i2', type: CardType.GATE, value: 'I' }, { id: 'q1', type: CardType.QUANTUM_BIT, value: '|0⟩' }],
+        [{ id: 'i2', type: CardType.GATE, value: 'I' }, { id: 'q1', type: CardType.QUBIT, value: '|0⟩' }],
       ],
     };
-    // Control lane 0, target lane 1, position 1 (targeting QUANTUM_BIT)
+    // Control lane 0, target lane 1, position 1 (targeting QUBIT)
     expect(isValidControlCardPlay(0, 1, 1, boardWithInvalidTarget)).toBe(false);
   });
 

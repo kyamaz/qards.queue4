@@ -1,0 +1,93 @@
+import React from 'react';
+import { Card, CardType } from '../../game/types';
+import QubitCard from './QubitCard';
+import GateCard from './GateCard';
+import UnitaryCard from './UnitaryCard';
+import MeasurementCard from './MeasurementCard';
+import ControlCard from './ControlCard';
+import { TargetCard } from './TargetCard';
+import EmptySlot from './EmptySlot';
+
+interface CardComponentProps {
+  card: Card | null;
+  position: number;
+  onClick?: () => void;
+  isSelected?: boolean;
+  isHighlighted?: boolean;
+  isAnimating?: boolean;
+  isClickable?: boolean;
+  className?: string;
+}
+
+const CardComponent: React.FC<CardComponentProps> = ({
+  card,
+  position,
+  onClick,
+  isSelected = false,
+  isHighlighted = false,
+  isAnimating = false,
+  isClickable = true,
+  className
+}) => {
+  if (!card) {
+    return (
+      <EmptySlot
+        position={position}
+        onClick={onClick}
+        isHighlighted={isHighlighted}
+        isClickable={isClickable}
+      />
+    );
+  }
+
+  const commonProps = {
+    value: card.value,
+    onClick,
+    isSelected,
+    isHighlighted,
+    isAnimating,
+    isClickable,
+    className
+  };
+
+  switch (card.type) {
+    case CardType.QUBIT:
+    case CardType.INITIAL_QUBIT:
+      return <QubitCard {...commonProps} cardType={card.type} />;
+    
+    case CardType.GATE:
+      return <GateCard {...commonProps} />;
+    
+    case CardType.UNITARY:
+      return <UnitaryCard {...commonProps} />;
+    
+    case CardType.MEASUREMENT:
+      return <MeasurementCard {...commonProps} />;
+    
+    case CardType.CONTROL:
+      return (
+        <ControlCard 
+          {...commonProps} 
+          targetLaneIndex={card.controlLink?.targetLaneIndex}
+        />
+      );
+    
+    case CardType.TARGET:
+      return (
+        <TargetCard 
+          card={card} 
+          onClick={onClick} 
+          isSelected={isSelected}
+          isHighlighted={isHighlighted}
+          isAnimating={isAnimating}
+          isClickable={isClickable}
+          className={className} 
+        />
+      );
+    
+    default:
+      return <EmptySlot position={position} onClick={onClick} isClickable={false} />;
+  }
+};
+
+export default CardComponent;

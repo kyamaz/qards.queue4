@@ -1,5 +1,6 @@
 import React from 'react';
 import { Card } from '../game/types';
+import { CardComponent } from './cards';
 
 interface PlayerHandProps {
   hand: Card[];
@@ -10,6 +11,7 @@ interface PlayerHandProps {
 }
 
 const PlayerHand: React.FC<PlayerHandProps> = ({ hand, playerName, isCurrentPlayer, onCardClick, selectedCard }) => {
+
   return (
     <div className="bg-gray-800 p-4 rounded-lg shadow-lg w-full">
       <h3 className="text-xl font-semibold mb-4 text-white">
@@ -19,17 +21,16 @@ const PlayerHand: React.FC<PlayerHandProps> = ({ hand, playerName, isCurrentPlay
         {hand.length === 0 ? (
           <p className="text-gray-400">手札がありません</p>
         ) : (
-          hand.map((card) => (
-            <div
+          hand.map((card, index) => (
+            <CardComponent
               key={card.id}
-              className={`w-20 h-28 bg-white text-gray-900 rounded-lg shadow-md flex flex-col items-center justify-center text-2xl font-bold cursor-pointer hover:scale-105 transition-transform duration-200
-                ${selectedCard && selectedCard.id === card.id ? 'border-4 border-green-500' : ''}
-              `}
-              onClick={() => onCardClick(card)}
-            >
-              <span className="text-sm text-gray-500">{card.type.replace('_', ' ')}</span>
-              {card.value}
-            </div>
+              card={card}
+              position={index}
+              onClick={() => isCurrentPlayer && onCardClick?.(card)}
+              isSelected={selectedCard?.id === card.id}
+              isClickable={isCurrentPlayer}
+              className={!isCurrentPlayer ? 'opacity-75' : ''}
+            />
           ))
         )}
       </div>

@@ -7,8 +7,8 @@ import { Card, CardType } from '../../src/game/types';
 describe('PlayerHand Component', () => {
   const mockCards: Card[] = [
     { id: '1', type: CardType.GATE, value: 'X' },
-    { id: '2', type: CardType.QUANTUM_BIT, value: '|+⟩' },
-    { id: '3', type: CardType.MEASUREMENT, value: '<0|' },
+    { id: '2', type: CardType.QUBIT, value: '|+⟩' },
+    { id: '3', type: CardType.MEASUREMENT, value: '⟨0|' },
     { id: '4', type: CardType.UNITARY, value: 'U' },
     { id: '5', type: CardType.CONTROL, value: 'C' },
   ];
@@ -31,7 +31,8 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText('Test Player')).toBeInTheDocument();
+      expect(screen.getByText(/Test Player/)).toBeInTheDocument();
+      expect(screen.getByText(/あなた/)).toBeInTheDocument();
     });
 
     it('should render all cards in hand', () => {
@@ -47,7 +48,7 @@ describe('PlayerHand Component', () => {
 
       expect(screen.getByText('X')).toBeInTheDocument();
       expect(screen.getByText('|+⟩')).toBeInTheDocument();
-      expect(screen.getByText('<0|')).toBeInTheDocument();
+      expect(screen.getByText('⟨0|')).toBeInTheDocument();
       expect(screen.getByText('U')).toBeInTheDocument();
       expect(screen.getByText('C')).toBeInTheDocument();
     });
@@ -66,7 +67,7 @@ describe('PlayerHand Component', () => {
       expect(screen.getByText('手札がありません')).toBeInTheDocument();
     });
 
-    it('should apply different styles for current player vs other players', () => {
+    it('should show current player indicator', () => {
       const { rerender } = render(
         <PlayerHand
           hand={mockCards}
@@ -77,7 +78,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText('Current Player').parentElement).toHaveClass('bg-gray-900');
+      expect(screen.getByText(/あなた/)).toBeInTheDocument();
 
       rerender(
         <PlayerHand
@@ -89,7 +90,50 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText('Other Player').parentElement).toHaveClass('bg-gray-800');
+      expect(screen.queryByText(/あなた/)).not.toBeInTheDocument();
+    });
+
+    it('should apply correct card type colors', () => {
+      render(
+        <PlayerHand
+          hand={mockCards}
+          playerName="Test Player"
+          isCurrentPlayer={true}
+          onCardClick={mockOnCardClick}
+          selectedCard={null}
+        />
+      );
+
+      const gateCard = screen.getByText('X').parentElement?.parentElement;
+      const quantumBitCard = screen.getByText('|+⟩').parentElement?.parentElement;
+      const measurementCard = screen.getByText('⟨0|').parentElement?.parentElement;
+      const unitaryCard = screen.getByText('U').parentElement?.parentElement;
+      const controlCard = screen.getByText('C').parentElement?.parentElement;
+
+      expect(gateCard).toHaveClass('bg-blue-600');
+      expect(quantumBitCard).toHaveClass('bg-green-600');
+      expect(measurementCard).toHaveClass('bg-red-600');
+      expect(unitaryCard).toHaveClass('bg-purple-600');
+      expect(controlCard).toHaveClass('bg-yellow-600');
+    });
+
+    it('should apply darker color for initial qubit cards', () => {
+      const initialQubitCards: Card[] = [
+        { id: '1', type: CardType.INITIAL_QUBIT, value: '|0⟩' },
+      ];
+
+      render(
+        <PlayerHand
+          hand={initialQubitCards}
+          playerName="Test Player"
+          isCurrentPlayer={true}
+          onCardClick={mockOnCardClick}
+          selectedCard={null}
+        />
+      );
+
+      const initialQubitCard = screen.getByText('|0⟩').parentElement?.parentElement;
+      expect(initialQubitCard).toHaveClass('bg-green-800');
     });
   });
 
@@ -105,7 +149,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const firstCard = screen.getByText('X').parentElement;
+      const firstCard = screen.getByText('X').parentElement?.parentElement;
       fireEvent.click(firstCard!);
 
       expect(mockOnCardClick).toHaveBeenCalledWith(mockCards[0]);
@@ -123,7 +167,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const firstCard = screen.getByText('X').parentElement;
+      const firstCard = screen.getByText('X').parentElement?.parentElement;
       fireEvent.click(firstCard!);
 
       expect(mockOnCardClick).not.toHaveBeenCalled();
@@ -140,8 +184,8 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const selectedCard = screen.getByText('X').parentElement;
-      expect(selectedCard).toHaveClass('ring-4', 'ring-yellow-400');
+      const selectedCard = screen.getByText('X').parentElement?.parentElement;
+      expect(selectedCard).toHaveClass('ring-4', 'ring-cyan-400');
     });
 
     it('should not show cursor-pointer for non-current player', () => {
@@ -155,36 +199,12 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const card = screen.getByText('X').parentElement;
+      const card = screen.getByText('X').parentElement?.parentElement;
+      expect(card).toHaveClass('cursor-default');
       expect(card).not.toHaveClass('cursor-pointer');
     });
   });
 
-  describe('Card Type Styling', () => {
-    it('should apply correct colors for different card types', () => {
-      render(
-        <PlayerHand
-          hand={mockCards}
-          playerName="Test Player"
-          isCurrentPlayer={true}
-          onCardClick={mockOnCardClick}
-          selectedCard={null}
-        />
-      );
-
-      const gateCard = screen.getByText('X').parentElement;
-      const quantumBitCard = screen.getByText('|+⟩').parentElement;
-      const measurementCard = screen.getByText('<0|').parentElement;
-      const unitaryCard = screen.getByText('U').parentElement;
-      const controlCard = screen.getByText('C').parentElement;
-
-      expect(gateCard).toHaveClass('bg-blue-600');
-      expect(quantumBitCard).toHaveClass('bg-green-600');
-      expect(measurementCard).toHaveClass('bg-red-600');
-      expect(unitaryCard).toHaveClass('bg-purple-600');
-      expect(controlCard).toHaveClass('bg-yellow-600');
-    });
-  });
 
   describe('Accessibility', () => {
     it('should have appropriate hover states for current player', () => {
@@ -198,8 +218,8 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const card = screen.getByText('X').parentElement;
-      expect(card).toHaveClass('hover:ring-2');
+      const card = screen.getByText('X').parentElement?.parentElement;
+      expect(card).toHaveClass('hover:scale-105');
     });
 
     it('should handle keyboard navigation if implemented', () => {
@@ -232,7 +252,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText(longName)).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(longName))).toBeInTheDocument();
     });
 
     it('should handle large number of cards', () => {
@@ -267,7 +287,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const card = screen.getByText('X').parentElement;
+      const card = screen.getByText('X').parentElement?.parentElement;
       
       // Should not throw error when clicking
       expect(() => fireEvent.click(card!)).not.toThrow();

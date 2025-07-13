@@ -1,8 +1,9 @@
 export enum CardType {
-  INITIAL_QUANTUM_BIT = 'INITIAL_QUANTUM_BIT',
-  QUANTUM_BIT = 'QUANTUM_BIT',
+  INITIAL_QUBIT = 'INITIAL_QUBIT',
+  QUBIT = 'QUBIT',
   GATE = 'GATE',
   CONTROL = 'CONTROL',
+  TARGET = 'TARGET',
   UNITARY = 'UNITARY',
   MEASUREMENT = 'MEASUREMENT',
 }
@@ -17,11 +18,12 @@ export type CardValue =
   | 'Z'
   | 'H'
   | 'U'
-  | '<0|'
-  | '<1|'
-  | '<+|'
-  | '<-|'
-  | 'C';
+  | '⟨0|'
+  | '⟨1|'
+  | '⟨+|'
+  | '⟨-|'
+  | 'C'
+  | 'T';
 
 export interface Card {
   id: string; // Unique identifier for each card instance
@@ -41,14 +43,34 @@ export interface Player {
   passes: number;
 }
 
+export type GamePhase = 'initial_selection' | 'normal_play' | 'ended';
+
+export interface InitialSelectionState {
+  currentPlayerIndex: number; // Index of player currently placing initial cards
+  playersCompleted: boolean[]; // Track which players have completed initial placement
+  firstPlayerCandidates: string[]; // Players who placed |1⟩ cards
+  phaseComplete: boolean;
+}
+
+export interface ControlTargetPlacement {
+  controlCard: Card;
+  controlLane: number;
+  controlPosition: number;
+  waitingForTarget: boolean;
+}
+
 export interface GameState {
   players: Player[];
   deck: Card[];
-  board: { lane: (Card | null)[][] }; // Represents multiple quantum bit lanes, each with a sequence of cards
+  board: { lane: (Card | null)[][] }; // Represents multiple qubit lanes, each with a sequence of cards
   currentPlayerId: string;
   turn: number;
   measurementCount: number;
   gameEnded: boolean;
   turnDirection: 'forward' | 'backward';
+  gamePhase: GamePhase;
+  initialSelection?: InitialSelectionState;
+  controlTargetPlacement?: ControlTargetPlacement;
+  unitaryCardsPlayedThisTurn: { [playerId: string]: number }; // Track Unitary cards played per player per turn
   // Add other game state properties as needed
 }

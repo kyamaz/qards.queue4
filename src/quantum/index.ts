@@ -1,0 +1,20 @@
+/**
+ * Quantum computation module for qards4
+ * Exports quantum computation engine and game integration
+ */
+
+export { QuantumEngine } from './quantumEngine';
+export { QuantumGameIntegration } from './gameIntegration';
+
+export type {
+  QuantumState,
+  QuantumGate,
+  QuantumCircuit,
+  QuantumComputationContext,
+  QuantumComputationResult,
+  MeasurementResult,
+  QubitState,
+  MeasurementBasis,
+  GateType,
+  QuantumCircuitElement
+} from './types';

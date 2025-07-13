@@ -69,15 +69,20 @@ describe('Game Logic Edge Cases', () => {
     });
 
     it('should throw error with 2 players', () => {
-      expect(() => initializeGame(['A', 'B'])).toThrow('Player count must be between 3 and 5.');
+      expect(() => initializeGame(['A', 'B'])).toThrow('Player count must be between 3 and 6.');
     });
 
-    it('should throw error with 6 players', () => {
-      expect(() => initializeGame(['A', 'B', 'C', 'D', 'E', 'F'])).toThrow('Player count must be between 3 and 5.');
+    it('should throw error with 7 players', () => {
+      expect(() => initializeGame(['A', 'B', 'C', 'D', 'E', 'F', 'G'])).toThrow('Player count must be between 3 and 6.');
     });
 
     it('should throw error with empty player array', () => {
-      expect(() => initializeGame([])).toThrow('Player count must be between 3 and 5.');
+      expect(() => initializeGame([])).toThrow('Player count must be between 3 and 6.');
+    });
+
+    it('should handle exactly 6 players', () => {
+      const gameState = initializeGame(['A', 'B', 'C', 'D', 'E', 'F']);
+      expect(gameState.players.length).toBe(6);
     });
 
     it('should handle player names with special characters', () => {
@@ -105,7 +110,7 @@ describe('Game Logic Edge Cases', () => {
       // Should have distributed 5 initial cards (one per player) + remaining deck cards
       expect(totalCardsInHands).toBeGreaterThan(0);
       
-      // Each player should have at least one card (initial quantum bit)
+      // Each player should have at least one card (initial qubit)
       gameState.players.forEach(player => {
         expect(player.hand.length).toBeGreaterThan(0);
       });
@@ -165,26 +170,26 @@ describe('Game Logic Edge Cases', () => {
       expect(isValidPlay(card, 0, 1, mockBoard)).toBe(true);
     });
 
-    it('should reject quantum bit placement after non-measurement card at end of lane', () => {
+    it('should reject qubit placement after non-measurement card at end of lane', () => {
       mockBoard.lane[0].push({ id: '2', type: CardType.GATE, value: 'X' });
       
-      const quantumBit: Card = { id: '5', type: CardType.QUANTUM_BIT, value: '|+⟩' };
+      const quantumBit: Card = { id: '5', type: CardType.QUBIT, value: '|+⟩' };
       
       expect(isValidPlay(quantumBit, 0, 2, mockBoard)).toBe(false);
     });
 
-    it('should allow quantum bit placement after measurement at end of lane', () => {
-      mockBoard.lane[0].push({ id: '2', type: CardType.MEASUREMENT, value: '<0|' });
+    it('should allow qubit placement after measurement at end of lane', () => {
+      mockBoard.lane[0].push({ id: '2', type: CardType.MEASUREMENT, value: '⟨0|' });
       
-      const quantumBit: Card = { id: '5', type: CardType.QUANTUM_BIT, value: '|+⟩' };
+      const quantumBit: Card = { id: '5', type: CardType.QUBIT, value: '|+⟩' };
       
       expect(isValidPlay(quantumBit, 0, 2, mockBoard)).toBe(true);
     });
 
-    it('should handle initial quantum bit cards same as regular quantum bits', () => {
-      mockBoard.lane[0].push({ id: '2', type: CardType.MEASUREMENT, value: '<0|' });
+    it('should handle initial qubit cards same as regular qubits', () => {
+      mockBoard.lane[0].push({ id: '2', type: CardType.MEASUREMENT, value: '⟨0|' });
       
-      const initialQuantumBit: Card = { id: '5', type: CardType.INITIAL_QUANTUM_BIT, value: '|0⟩' };
+      const initialQuantumBit: Card = { id: '5', type: CardType.INITIAL_QUBIT, value: '|0⟩' };
       
       expect(isValidPlay(initialQuantumBit, 0, 2, mockBoard)).toBe(true);
     });
@@ -208,10 +213,10 @@ describe('Game Logic Edge Cases', () => {
       expect(isValidPlay(gateCard, 0, 1, mockBoard)).toBe(true);
     });
 
-    it('should reject measurement card when no quantum bit precedes it', () => {
-      const measurementCard: Card = { id: '5', type: CardType.MEASUREMENT, value: '<0|' };
+    it('should reject measurement card when no qubit precedes it', () => {
+      const measurementCard: Card = { id: '5', type: CardType.MEASUREMENT, value: '⟨0|' };
       
-      // Only I gate in lane, no quantum bit
+      // Only I gate in lane, no qubit
       expect(isValidPlay(measurementCard, 0, 1, mockBoard)).toBe(false);
     });
 
@@ -270,7 +275,7 @@ describe('Game Logic Edge Cases', () => {
     });
 
     it('should reject non-gate and non-control targets', () => {
-      mockBoard.lane[1][1] = { id: '7', type: CardType.QUANTUM_BIT, value: '|+⟩' };
+      mockBoard.lane[1][1] = { id: '7', type: CardType.QUBIT, value: '|+⟩' };
       
       expect(isValidControlCardPlay(0, 1, 1, mockBoard)).toBe(false);
     });

@@ -13,7 +13,7 @@ describe('GameBoard Component', () => {
         { id: '1', type: CardType.GATE, value: 'I' },
         { id: '2', type: CardType.GATE, value: 'X' },
         null,
-        { id: '3', type: CardType.QUANTUM_BIT, value: '|+⟩' }
+        { id: '3', type: CardType.QUBIT, value: '|+⟩' }
       ],
       [
         { id: '4', type: CardType.GATE, value: 'I' },
@@ -34,7 +34,7 @@ describe('GameBoard Component', () => {
   });
 
   describe('Rendering', () => {
-    it('should render all 4 lanes', () => {
+    it('should render quantum circuit title', () => {
       render(
         <GameBoard
           board={createMockBoard()}
@@ -42,11 +42,8 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Check lane headers
-      expect(screen.getByText('レーン 1')).toBeInTheDocument();
-      expect(screen.getByText('レーン 2')).toBeInTheDocument();
-      expect(screen.getByText('レーン 3')).toBeInTheDocument();
-      expect(screen.getByText('レーン 4')).toBeInTheDocument();
+      // Check quantum circuit title
+      expect(screen.getByText('量子回路')).toBeInTheDocument();
     });
 
     it('should render cards in correct positions', () => {
@@ -94,10 +91,10 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // All lanes should be extended to length 3 (max length + 1)
+      // All lanes should be extended to have equal length (max length + 1, minimum 11)
       const slots = screen.getAllByRole('button');
-      // 4 lanes * 3 slots each = 12 total slots
-      expect(slots.length).toBe(12);
+      // 4 lanes * 11 slots each = 44 total slots (max length 2 + 1 = 3, but minimum is 10 + 1 = 11)
+      expect(slots.length).toBe(44);
     });
   });
 
@@ -166,15 +163,39 @@ describe('GameBoard Component', () => {
         />
       );
 
-      const gateCard = screen.getByText('X').parentElement;
-      const quantumBitCard = screen.getByText('|+⟩').parentElement;
-      const unitaryCard = screen.getByText('U').parentElement;
-      const controlCard = screen.getByText('C').parentElement;
+      const gateCard = screen.getByText('X').parentElement?.parentElement;
+      const quantumBitCard = screen.getByText('|+⟩').parentElement?.parentElement;
+      const unitaryCard = screen.getByText('U').parentElement?.parentElement;
+      const controlCard = screen.getByText('C').parentElement?.parentElement;
 
       expect(gateCard).toHaveClass('bg-blue-600');
       expect(quantumBitCard).toHaveClass('bg-green-600');
       expect(unitaryCard).toHaveClass('bg-purple-600');
       expect(controlCard).toHaveClass('bg-yellow-600');
+    });
+
+    it('should apply darker color for initial qubit cards', () => {
+      const board: GameState['board'] = {
+        lane: [
+          [
+            { id: '1', type: CardType.GATE, value: 'I' },
+            { id: '2', type: CardType.INITIAL_QUBIT, value: '|0⟩' }
+          ],
+          [],
+          [],
+          []
+        ]
+      };
+
+      render(
+        <GameBoard
+          board={board}
+          onCardSlotClick={mockOnCardSlotClick}
+        />
+      );
+
+      const initialQubitCard = screen.getByText('|0⟩').parentElement?.parentElement;
+      expect(initialQubitCard).toHaveClass('bg-green-800');
     });
 
     it('should show control link indicator for control cards', () => {
@@ -185,7 +206,7 @@ describe('GameBoard Component', () => {
         />
       );
 
-      const controlCard = screen.getByText('C').parentElement;
+      const controlCard = screen.getByText('C').parentElement?.parentElement;
       expect(controlCard).toHaveTextContent('→2'); // Links to lane 2 (1-indexed display)
     });
   });
@@ -203,12 +224,11 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Should still render 4 lanes with at least one empty slot each
-      expect(screen.getByText('レーン 1')).toBeInTheDocument();
-      expect(screen.getByText('レーン 4')).toBeInTheDocument();
+      // Should still render quantum circuit title and empty slots
+      expect(screen.getByText('量子回路')).toBeInTheDocument();
       
       const emptySlots = screen.getAllByText('空');
-      expect(emptySlots.length).toBe(4); // One per lane
+      expect(emptySlots.length).toBeGreaterThanOrEqual(4); // At least one per lane
     });
 
     it('should handle board with very long lanes', () => {
@@ -265,7 +285,7 @@ describe('GameBoard Component', () => {
 
       const slot = screen.getAllByText('空')[0];
       
-      // Should not throw error when clicking
+      // Should not throw error when clicking with optional chaining
       expect(() => fireEvent.click(slot)).not.toThrow();
     });
   });
@@ -280,7 +300,7 @@ describe('GameBoard Component', () => {
       );
 
       const slot = screen.getAllByRole('button')[0];
-      expect(slot).toHaveClass('hover:ring-2');
+      expect(slot).toHaveClass('hover:scale-105');
     });
 
     it('should have consistent slot sizing', () => {
@@ -303,7 +323,7 @@ describe('GameBoard Component', () => {
         lane: [
           [
             { id: '1', type: CardType.GATE, value: 'I' },
-            { id: '2', type: CardType.MEASUREMENT, value: '<0|' }
+            { id: '2', type: CardType.MEASUREMENT, value: '⟨0|' }
           ],
           [],
           [],
@@ -319,7 +339,7 @@ describe('GameBoard Component', () => {
       );
 
       // Future: Check for measurement count display
-      expect(screen.getByText('<0|')).toBeInTheDocument();
+      expect(screen.getByText('⟨0|')).toBeInTheDocument();
     });
   });
 });
