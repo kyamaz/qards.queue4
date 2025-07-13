@@ -15,7 +15,7 @@ describe('Game Logic Edge Cases', () => {
       // Test that deck creation doesn't fail even if UUID has issues
       const deck = createDeck();
       expect(deck).toBeDefined();
-      expect(deck.length).toBe(60);
+      expect(deck.length).toBe(56); // Main deck without INITIAL_QUBIT cards
     });
 
     it('should create unique IDs for all cards', () => {
@@ -52,7 +52,7 @@ describe('Game Logic Edge Cases', () => {
       const deckCopy = [...originalDeck];
       shuffleDeck(deckCopy);
       
-      expect(originalDeck.length).toBe(60);
+      expect(originalDeck.length).toBe(56); // Main deck without INITIAL_QUBIT cards
       expect(originalDeck[0]).toBeDefined();
     });
   });
@@ -121,11 +121,9 @@ describe('Game Logic Edge Cases', () => {
       
       expect(gameState.board.lane.length).toBe(4);
       
-      // Each lane should start with an I gate
+      // Each lane should start empty (no I gates anymore)
       gameState.board.lane.forEach(lane => {
-        expect(lane.length).toBe(1);
-        expect(lane[0]?.type).toBe(CardType.GATE);
-        expect(lane[0]?.value).toBe('I');
+        expect(lane.length).toBe(0);
       });
     });
   });
@@ -213,11 +211,11 @@ describe('Game Logic Edge Cases', () => {
       expect(isValidPlay(gateCard, 0, 1, mockBoard)).toBe(true);
     });
 
-    it('should reject measurement card when no qubit precedes it', () => {
+    it('should allow measurement card placement after non-measurement cards', () => {
       const measurementCard: Card = { id: '5', type: CardType.MEASUREMENT, value: '⟨0|' };
       
-      // Only I gate in lane, no qubit
-      expect(isValidPlay(measurementCard, 0, 1, mockBoard)).toBe(false);
+      // I gate in lane - measurement cards can be placed after any non-measurement card
+      expect(isValidPlay(measurementCard, 0, 1, mockBoard)).toBe(true);
     });
 
     it('should handle unknown card type', () => {

@@ -25,14 +25,16 @@ Develop a card game application that allows players to learn fundamental quantum
 - **Pass System**: Game ends when a player passes 4 times
 
 #### 2.1.2 Initial Player Selection Process
-- **Pre-Game Phase**: Before normal gameplay begins, determine first player
-- **Sequential Check**: Starting from Player A, each player checks their hand for INITIAL_QUBIT cards
+- **Card Distribution Phase**: Distribute all cards (including INITIAL_QUBIT cards) randomly to all players
+- **Hand Check Phase**: Each player checks if they have INITIAL_QUBIT cards in their hand
+- **Sequential Placement**: Starting from Player A, players with INITIAL_QUBIT cards place them sequentially
 - **Card Placement**: Players with INITIAL_QUBIT cards must place ALL of them in leftmost board slots
 - **Multiple Cards**: If a player has multiple INITIAL_QUBIT cards, all must be placed
 - **Lane Assignment**: Each INITIAL_QUBIT card is placed in a separate lane (lane 0, 1, 2, 3)
 - **First Player Rule**: The player who places an |1⟩ INITIAL_QUBIT card becomes the first player
 - **Priority Order**: If multiple players have |1⟩ cards, the first in alphabetical/turn order wins
 - **Default Rule**: If no player has |1⟩, the first player with any INITIAL_QUBIT card starts
+- **Random Distribution**: INITIAL_QUBIT cards are distributed randomly, so some players may not have any
 
 #### 2.1.3 Turn Management System
 - **Turn Counter**: Increments only when all players complete a full round
@@ -42,34 +44,36 @@ Develop a card game application that allows players to learn fundamental quantum
 #### 2.1.4 Card System
 Total Deck: 60 cards
 
-**Qubit Cards (8 cards)**
-- |+⟩ cards: 4 cards
-- |-⟩ cards: 4 cards
+**Qubit Cards (7 cards)**
+- |+⟩ cards: 2 cards
+- |-⟩ cards: 2 cards
+- |0⟩ cards: 2 cards
+- |1⟩ cards: 1 card
 - Placeable only after Measurement cards
 
-**Gate Cards (28 cards)**
-- I (Identity) gates: 7 cards
-- X (Pauli-X) gates: 7 cards
-- Z (Pauli-Z) gates: 7 cards
-- H (Hadamard) gates: 7 cards
+**Gate Cards (32 cards)**
+- I (Identity) gates: 8 cards
+- X (Pauli-X) gates: 8 cards
+- Z (Pauli-Z) gates: 8 cards
+- H (Hadamard) gates: 8 cards
 
-**Unitary Cards (8 cards)**
-- U cards: 8 cards
+**Unitary Cards (2 cards)**
+- U cards: 2 cards
 
-**Control Cards (8 cards)**
-- C cards: 8 cards
+**Control Cards (4 cards)**
+- C cards: 4 cards
 
 **Target Cards (Generated dynamically)**
 - T cards: Auto-generated when Control cards are placed
 - Not included in deck, created during gameplay
 
-**Measurement Cards (8 cards)**
-- ⟨0| cards: 2 cards
-- ⟨1| cards: 2 cards
+**Measurement Cards (11 cards)**
+- ⟨0| cards: 4 cards
+- ⟨1| cards: 3 cards
 - ⟨+| cards: 2 cards
 - ⟨-| cards: 2 cards
 
-**Initial State Cards (4 cards, distributed only at game start)**
+**Initial State Cards (4 cards, distributed with other cards at game start)**
 - |0⟩ cards: 3 cards
 - |1⟩ cards: 1 card
 
@@ -111,6 +115,7 @@ Total Deck: 60 cards
 - Accept Gate card placement (similar to Unitary cards)
 - Gate placement on Target cards does NOT reverse turn direction
 - Cannot be manually selected or placed by players
+- Cannot be placed if the preceding card in the target lane is a Measurement card
 
 ### 2.3 Measurement Card Scoring System
 
@@ -148,7 +153,7 @@ Total Deck: 60 cards
 - Player score addition based on quantum computation or compatibility score
 - Measurement result message display with quantum computation indicator (🔬)
 - Detailed quantum computation steps logged to browser console
-- Game ends after 10 measurements
+- Game ends after 11 measurements
 
 ### 2.4 Card Effect System
 
@@ -201,7 +206,7 @@ Total Deck: 60 cards
 
 ### 2.6 Game End Conditions
 1. **Hand Empty Trigger**: When any player empties their hand, game ends and final scoring occurs
-2. **Measurement Count**: 10 measurements completed
+2. **Measurement Count**: 11 measurements completed
 3. **Pass Limit**: Any player passes 4 times
 4. **All Players Pass**: All players have passed 3+ times
 

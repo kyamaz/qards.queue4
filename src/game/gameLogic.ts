@@ -11,34 +11,35 @@ const generateCards = (type: CardType, value: CardValue, count: number): Card[] 
   }));
 };
 
-// Create the initial deck of 60 cards
+// Create the initial deck - total 56 cards (will be 60 with INITIAL_QUBIT cards)
 export const createDeck = (): Card[] => {
   let deck: Card[] = [];
 
-  // Qubit Cards
-  deck = deck.concat(generateCards(CardType.QUBIT, '|+⟩', 4));
-  deck = deck.concat(generateCards(CardType.QUBIT, '|-⟩', 4));
+  // Qubit Cards (7 total)
+  deck = deck.concat(generateCards(CardType.QUBIT, '|+⟩', 2));
+  deck = deck.concat(generateCards(CardType.QUBIT, '|-⟩', 2));
+  deck = deck.concat(generateCards(CardType.QUBIT, '|0⟩', 2));
+  deck = deck.concat(generateCards(CardType.QUBIT, '|1⟩', 1));
 
-  // Gate Cards (7 each for I, X, Z, H, total 28)
-  deck = deck.concat(generateCards(CardType.GATE, 'I', 7));
-  deck = deck.concat(generateCards(CardType.GATE, 'X', 7));
-  deck = deck.concat(generateCards(CardType.GATE, 'Z', 7));
-  deck = deck.concat(generateCards(CardType.GATE, 'H', 7));
+  // Gate Cards (8 each for I, X, Z, H, total 32)
+  deck = deck.concat(generateCards(CardType.GATE, 'I', 8));
+  deck = deck.concat(generateCards(CardType.GATE, 'X', 8));
+  deck = deck.concat(generateCards(CardType.GATE, 'Z', 8));
+  deck = deck.concat(generateCards(CardType.GATE, 'H', 8));
 
-  // Unitary Cards (8 total)
-  deck = deck.concat(generateCards(CardType.UNITARY, 'U', 8));
+  // Unitary Cards (2 total)
+  deck = deck.concat(generateCards(CardType.UNITARY, 'U', 2));
 
-  // Control Cards (8 total)
-  deck = deck.concat(generateCards(CardType.CONTROL, 'C' as CardValue, 8));
+  // Control Cards (4 total)
+  deck = deck.concat(generateCards(CardType.CONTROL, 'C' as CardValue, 4));
 
   // Note: TARGET cards are not added to the deck - they are automatically created when CONTROL cards are played
 
-  // Measurement Cards (2 each, total 8)
-  deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨0|', 2));
-  deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨1|', 2));
+  // Measurement Cards (11 total)
+  deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨0|', 4));
+  deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨1|', 3));
   deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨+|', 2));
   deck = deck.concat(generateCards(CardType.MEASUREMENT, '⟨-|', 2));
-
 
   return deck;
 };
@@ -277,28 +278,29 @@ export const initializeGame = (playerNames: string[]): GameState => {
     passes: 0,
   }));
 
-  // 2. Create and distribute Initial State Cards
-  let initialCards: Card[] = [
+  // 2. Create complete deck including INITIAL_QUBIT cards
+  let completeDeck = createDeck();
+  
+  // Add INITIAL_QUBIT cards to the deck
+  const initialCards: Card[] = [
     ...generateCards(CardType.INITIAL_QUBIT, '|0⟩', 3),
     ...generateCards(CardType.INITIAL_QUBIT, '|1⟩', 1),
   ];
-  initialCards = shuffleDeck(initialCards);
-
-  // Distribute INITIAL_QUBIT cards to players randomly
-  players.forEach((player) => {
-    const card = initialCards.pop();
-    if (card) {
-      player.hand.push(card);
-    }
-  });
-
-  // 3. Prepare the main deck
-  let mainDeck = createDeck();
   
-  // Add any remaining INITIAL_QUBIT cards to the main deck (for 3-player games)
-  if (initialCards.length > 0) {
-    mainDeck = [...mainDeck, ...initialCards];
-    mainDeck = shuffleDeck(mainDeck);
+  completeDeck = [...completeDeck, ...initialCards];
+  completeDeck = shuffleDeck(completeDeck);
+
+  // 3. Distribute all cards randomly among players
+  let cardIndex = 0;
+  while (cardIndex < completeDeck.length) {
+    for (const player of players) {
+      if (completeDeck[cardIndex]) {
+        player.hand.push(completeDeck[cardIndex]);
+        cardIndex++;
+      } else {
+        break;
+      }
+    }
   }
   
   // 4. Prepare the empty board (no I gates initially)
@@ -308,26 +310,12 @@ export const initializeGame = (playerNames: string[]): GameState => {
     board.lane.push([]); // Start with empty lanes
   }
 
-  // 5. Distribute the rest of the main deck
-  mainDeck = shuffleDeck(mainDeck);
-  let cardIndex = 0;
-  while (cardIndex < mainDeck.length) {
-    for (const player of players) {
-      if (mainDeck[cardIndex]) {
-        player.hand.push(mainDeck[cardIndex]);
-        cardIndex++;
-      } else {
-        break;
-      }
-    }
-  }
-
-  // Initialize initial selection state
+  // 5. Initialize initial selection state
   const initialSelectionState = initializeInitialSelection(players);
 
   return {
     players,
-    deck: mainDeck,
+    deck: [], // All cards are already distributed
     board,
     currentPlayerId: players[0].id, // Temporarily set to first player
     turn: 1,
@@ -392,6 +380,11 @@ export const completeControlTargetPlacement = (
 ): GameState => {
   if (!gameState.controlTargetPlacement || !gameState.controlTargetPlacement.waitingForTarget) {
     throw new Error('No pending control-target placement');
+  }
+
+  // Validate target lane placement
+  if (!isValidTargetLane(gameState, targetLane)) {
+    throw new Error('Invalid target lane for control-target placement');
   }
 
   const { controlCard, controlLane, controlPosition } = gameState.controlTargetPlacement;
@@ -512,6 +505,14 @@ export const isValidTargetLane = (
     }
   }
 
+  // Check if TARGET card can be placed: preceding card must not be a Measurement card
+  if (controlPosition > 0 && targetLaneCards.length > controlPosition - 1) {
+    const precedingCard = targetLaneCards[controlPosition - 1];
+    if (precedingCard && precedingCard.type === CardType.MEASUREMENT) {
+      return false; // Cannot place TARGET after a Measurement card
+    }
+  }
+
   return true;
 };
 
@@ -568,5 +569,42 @@ export const incrementUnitaryCardCounter = (gameState: GameState, playerId: stri
       ...gameState.unitaryCardsPlayedThisTurn,
       [playerId]: currentCount + 1
     }
+  };
+};
+
+// Distribute main deck cards after initial selection is complete
+export const distributeMainDeck = (gameState: GameState): GameState => {
+  if (gameState.gamePhase !== 'normal_play') {
+    throw new Error('Main deck can only be distributed after initial selection is complete');
+  }
+
+  let deck = [...gameState.deck];
+  
+  // Shuffle the deck before distribution
+  deck = shuffleDeck(deck);
+  
+  // Deep copy players with their hands
+  const players = gameState.players.map(player => ({
+    ...player,
+    hand: [...player.hand]
+  }));
+  
+  // Distribute cards evenly among players
+  let cardIndex = 0;
+  while (cardIndex < deck.length) {
+    for (const player of players) {
+      if (deck[cardIndex]) {
+        player.hand.push(deck[cardIndex]);
+        cardIndex++;
+      } else {
+        break;
+      }
+    }
+  }
+
+  return {
+    ...gameState,
+    players,
+    deck: [] // Deck is now empty as all cards are distributed
   };
 };
