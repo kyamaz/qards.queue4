@@ -7,15 +7,19 @@ interface GameBoardProps {
   onCardSlotClick: (laneIndex: number, position: number) => void;
   highlightedSlots?: {laneIndex: number; position: number}[];
   animatingCard?: string | null;
+  playerCount: number;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
   board, 
   onCardSlotClick, 
   highlightedSlots = [], 
-  animatingCard 
+  animatingCard,
+  playerCount
 }) => {
-  const maxLength = Math.max(...board.lane.map(l => l.length), 10);
+  const totalCards = 60; // Total cards in deck (including INITIAL_QUBIT cards)
+  const calculatedSlots = Math.floor(totalCards / (playerCount * 2));
+  const maxLength = Math.max(...board.lane.map(l => l.length), calculatedSlots);
   const displayLength = maxLength + 1;
 
   const isSlotHighlighted = (laneIndex: number, position: number) => {

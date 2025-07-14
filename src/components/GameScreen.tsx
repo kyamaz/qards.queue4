@@ -528,7 +528,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     );
   }
 
-  const otherPlayers = gameState.players.filter(player => player.id !== gameState.currentPlayerId);
 
   // Handle initial selection phase
   if (gameState.gamePhase === 'initial_selection') {
@@ -637,6 +636,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 board={gameState.board} 
                 onCardSlotClick={() => {}} // Disabled during initial phase
                 highlightedSlots={[]}
+                playerCount={gameState.players.length}
               />
             </div>
           )}
@@ -709,16 +709,25 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       )}
 
       <div className="flex flex-col lg:flex-row min-h-screen">
-        {/* Left sidebar: Other players */}
+        {/* Left sidebar: All players */}
         <aside className="lg:w-64 bg-black bg-opacity-20 p-4">
-          <h2 className="text-lg font-semibold mb-4">他のプレイヤー</h2>
+          <h2 className="text-lg font-semibold mb-4">プレイヤー状況</h2>
           <div className="space-y-4">
-            {otherPlayers.map((player) => (
+            {gameState.players.map((player) => (
               <div 
                 key={player.id} 
-                className="bg-gray-800 bg-opacity-50 rounded-lg p-3 border border-gray-600"
+                className={`rounded-lg p-3 border transition-all duration-300 ${
+                  player.id === gameState.currentPlayerId 
+                    ? 'bg-blue-700 bg-opacity-60 border-blue-400 shadow-lg' 
+                    : 'bg-gray-800 bg-opacity-50 border-gray-600'
+                }`}
               >
-                <p className="font-semibold text-lg">{player.name}</p>
+                <p className="font-semibold text-lg flex items-center gap-2">
+                  {player.name}
+                  {player.id === gameState.currentPlayerId && (
+                    <span className="text-xs bg-blue-500 px-2 py-1 rounded">現在のターン</span>
+                  )}
+                </p>
                 <div className="text-sm space-y-1">
                   <p>手札: <span className="font-mono">{player.hand.length}枚</span></p>
                   <p>パス: <span className="font-mono">{player.passes}/3回</span></p>
@@ -739,6 +748,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 onCardSlotClick={handleCardSlotClick}
                 highlightedSlots={highlightedSlots}
                 animatingCard={animatingCard}
+                playerCount={gameState.players.length}
               />
             </div>
           </div>
