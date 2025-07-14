@@ -198,6 +198,7 @@ export const determineFirstPlayer = (gameState: GameState): string => {
 
 /**
  * Complete the initial selection phase and transition to normal play
+ * Note: Main deck distribution should be handled by the caller after this function
  */
 export const completeInitialSelection = (gameState: GameState): GameState => {
   if (!gameState.initialSelection?.phaseComplete) {
@@ -208,7 +209,7 @@ export const completeInitialSelection = (gameState: GameState): GameState => {
 
   return {
     ...gameState,
-    gamePhase: 'normal_play',
+    gamePhase: 'normal_play' as const,
     currentPlayerId: firstPlayerId,
     initialSelection: undefined // Clear initial selection state
   };

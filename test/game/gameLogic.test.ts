@@ -9,7 +9,7 @@ jest.mock('uuid', () => ({
 describe('createDeck', () => {
   it('should create a deck with the correct number of cards', () => {
     const deck = createDeck();
-    expect(deck.length).toBe(60); // Based on game logic implementation
+    expect(deck.length).toBe(56); // 60 total - 4 INITIAL_QUBIT cards
   });
 
   it('should contain specific card types and counts', () => {
@@ -20,11 +20,11 @@ describe('createDeck', () => {
     const controlCards = deck.filter(card => card.type === CardType.CONTROL);
     const measurementCards = deck.filter(card => card.type === CardType.MEASUREMENT);
 
-    expect(quantumBitCards.length).toBe(8); // |+⟩ (4) + |-⟩ (4)
-    expect(gateCards.length).toBe(28); // I (7) + X (7) + Z (7) + H (7)
-    expect(unitaryCards.length).toBe(8); // U (8)
-    expect(controlCards.length).toBe(8); // C (8)
-    expect(measurementCards.length).toBe(8); // ⟨0| (2) + ⟨1| (2) + ⟨+| (2) + ⟨-| (2)
+    expect(quantumBitCards.length).toBe(7); // |+⟩ (2) + |-⟩ (2) + |0⟩ (2) + |1⟩ (1)
+    expect(gateCards.length).toBe(32); // I (8) + X (8) + Z (8) + H (8)
+    expect(unitaryCards.length).toBe(2); // U (2)
+    expect(controlCards.length).toBe(4); // C (4)
+    expect(measurementCards.length).toBe(11); // ⟨0| (4) + ⟨1| (3) + ⟨+| (2) + ⟨-| (2)
   });
 
   it('should assign unique IDs to each card', () => {
@@ -96,12 +96,13 @@ describe('initializeGame', () => {
     expect(gameState.initialSelection?.currentPlayerIndex).toBe(0);
     expect(gameState.initialSelection?.phaseComplete).toBe(false);
 
-    // Check if players have hands and initial cards are distributed
+    // Check if all cards are distributed at initialization
     const totalCardsInHands = gameState.players.reduce((sum, player) => sum + player.hand.length, 0);
-    // Initial cards (3x|0>, 1x|1>) = 4 cards
-    // Main deck (60 cards) = 60 cards total distributed
-    // Total cards in hands = 60 + 4 initial = 64 cards
-    expect(totalCardsInHands).toBe(64);
+    // All 60 cards should be distributed (56 main deck + 4 INITIAL_QUBIT)
+    expect(totalCardsInHands).toBe(60);
+    
+    // Check that deck is empty as all cards are distributed
+    expect(gameState.deck.length).toBe(0);
 
     // Check that board is initially empty (no I gates until after initial selection)
     gameState.board.lane.forEach(lane => {
@@ -116,7 +117,7 @@ describe('initializeGame', () => {
     expect(gameState.currentPlayerId).toBeTruthy();
   });
 
-  it('should distribute cards relatively evenly among players', () => {
+  it('should distribute all cards randomly including INITIAL_QUBIT cards', () => {
     const playerNames = ['P1', 'P2', 'P3', 'P4'];
     const gameState = initializeGame(playerNames);
 
@@ -124,10 +125,16 @@ describe('initializeGame', () => {
     const minHand = Math.min(...handLengths);
     const maxHand = Math.max(...handLengths);
 
-    // With 64 cards distributed among 4 players, hands should be around 16.
-    // 64 / 4 = 16
-    expect(minHand).toBeGreaterThanOrEqual(15);
-    expect(maxHand).toBeLessThanOrEqual(17);
+    // All cards should be distributed among players
+    // With 60 cards distributed among 4 players, hands should be around 15
+    expect(minHand).toBeGreaterThanOrEqual(14);
+    expect(maxHand).toBeLessThanOrEqual(16);
+    
+    // Check that INITIAL_QUBIT cards are randomly distributed
+    const initialQubitCount = gameState.players.reduce((count, player) => {
+      return count + player.hand.filter(card => card.type === CardType.INITIAL_QUBIT).length;
+    }, 0);
+    expect(initialQubitCount).toBe(4); // All 4 INITIAL_QUBIT cards should be distributed
   });
 
   it('should handle 3-player games correctly', () => {
@@ -137,31 +144,28 @@ describe('initializeGame', () => {
     
     expect(gameState.players.length).toBe(3);
     
-    // Check total cards distributed
+    // Check total cards in hands (all cards distributed)
     const totalCardsInHands = gameState.players.reduce((sum, player) => sum + player.hand.length, 0);
-    // All 64 cards should be distributed (60 main deck + 4 INITIAL_QUBIT)
-    expect(totalCardsInHands).toBe(64);
+    // All 60 cards should be distributed (56 main deck + 4 INITIAL_QUBIT)
+    expect(totalCardsInHands).toBe(60);
     
     // Check that INITIAL_QUBIT cards are distributed
     const initialQubitCount = gameState.players.reduce((count, player) => {
       return count + player.hand.filter(card => card.type === CardType.INITIAL_QUBIT).length;
     }, 0);
-    // All 4 INITIAL_QUBIT cards should be distributed (3 to players initially, 1 via main deck)
+    // All 4 INITIAL_QUBIT cards should be distributed randomly among players
     expect(initialQubitCount).toBe(4);
-    
-    // Check that at least 3 players have an INITIAL_QUBIT card
-    const playersWithInitialQubit = gameState.players.filter(player => 
-      player.hand.some(card => card.type === CardType.INITIAL_QUBIT)
-    ).length;
-    expect(playersWithInitialQubit).toBeGreaterThanOrEqual(3);
     
     // Check hand sizes are relatively even
     const handLengths = gameState.players.map(p => p.hand.length);
     const minHand = Math.min(...handLengths);
     const maxHand = Math.max(...handLengths);
-    // 64 / 3 ≈ 21.3, so expect 20-23 cards per player
-    expect(minHand).toBeGreaterThanOrEqual(20);
-    expect(maxHand).toBeLessThanOrEqual(23);
+    // 60 / 3 = 20, so expect 20 cards per player
+    expect(minHand).toBe(20);
+    expect(maxHand).toBe(20);
+    
+    // Check that deck is empty as all cards are distributed
+    expect(gameState.deck.length).toBe(0);
   });
 });
 

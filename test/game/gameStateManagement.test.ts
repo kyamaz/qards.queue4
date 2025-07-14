@@ -237,15 +237,15 @@ describe('Game State Management', () => {
       expect(partialMatchScore).toBe(1);
     });
 
-    it('should end game when measurement count reaches 10', () => {
+    it('should end game when measurement count reaches 11', () => {
       const gameState = initializeGame(['Player 1', 'Player 2', 'Player 3']);
-      gameState.measurementCount = 9;
+      gameState.measurementCount = 10;
       
-      // Simulate 10th measurement
+      // Simulate 11th measurement
       const newMeasurementCount = gameState.measurementCount + 1;
-      const gameEnded = newMeasurementCount >= 10;
+      const gameEnded = newMeasurementCount >= 11;
       
-      expect(newMeasurementCount).toBe(10);
+      expect(newMeasurementCount).toBe(11);
       expect(gameEnded).toBe(true);
     });
 

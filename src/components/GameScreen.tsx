@@ -364,7 +364,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           (selectedCard as Card & { measurementScore?: number; quantumComputationUsed?: boolean }).measurementScore = scoreGained;
           (selectedCard as Card & { measurementScore?: number; quantumComputationUsed?: boolean }).quantumComputationUsed = quantumComputationUsed;
           
-          if (newMeasurementCount >= 10) gameEnded = true;
+          if (newMeasurementCount >= 11) gameEnded = true;
         }
         
         return { 
@@ -654,7 +654,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
             <h1 className="text-2xl font-bold">量子ゲート並べ</h1>
             <div className="flex items-center gap-2 text-sm">
               <span className="bg-blue-600 px-2 py-1 rounded">ターン {gameState.turn}</span>
-              <span className="bg-purple-600 px-2 py-1 rounded">測定 {gameState.measurementCount}/10</span>
+              <span className="bg-purple-600 px-2 py-1 rounded">測定 {gameState.measurementCount}/11</span>
               {gameState.turnDirection === 'backward' && (
                 <span className="bg-orange-600 px-2 py-1 rounded">逆順</span>
               )}
