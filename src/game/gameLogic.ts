@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import { Card, CardType, CardValue, GameState, Player } from './types';
 import { initializeInitialSelection } from './initialSelection';
 import { v4 as uuidv4 } from 'uuid'; // For unique card IDs

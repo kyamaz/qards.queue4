@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import { QuantumGameIntegration } from '../../src/quantum/gameIntegration';
 import { GameState, CardType } from '../../src/game/types';
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 /**
  * Quantum computation module for qards4
  * Exports quantum computation engine and game integration

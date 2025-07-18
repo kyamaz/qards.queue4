@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 export { default as BaseCard } from './BaseCard';
 export { default as QubitCard } from './QubitCard';
 export { default as GateCard } from './GateCard';

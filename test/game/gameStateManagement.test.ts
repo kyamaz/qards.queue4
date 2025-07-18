@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import { initializeGame } from '../../src/game/gameLogic';
 import { CardType, GameState, Card } from '../../src/game/types';
 

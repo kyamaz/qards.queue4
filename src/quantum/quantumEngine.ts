@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 /**
  * Quantum computation engine for qards4
  * Handles quantum state evolution and measurement calculations

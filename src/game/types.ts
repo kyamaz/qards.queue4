@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 export enum CardType {
   INITIAL_QUBIT = 'INITIAL_QUBIT',
   QUBIT = 'QUBIT',

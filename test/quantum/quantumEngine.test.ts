@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import { QuantumEngine } from '../../src/quantum/quantumEngine';
 import { QuantumComputationContext, QuantumCircuit, QubitState, MeasurementBasis } from '../../src/quantum/types';
 

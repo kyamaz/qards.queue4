@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import { isValidPlay } from '../../src/game/gameLogic';
 import { CardType } from '../../src/game/types';
 

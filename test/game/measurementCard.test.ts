@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import { calculateMeasurementScore, findPrecedingQubit } from '../../src/game/gameLogic';
 import { Card, CardType } from '../../src/game/types';
 

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import { createDeck, shuffleDeck, initializeGame, isValidPlay, isValidControlCardPlay } from '../../src/game/gameLogic';
 import { Card, CardType, GameState } from '../../src/game/types';
 import { v4 as uuidv4 } from 'uuid';

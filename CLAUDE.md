@@ -65,3 +65,23 @@ npm test         # Run Jest tests
 3. **Path Imports**: Use `@/` alias for imports (maps to `./src/`)
 4. **Client Components**: Add 'use client' directive for interactive components
 5. **Styling**: Use Tailwind CSS v4 classes for all styling
+
+## License and Copyright
+
+This project is licensed under the MIT License. All source code files include SPDX license identifiers for compliance and clarity.
+
+### SPDX License Identifier Policy
+- **All source files** (.ts, .tsx, .js, .jsx, .css) must include both SPDX headers
+- **Header format**: 
+  ```
+  // SPDX-License-Identifier: MIT
+  // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
+  ```
+  For CSS files use `/* */` comment style instead of `//`
+- **Placement**: SPDX headers must be the very first lines of each file
+- **JSON files**: Skip JSON files as they don't support comments
+- **Generated files**: Skip auto-generated files like `next-env.d.ts`
+
+## Memories
+
+- to memorize

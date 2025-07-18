@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import React from 'react';
 import { GameState, CardType } from '../game/types';
 import { CardComponent } from './cards';

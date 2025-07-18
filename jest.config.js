@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 const nextJest = require('next/jest')
 
 const createJestConfig = nextJest({
