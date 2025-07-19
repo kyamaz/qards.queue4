@@ -66,6 +66,22 @@ npm test         # Run Jest tests
 4. **Client Components**: Add 'use client' directive for interactive components
 5. **Styling**: Use Tailwind CSS v4 classes for all styling
 
+### Git Branching Strategy
+- **Feature branches** → **develop branch** → **main branch**
+- Create feature branches from `develop` for new features and bug fixes
+- Merge feature branches into `develop` via pull requests
+- Merge `develop` into `main` for releases
+- `main` branch contains stable, production-ready code
+
+### Commit Guidelines
+- **Always run tests before committing**: Execute `npm test` to ensure all tests pass
+- **Never commit broken code**: Verify that your changes don't break existing functionality
+- **Pre-commit checklist**:
+  1. Run `npm test` - all tests must pass
+  2. Run `npm run lint` - fix any linting errors
+  3. Run `npm run build` - ensure the build succeeds
+  4. Review your changes with `git diff`
+
 ## License and Copyright
 
 This project is licensed under the MIT License. All source code files include SPDX license identifiers for compliance and clarity.
