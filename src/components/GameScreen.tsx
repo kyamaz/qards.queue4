@@ -19,8 +19,6 @@ import {
 } from '../game/gameLogic';
 import { 
   hasInitialQubitCards, 
-  getInitialQubitCards, 
-  placeInitialQubitCards, 
   skipPlayerInitialSelection,
   advanceInitialSelectionPlayer,
   isInitialSelectionComplete,
@@ -30,6 +28,7 @@ import { Card, CardType, GameState } from '../game/types';
 import { QuantumGameIntegration } from '../quantum';
 import GameBoard from './GameBoard';
 import PlayerHand from './PlayerHand';
+import ConfirmationPopup from './ConfirmationPopup';
 
 interface GameScreenProps {
   onBackToMenu?: () => void;
@@ -44,6 +43,17 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [animatingCard, setAnimatingCard] = useState<string | null>(null);
   const [highlightedSlots, setHighlightedSlots] = useState<{laneIndex: number; position: number}[]>([]);
+  const [confirmationPopup, setConfirmationPopup] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    action: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    action: () => {}
+  });
   
   // Quantum computation integration
   const [quantumIntegration] = useState(() => new QuantumGameIntegration());
@@ -64,6 +74,38 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   };
 
   const [settings] = useState(getSettings());
+
+  // Check if game is in progress (not initial state, has moves made)
+  const isGameInProgress = () => {
+    if (!gameState) return false;
+    if (gameState.gamePhase === 'initial_selection') return true;
+    
+    // Check if any cards have been played (board has cards or players have different hand sizes)
+    const hasCardsOnBoard = gameState.board.lane.some(lane => lane.some(card => card !== null));
+    const hasDifferentHandSizes = gameState.players.some(player => player.hand.length !== gameState.players[0].hand.length);
+    const hasScores = gameState.players.some(player => player.score > 0);
+    const hasPasses = gameState.players.some(player => player.passes > 0);
+    
+    return hasCardsOnBoard || hasDifferentHandSizes || hasScores || hasPasses || gameState.turn > 1;
+  };
+
+  const showConfirmationPopup = (title: string, message: string, action: () => void) => {
+    setConfirmationPopup({
+      isOpen: true,
+      title,
+      message,
+      action
+    });
+  };
+
+  const closeConfirmationPopup = () => {
+    setConfirmationPopup({
+      isOpen: false,
+      title: '',
+      message: '',
+      action: () => {}
+    });
+  };
 
   const advanceTurn = () => {
     setGameState(prevGameState => {
@@ -109,19 +151,29 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
 
     const validSlots: {laneIndex: number; position: number}[] = [];
     
-    // Check all possible positions for the selected card
-    gameState.board.lane.forEach((lane, laneIndex) => {
-      for (let position = 0; position <= lane.length; position++) {
-        if (card.type === CardType.CONTROL) {
-          // For control cards, check if slot is empty
-          if (!lane[position]) {
+    // Special handling for initial qubit cards during initial phase
+    if (isInitialPhase && card.type === CardType.INITIAL_QUBIT) {
+      // Initial qubit cards can only be placed at position 0 of empty lanes
+      gameState.board.lane.forEach((lane, laneIndex) => {
+        if (lane.length === 0) {
+          validSlots.push({ laneIndex, position: 0 });
+        }
+      });
+    } else {
+      // Check all possible positions for the selected card
+      gameState.board.lane.forEach((lane, laneIndex) => {
+        for (let position = 0; position <= lane.length; position++) {
+          if (card.type === CardType.CONTROL) {
+            // For control cards, check if slot is empty
+            if (!lane[position]) {
+              validSlots.push({ laneIndex, position });
+            }
+          } else if (isValidPlay(card, laneIndex, position, gameState.board)) {
             validSlots.push({ laneIndex, position });
           }
-        } else if (isValidPlay(card, laneIndex, position, gameState.board)) {
-          validSlots.push({ laneIndex, position });
         }
-      }
-    });
+      });
+    }
 
     setHighlightedSlots(validSlots);
 
@@ -141,6 +193,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       if (scoreHints.length > 0) {
         setMessage(`測定カードヒント: ${scoreHints.join(', ')}`);
       }
+    }
+    
+    // Show initial qubit card hints
+    if (isInitialPhase && card.type === CardType.INITIAL_QUBIT && validSlots.length > 0) {
+      setMessage(`初期量子ビットカード: 空のレーンの左端に配置してください（${validSlots.length}箇所利用可能）`);
     }
   };
 
@@ -174,21 +231,50 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     setTimeout(() => setAnimatingCard(null), duration);
   };
 
-  // Initial selection phase handlers
-  const handleInitialCardPlacement = () => {
+  // Skip current player in initial selection if they have no initial cards
+  const handleSkipInitialPlayer = () => {
     if (!gameState || gameState.gamePhase !== 'initial_selection') return;
 
     const currentPlayerIndex = gameState.initialSelection?.currentPlayerIndex || 0;
     const currentPlayer = gameState.players[currentPlayerIndex];
     
-    if (hasInitialQubitCards(currentPlayer)) {
-      // Place all INITIAL_QUBIT cards
-      const initialCards = getInitialQubitCards(currentPlayer);
-      try {
-        let newState = placeInitialQubitCards(gameState, currentPlayer.id, initialCards);
-        showTemporaryMessage(`${currentPlayer.name}が初期量子ビットカードを配置しました`);
+    // Skip this player
+    let newState = skipPlayerInitialSelection(gameState, currentPlayer.id);
+    
+    if (isInitialSelectionComplete(newState)) {
+      newState = completeInitialSelection(newState);
+      showTemporaryMessage('初期配置完了！ゲーム開始です');
+    } else {
+      newState = advanceInitialSelectionPlayer(newState);
+    }
+    
+    setGameState(newState);
+  };
+
+  // Check if an initial qubit card was just placed
+  const checkInitialCardPlacement = (playerId: string) => {
+    if (!gameState || gameState.gamePhase !== 'initial_selection') return;
+    
+    const currentPlayerIndex = gameState.initialSelection?.currentPlayerIndex || 0;
+    const currentPlayer = gameState.players[currentPlayerIndex];
+    
+    if (currentPlayer.id === playerId) {
+      // Check if this player now has no more initial qubit cards
+      if (!hasInitialQubitCards(currentPlayer)) {
+        // Mark this player as completed
+        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
+        const newPlayersCompleted = [...(gameState.initialSelection?.playersCompleted || [])];
+        newPlayersCompleted[playerIndex] = true;
         
-        // Check if all players are done
+        let newState: GameState = {
+          ...gameState,
+          initialSelection: {
+            ...gameState.initialSelection!,
+            playersCompleted: newPlayersCompleted,
+            phaseComplete: newPlayersCompleted.every(completed => completed)
+          }
+        };
+        
         if (isInitialSelectionComplete(newState)) {
           newState = completeInitialSelection(newState);
           showTemporaryMessage('初期配置完了！ゲーム開始です');
@@ -197,22 +283,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         }
         
         setGameState(newState);
-      } catch (error) {
-        console.error('Initial card placement failed:', error);
-        showTemporaryMessage('カード配置に失敗しました');
       }
-    } else {
-      // Skip this player
-      let newState = skipPlayerInitialSelection(gameState, currentPlayer.id);
-      
-      if (isInitialSelectionComplete(newState)) {
-        newState = completeInitialSelection(newState);
-        showTemporaryMessage('初期配置完了！ゲーム開始です');
-      } else {
-        newState = advanceInitialSelectionPlayer(newState);
-      }
-      
-      setGameState(newState);
     }
   };
 
@@ -273,7 +344,30 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         }
       }
 
-      if (!gameState || !isValidPlay(selectedCard, laneIndex, position, gameState.board)) {
+      // Special validation for initial qubit cards during initial phase
+      if (isInitialPhase && selectedCard.type === CardType.INITIAL_QUBIT) {
+        // Initial qubit cards can only be placed at position 0
+        if (position !== 0) {
+          showTemporaryMessage('初期量子ビットカードは各レーンの左端（位置0）にのみ配置できます。');
+          return;
+        }
+        
+        // The target lane must be empty
+        if (gameState.board.lane[laneIndex].length > 0) {
+          showTemporaryMessage('このレーンは既にカードが配置されています。空のレーンを選択してください。');
+          return;
+        }
+        
+        // Only allow placement by the current initial selection player
+        const currentPlayerIndex = gameState.initialSelection?.currentPlayerIndex || 0;
+        const currentInitialPlayer = gameState.players[currentPlayerIndex];
+        
+        // currentPlayerId should now be synchronized with initialSelection.currentPlayerIndex
+        if (!currentPlayer || currentPlayer.id !== currentInitialPlayer.id) {
+          showTemporaryMessage('現在の初期配置プレイヤーのみがカードを配置できます。');
+          return;
+        }
+      } else if (!gameState || !isValidPlay(selectedCard, laneIndex, position, gameState.board)) {
         showTemporaryMessage('そのカードはそのレーンに配置できません。');
         return;
       }
@@ -382,6 +476,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       setSelectedCard(null);
       setHighlightedSlots([]);
 
+      // Handle initial qubit card placement in initial phase
+      if (isInitialPhase && playedCardType === CardType.INITIAL_QUBIT) {
+        showTemporaryMessage(`初期量子ビットカード ${selectedCard.value} を配置しました。`);
+        checkInitialCardPlacement(currentPlayerId);
+        return;
+      }
+
       // Check if GATE was placed on TARGET card (using the existingCard from before state update)
       const existingCardBeforePlacement = gameState?.board.lane[laneIndex]?.[position] || null;
       const placedOnTarget = playedCardType === CardType.GATE && 
@@ -447,6 +548,21 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   };
 
   const handleNewGame = () => {
+    if (isGameInProgress()) {
+      showConfirmationPopup(
+        'ゲームを終了しますか？',
+        '現在のゲームを終了して新しいゲームを開始します。進行中のゲームは失われます。',
+        () => {
+          startNewGame();
+          closeConfirmationPopup();
+        }
+      );
+    } else {
+      startNewGame();
+    }
+  };
+
+  const startNewGame = () => {
     try {
       const playerCount = settings.playerCount || 4;
       const playerNames = [];
@@ -464,6 +580,42 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     } catch (err) {
       console.error('Failed to initialize game:', err);
       setError(err instanceof Error ? err.message : 'ゲームの初期化に失敗しました。');
+    }
+  };
+
+  const handleBackToMenu = () => {
+    if (isGameInProgress()) {
+      showConfirmationPopup(
+        'メインメニューに戻りますか？',
+        '現在のゲームを終了してメインメニューに戻ります。進行中のゲームは失われます。',
+        () => {
+          if (onBackToMenu) {
+            onBackToMenu();
+          }
+          closeConfirmationPopup();
+        }
+      );
+    } else {
+      if (onBackToMenu) {
+        onBackToMenu();
+      }
+    }
+  };
+
+  const handleCloseMenu = () => {
+    if (isGameInProgress()) {
+      showConfirmationPopup(
+        'ゲームを終了しますか？',
+        '現在のゲームを終了します。進行中のゲームは失われます。',
+        () => {
+          setShowMenu(false);
+          closeConfirmationPopup();
+          // In a real app, this might close the window or navigate away
+          showTemporaryMessage('ゲームを終了しました。');
+        }
+      );
+    } else {
+      setShowMenu(false);
     }
   };
 
@@ -531,121 +683,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   }
 
 
-  // Handle initial selection phase
-  if (gameState.gamePhase === 'initial_selection') {
-    const currentPlayerIndex = gameState.initialSelection?.currentPlayerIndex || 0;
-    const activePlayer = gameState.players[currentPlayerIndex];
-    const hasInitialCards = hasInitialQubitCards(activePlayer);
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white relative">
-        {/* Header */}
-        <header className="bg-black bg-opacity-30 backdrop-blur-sm border-b border-gray-600 p-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">量子ゲート並べ - 初期配置フェーズ</h1>
-            <button
-              onClick={onBackToMenu}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition duration-300"
-            >
-              メニューに戻る
-            </button>
-          </div>
-        </header>
-
-        {/* Message display */}
-        {message && (
-          <div className="bg-blue-600 bg-opacity-80 p-4 text-center">
-            {message}
-          </div>
-        )}
-
-        {/* Main content */}
-        <div className="flex flex-col items-center justify-center min-h-[70vh] p-8">
-          <div className="bg-gray-800 bg-opacity-80 rounded-xl p-8 max-w-2xl w-full text-center">
-            <h2 className="text-3xl font-bold mb-6">初期量子ビット配置</h2>
-            
-            <div className="mb-8">
-              <p className="text-xl mb-4">
-                現在のプレイヤー: <span className="text-blue-400 font-bold">{activePlayer.name}</span>
-              </p>
-              
-              {hasInitialCards ? (
-                <div className="space-y-4">
-                  <p className="text-lg">
-                    {activePlayer.name}さんは初期量子ビットカードを持っています。
-                  </p>
-                  <p className="text-sm text-gray-300">
-                    すべての初期量子ビットカードを左端のスロットに配置します。
-                  </p>
-                  
-                  {/* Show initial cards */}
-                  <div className="flex justify-center gap-4 my-6">
-                    {getInitialQubitCards(activePlayer).map(card => (
-                      <div key={card.id} className="bg-green-800 text-white rounded-lg p-4 w-20 h-28 flex items-center justify-center font-bold">
-                        {card.value}
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <button
-                    onClick={handleInitialCardPlacement}
-                    className="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg text-xl font-bold transition duration-300"
-                  >
-                    カードを配置
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-lg">
-                    {activePlayer.name}さんは初期量子ビットカードを持っていません。
-                  </p>
-                  <button
-                    onClick={handleInitialCardPlacement}
-                    className="px-8 py-4 bg-gray-600 hover:bg-gray-700 rounded-lg text-xl font-bold transition duration-300"
-                  >
-                    スキップ
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Progress indicator */}
-            <div className="mt-8">
-              <p className="text-sm text-gray-400 mb-2">進行状況:</p>
-              <div className="flex justify-center gap-2">
-                {gameState.players.map((player, index) => (
-                  <div
-                    key={player.id}
-                    className={`w-4 h-4 rounded-full ${
-                      gameState.initialSelection?.playersCompleted[index]
-                        ? 'bg-green-500'
-                        : index === currentPlayerIndex
-                        ? 'bg-blue-500'
-                        : 'bg-gray-500'
-                    }`}
-                    title={player.name}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Current board state */}
-          {gameState.board.lane.some(lane => lane.length > 0) && (
-            <div className="mt-8 w-full max-w-4xl">
-              <h3 className="text-xl font-bold mb-4 text-center">現在の配置状況</h3>
-              <GameBoard 
-                board={gameState.board} 
-                onCardSlotClick={() => {}} // Disabled during initial phase
-                highlightedSlots={[]}
-                playerCount={gameState.players.length}
-              />
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Check if we're in initial selection phase for UI adjustments
+  const isInitialPhase = gameState.gamePhase === 'initial_selection';
+  const currentPlayerIndex = isInitialPhase ? (gameState.initialSelection?.currentPlayerIndex || 0) : 0;
+  const activeInitialPlayer = isInitialPhase ? gameState.players[currentPlayerIndex] : null;
+  const hasInitialCards = activeInitialPlayer ? hasInitialQubitCards(activeInitialPlayer) : false;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white relative">
@@ -653,18 +695,31 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       <header className="bg-black bg-opacity-30 backdrop-blur-sm border-b border-gray-600 p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">量子ゲート並べ</h1>
+            <h1 className="text-2xl font-bold">
+              量子ゲート並べ{isInitialPhase && ' - 初期配置フェーズ'}
+            </h1>
             <div className="flex items-center gap-2 text-sm">
-              <span className="bg-blue-600 px-2 py-1 rounded">ターン {gameState.turn}</span>
-              <span className="bg-purple-600 px-2 py-1 rounded">測定 {gameState.measurementCount}/11</span>
-              {gameState.turnDirection === 'backward' && (
-                <span className="bg-orange-600 px-2 py-1 rounded">逆順</span>
+              {isInitialPhase ? (
+                <>
+                  <span className="bg-green-600 px-2 py-1 rounded">初期配置</span>
+                  <span className="bg-blue-600 px-2 py-1 rounded">
+                    {currentPlayerIndex + 1}/{gameState.players.length}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="bg-blue-600 px-2 py-1 rounded">ターン {gameState.turn}</span>
+                  <span className="bg-purple-600 px-2 py-1 rounded">測定 {gameState.measurementCount}/11</span>
+                  {gameState.turnDirection === 'backward' && (
+                    <span className="bg-orange-600 px-2 py-1 rounded">逆順</span>
+                  )}
+                </>
               )}
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            {(selectedCard || gameState?.controlTargetPlacement?.waitingForTarget) && (
+            {(selectedCard || gameState?.controlTargetPlacement?.waitingForTarget) && !isInitialPhase && (
               <button
                 onClick={handleCancelAction}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition duration-300"
@@ -694,14 +749,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
             </button>
             {onBackToMenu && (
               <button
-                onClick={onBackToMenu}
+                onClick={handleBackToMenu}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition duration-300 text-left"
               >
                 メインメニューに戻る
               </button>
             )}
             <button
-              onClick={() => setShowMenu(false)}
+              onClick={handleCloseMenu}
               className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition duration-300 text-left"
             >
               閉じる
@@ -760,38 +815,76 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
             {/* Game status messages */}
             <div className="text-center mb-4">
               <div className="flex items-center justify-center gap-4 mb-2">
-                <p className="text-xl font-bold">
-                  現在のプレイヤー: <span className="text-blue-400">{currentPlayer.name}</span>
-                </p>
-                {gameState.gameEnded && (
+                {isInitialPhase ? (
                   <div className="flex flex-col items-center gap-2">
-                    <span className="bg-red-600 px-4 py-2 rounded-lg text-xl font-bold animate-pulse">
-                      ゲーム終了！
-                    </span>
-                    {(() => {
-                      const { winner, finalScores } = determineWinner(gameState);
-                      return (
-                        <div className="bg-black bg-opacity-80 rounded-lg p-4 text-center">
-                          <div className="text-2xl font-bold text-yellow-400 mb-2">
-                            🏆 勝者: {winner.name}
-                          </div>
-                          <div className="text-lg mb-2">
-                            最終スコア: {finalScores.find(s => s.player.id === winner.id)?.finalScore}点
-                          </div>
-                          <div className="text-sm text-gray-300">
-                            <div className="grid grid-cols-1 gap-1">
-                              {finalScores.map(({ player, finalScore }) => (
-                                <div key={player.id} className={`flex justify-between ${player.id === winner.id ? 'text-yellow-400 font-bold' : ''}`}>
-                                  <span>{player.name}:</span>
-                                  <span>{player.score}点 - {player.hand.length}枚 = {finalScore}点</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
+                    <p className="text-xl font-bold">
+                      初期配置: <span className="text-green-400">{activeInitialPlayer?.name}</span>
+                    </p>
+                    <div className="flex items-center gap-4">
+                      {hasInitialCards ? (
+                        <span className="text-lg text-green-300">
+                          初期量子ビットカードを配置してください
+                        </span>
+                      ) : (
+                        <span className="text-lg text-yellow-300">
+                          初期量子ビットカードがありません - スキップ
+                        </span>
+                      )}
+                    </div>
+                    {/* Initial phase progress indicator */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-400">進行状況:</span>
+                      {gameState.players.map((player, index) => (
+                        <div
+                          key={player.id}
+                          className={`w-3 h-3 rounded-full ${
+                            gameState.initialSelection?.playersCompleted[index]
+                              ? 'bg-green-500'
+                              : index === currentPlayerIndex
+                              ? 'bg-blue-500'
+                              : 'bg-gray-500'
+                          }`}
+                          title={player.name}
+                        />
+                      ))}
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <p className="text-xl font-bold">
+                      現在のプレイヤー: <span className="text-blue-400">{currentPlayer.name}</span>
+                    </p>
+                    {gameState.gameEnded && (
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="bg-red-600 px-4 py-2 rounded-lg text-xl font-bold animate-pulse">
+                          ゲーム終了！
+                        </span>
+                        {(() => {
+                          const { winner, finalScores } = determineWinner(gameState);
+                          return (
+                            <div className="bg-black bg-opacity-80 rounded-lg p-4 text-center">
+                              <div className="text-2xl font-bold text-yellow-400 mb-2">
+                                🏆 勝者: {winner.name}
+                              </div>
+                              <div className="text-lg mb-2">
+                                最終スコア: {finalScores.find(s => s.player.id === winner.id)?.finalScore}点
+                              </div>
+                              <div className="text-sm text-gray-300">
+                                <div className="grid grid-cols-1 gap-1">
+                                  {finalScores.map(({ player, finalScore }) => (
+                                    <div key={player.id} className={`flex justify-between ${player.id === winner.id ? 'text-yellow-400 font-bold' : ''}`}>
+                                      <span>{player.name}:</span>
+                                      <span>{player.score}点 - {player.hand.length}枚 = {finalScore}点</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               
@@ -824,39 +917,90 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
               )}
             </div>
 
-            {/* Player hand and controls */}
+            {/* Player hand and controls / Initial placement controls */}
             <div className="flex flex-col items-center gap-4">
-              <PlayerHand
-                hand={currentPlayer.hand}
-                playerName={currentPlayer.name}
-                isCurrentPlayer={true}
-                onCardClick={handleCardSelect}
-                selectedCard={selectedCard}
-              />
-              
-              <div className="flex gap-4">
-                <button
-                  onClick={handlePass}
-                  disabled={gameState.gameEnded}
-                  className={`px-6 py-3 text-lg rounded-lg shadow-lg transition duration-300 ${
-                    gameState.gameEnded 
-                      ? 'bg-gray-500 cursor-not-allowed' 
-                      : 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                  }`}
-                >
-                  パス ({currentPlayer.passes}/3)
-                </button>
-                
-                {settings.showHints && (
-                  <div className="text-sm text-gray-400 flex items-center">
-                    💡 ヒント: {selectedCard ? '配置可能な場所が光っています' : 'カードを選択してください'}
+              {isInitialPhase ? (
+                <div className="flex flex-col items-center gap-4">
+                  {/* Show current player's hand with initial cards */}
+                  {activeInitialPlayer && (
+                    <PlayerHand
+                      hand={activeInitialPlayer.hand}
+                      playerName={activeInitialPlayer.name}
+                      isCurrentPlayer={true}
+                      onCardClick={handleCardSelect}
+                      selectedCard={selectedCard}
+                    />
+                  )}
+                  
+                  {/* Initial placement instructions and skip button */}
+                  <div className="flex flex-col items-center gap-4">
+                    {!hasInitialCards && (
+                      <div className="flex gap-4">
+                        <button
+                          onClick={handleSkipInitialPlayer}
+                          className="px-8 py-4 text-xl font-bold rounded-lg shadow-lg transition duration-300 bg-gray-600 hover:bg-gray-700 text-white"
+                        >
+                          スキップ
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Show instruction */}
+                    <div className="text-sm text-gray-400 text-center max-w-md">
+                      {hasInitialCards 
+                        ? '初期量子ビットカードを手札から選択して、空のレーンの左端（位置0）に配置してください'
+                        : 'このプレイヤーは初期量子ビットカードを持っていません'
+                      }
+                    </div>
                   </div>
-                )}
-              </div>
+                </div>
+              ) : (
+                <>
+                  <PlayerHand
+                    hand={currentPlayer.hand}
+                    playerName={currentPlayer.name}
+                    isCurrentPlayer={true}
+                    onCardClick={handleCardSelect}
+                    selectedCard={selectedCard}
+                  />
+                  
+                  <div className="flex gap-4">
+                    <button
+                      onClick={handlePass}
+                      disabled={gameState.gameEnded}
+                      className={`px-6 py-3 text-lg rounded-lg shadow-lg transition duration-300 ${
+                        gameState.gameEnded 
+                          ? 'bg-gray-500 cursor-not-allowed' 
+                          : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                      }`}
+                    >
+                      パス ({currentPlayer.passes}/3)
+                    </button>
+                    
+                    {settings.showHints && (
+                      <div className="text-sm text-gray-400 flex items-center">
+                        💡 ヒント: {selectedCard ? '配置可能な場所が光っています' : 'カードを選択してください'}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </section>
         </main>
       </div>
+
+      {/* Confirmation Popup */}
+      <ConfirmationPopup
+        isOpen={confirmationPopup.isOpen}
+        title={confirmationPopup.title}
+        message={confirmationPopup.message}
+        confirmText="はい"
+        cancelText="いいえ"
+        onConfirm={confirmationPopup.action}
+        onCancel={closeConfirmationPopup}
+        confirmButtonColor="red"
+      />
     </div>
   );
 };

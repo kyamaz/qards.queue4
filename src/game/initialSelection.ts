@@ -148,9 +148,11 @@ export const advanceInitialSelectionPlayer = (gameState: GameState): GameState =
 
   const currentIndex = gameState.initialSelection.currentPlayerIndex;
   const nextIndex = (currentIndex + 1) % gameState.players.length;
+  const nextPlayer = gameState.players[nextIndex];
 
   return {
     ...gameState,
+    currentPlayerId: nextPlayer.id, // Update currentPlayerId to match initial selection
     initialSelection: {
       ...gameState.initialSelection,
       currentPlayerIndex: nextIndex

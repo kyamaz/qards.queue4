@@ -12,6 +12,8 @@ interface SettingsData {
   showHints: boolean;
   language: 'ja' | 'en';
   playerCount: 3 | 4 | 5 | 6;
+  comPlayerCount: number;
+  controlledHadamard: boolean;
 }
 
 interface SettingsScreenProps {
@@ -28,6 +30,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
     showHints: true,
     language: 'ja' as const,
     playerCount: 4 as const,
+    comPlayerCount: 3,
+    controlledHadamard: false,
   }), []);
 
   const [settings, setSettings] = useState<SettingsData>(defaultSettings);
@@ -46,7 +50,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
   }, [defaultSettings]);
 
   const updateSetting = <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings(prev => {
+      const newSettings = { ...prev, [key]: value };
+      
+      // When player count changes, adjust COM player count if needed
+      if (key === 'playerCount') {
+        const maxComPlayers = (value as number) - 1;
+        if (newSettings.comPlayerCount > maxComPlayers) {
+          newSettings.comPlayerCount = maxComPlayers;
+        }
+      }
+      
+      return newSettings;
+    });
   };
 
   const handleSave = () => {
@@ -89,20 +105,74 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
             </select>
           </div>
 
+          {/* COM Player Count */}
+          <div className="mb-4">
+            <label className="block text-lg mb-2">COMプレイヤー人数</label>
+            <select
+              value={settings.comPlayerCount}
+              onChange={(e) => updateSetting('comPlayerCount', parseInt(e.target.value))}
+              className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+            >
+              <option value={0}>0人（1人プレイ）</option>
+              {Array.from({ length: settings.playerCount - 1 }, (_, i) => i + 1).map(count => (
+                <option key={count} value={count}>
+                  {count}人{count === Math.min(3, settings.playerCount - 1) ? '（推奨）' : ''}
+                </option>
+              ))}
+            </select>
+            <p className="text-sm text-gray-400 mt-1">
+              {settings.comPlayerCount === 0 
+                ? '1人プレイモード（人間プレイヤーのみ）' 
+                : `人間プレイヤー1人 + COMプレイヤー${settings.comPlayerCount}人 = 合計${settings.comPlayerCount + 1}人`
+              }
+            </p>
+          </div>
+
           {/* Difficulty */}
           <div className="mb-4">
             <label className="block text-lg mb-2">難易度</label>
             <select
               value={settings.difficulty}
               onChange={(e) => updateSetting('difficulty', e.target.value as 'easy' | 'normal' | 'hard')}
-              className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              disabled={settings.comPlayerCount === 0}
+              className={`w-full p-3 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none ${
+                settings.comPlayerCount === 0 
+                  ? 'bg-gray-600 cursor-not-allowed opacity-50' 
+                  : 'bg-gray-700'
+              }`}
             >
               <option value="easy">初級 - CPUが弱く、ヒントが多い</option>
               <option value="normal">中級 - 標準的な難易度</option>
               <option value="hard">上級 - CPUが強く、ヒントが少ない</option>
             </select>
+            {settings.comPlayerCount === 0 && (
+              <p className="text-sm text-gray-400 mt-1">1人プレイモードでは難易度設定は無効です</p>
+            )}
           </div>
 
+        </div>
+
+        <div className="bg-gray-900 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-semibold mb-4">ルール設定</h2>
+          
+          {/* Controlled Hadamard */}
+          <div className="mb-4">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.controlledHadamard}
+                onChange={(e) => updateSetting('controlledHadamard', e.target.checked)}
+                className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <span className="text-lg">制御アダマール使用</span>
+            </label>
+            <p className="text-sm text-gray-400 mt-1">制御アダマールゲートカードを使用可能にします</p>
+          </div>
+        </div>
+
+        <div className="bg-gray-900 rounded-lg p-6 mb-6">
+          <h2 className="text-2xl font-semibold mb-4">システム設定</h2>
+          
           {/* Show Hints */}
           <div className="mb-4">
             <label className="flex items-center cursor-pointer">
@@ -116,11 +186,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
             </label>
             <p className="text-sm text-gray-400 mt-1">有効にすると、配置可能な場所がハイライトされます</p>
           </div>
-        </div>
 
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">システム設定</h2>
-          
           {/* Language */}
           <div className="mb-4">
             <label className="block text-lg mb-2">言語</label>
