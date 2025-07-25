@@ -5,35 +5,40 @@ import { Card, CardType } from '../../src/game/types';
 
 describe('Measurement Card Functionality', () => {
   describe('calculateMeasurementScore', () => {
-    it('should return 3 for perfect matches', () => {
+    it('should return 5 points for measurement result 1', () => {
+      // |1⟩ states always measure as '1' regardless of measurement basis
+      expect(calculateMeasurementScore('|1⟩', '⟨0|')).toBe(5);
+      expect(calculateMeasurementScore('|1⟩', '⟨1|')).toBe(5);
+      expect(calculateMeasurementScore('|1⟩', '⟨+|')).toBe(5);
+      expect(calculateMeasurementScore('|1⟩', '⟨-|')).toBe(5);
+      
+      // |-⟩ states always measure as '1' in +/- basis
+      expect(calculateMeasurementScore('|-⟩', '⟨+|')).toBe(5);
+      expect(calculateMeasurementScore('|-⟩', '⟨-|')).toBe(5);
+    });
+
+    it('should return 3 points for measurement result 0', () => {
+      // |0⟩ states always measure as '0' regardless of measurement basis
       expect(calculateMeasurementScore('|0⟩', '⟨0|')).toBe(3);
-      expect(calculateMeasurementScore('|1⟩', '⟨1|')).toBe(3);
+      expect(calculateMeasurementScore('|0⟩', '⟨1|')).toBe(3);
+      expect(calculateMeasurementScore('|0⟩', '⟨+|')).toBe(3);
+      expect(calculateMeasurementScore('|0⟩', '⟨-|')).toBe(3);
+      
+      // |+⟩ states always measure as '0' in +/- basis and computational basis
+      expect(calculateMeasurementScore('|+⟩', '⟨0|')).toBe(3);
+      expect(calculateMeasurementScore('|+⟩', '⟨1|')).toBe(3);
       expect(calculateMeasurementScore('|+⟩', '⟨+|')).toBe(3);
-      expect(calculateMeasurementScore('|-⟩', '⟨-|')).toBe(3);
+      expect(calculateMeasurementScore('|+⟩', '⟨-|')).toBe(3);
+      
+      // |-⟩ states measure as '0' in computational basis (equal probability, defaulting to '0')
+      expect(calculateMeasurementScore('|-⟩', '⟨0|')).toBe(3);
+      expect(calculateMeasurementScore('|-⟩', '⟨1|')).toBe(3);
     });
 
-    it('should return 0 for opposite matches', () => {
-      expect(calculateMeasurementScore('|0⟩', '⟨1|')).toBe(0);
-      expect(calculateMeasurementScore('|1⟩', '⟨0|')).toBe(0);
-      expect(calculateMeasurementScore('|+⟩', '⟨-|')).toBe(0);
-      expect(calculateMeasurementScore('|-⟩', '⟨+|')).toBe(0);
-    });
-
-    it('should return 1 for partial matches', () => {
-      expect(calculateMeasurementScore('|0⟩', '⟨+|')).toBe(1);
-      expect(calculateMeasurementScore('|0⟩', '⟨-|')).toBe(1);
-      expect(calculateMeasurementScore('|1⟩', '⟨+|')).toBe(1);
-      expect(calculateMeasurementScore('|1⟩', '⟨-|')).toBe(1);
-      expect(calculateMeasurementScore('|+⟩', '⟨0|')).toBe(1);
-      expect(calculateMeasurementScore('|+⟩', '⟨1|')).toBe(1);
-      expect(calculateMeasurementScore('|-⟩', '⟨0|')).toBe(1);
-      expect(calculateMeasurementScore('|-⟩', '⟨1|')).toBe(1);
-    });
-
-    it('should return 1 for unknown combinations', () => {
-      expect(calculateMeasurementScore('unknown', '⟨0|')).toBe(1);
-      expect(calculateMeasurementScore('|0⟩', 'unknown')).toBe(1);
-      expect(calculateMeasurementScore('unknown', 'unknown')).toBe(1);
+    it('should return 3 points for unknown combinations (default to measurement result 0)', () => {
+      expect(calculateMeasurementScore('unknown', '⟨0|')).toBe(3);
+      expect(calculateMeasurementScore('|0⟩', 'unknown')).toBe(3);
+      expect(calculateMeasurementScore('unknown', 'unknown')).toBe(3);
     });
   });
 
@@ -121,18 +126,31 @@ describe('Measurement Card Functionality', () => {
   });
 
   describe('Measurement Card Game Logic', () => {
-    it('should calculate correct scores for various quantum-measurement combinations', () => {
+    it('should calculate correct scores based on measurement outcomes', () => {
       const testCases = [
-        { quantum: '|0⟩', measurement: '⟨0|', expectedScore: 3, description: 'Perfect match |0⟩-⟨0|' },
-        { quantum: '|1⟩', measurement: '⟨1|', expectedScore: 3, description: 'Perfect match |1⟩-⟨1|' },
-        { quantum: '|+⟩', measurement: '⟨+|', expectedScore: 3, description: 'Perfect match |+⟩-⟨+|' },
-        { quantum: '|-⟩', measurement: '⟨-|', expectedScore: 3, description: 'Perfect match |-⟩-⟨-|' },
-        { quantum: '|0⟩', measurement: '⟨1|', expectedScore: 0, description: 'Opposite |0⟩-⟨1|' },
-        { quantum: '|1⟩', measurement: '⟨0|', expectedScore: 0, description: 'Opposite |1⟩-⟨0|' },
-        { quantum: '|+⟩', measurement: '⟨-|', expectedScore: 0, description: 'Opposite |+⟩-⟨-|' },
-        { quantum: '|-⟩', measurement: '⟨+|', expectedScore: 0, description: 'Opposite |-⟩-⟨+|' },
-        { quantum: '|0⟩', measurement: '⟨+|', expectedScore: 1, description: 'Partial |0⟩-⟨+|' },
-        { quantum: '|1⟩', measurement: '⟨-|', expectedScore: 1, description: 'Partial |1⟩-⟨-|' }
+        // |0⟩ always gives measurement result '0' → 3 points
+        { quantum: '|0⟩', measurement: '⟨0|', expectedScore: 3, description: '|0⟩ measured, result 0' },
+        { quantum: '|0⟩', measurement: '⟨1|', expectedScore: 3, description: '|0⟩ measured, result 0' },
+        { quantum: '|0⟩', measurement: '⟨+|', expectedScore: 3, description: '|0⟩ measured, result 0' },
+        { quantum: '|0⟩', measurement: '⟨-|', expectedScore: 3, description: '|0⟩ measured, result 0' },
+        
+        // |1⟩ always gives measurement result '1' → 5 points
+        { quantum: '|1⟩', measurement: '⟨0|', expectedScore: 5, description: '|1⟩ measured, result 1' },
+        { quantum: '|1⟩', measurement: '⟨1|', expectedScore: 5, description: '|1⟩ measured, result 1' },
+        { quantum: '|1⟩', measurement: '⟨+|', expectedScore: 5, description: '|1⟩ measured, result 1' },
+        { quantum: '|1⟩', measurement: '⟨-|', expectedScore: 5, description: '|1⟩ measured, result 1' },
+        
+        // |+⟩ always gives measurement result '0' → 3 points
+        { quantum: '|+⟩', measurement: '⟨0|', expectedScore: 3, description: '|+⟩ measured, result 0' },
+        { quantum: '|+⟩', measurement: '⟨1|', expectedScore: 3, description: '|+⟩ measured, result 0' },
+        { quantum: '|+⟩', measurement: '⟨+|', expectedScore: 3, description: '|+⟩ measured, result 0' },
+        { quantum: '|+⟩', measurement: '⟨-|', expectedScore: 3, description: '|+⟩ measured, result 0' },
+        
+        // |-⟩ gives different results based on basis
+        { quantum: '|-⟩', measurement: '⟨0|', expectedScore: 3, description: '|-⟩ in computational basis, result 0' },
+        { quantum: '|-⟩', measurement: '⟨1|', expectedScore: 3, description: '|-⟩ in computational basis, result 0' },
+        { quantum: '|-⟩', measurement: '⟨+|', expectedScore: 5, description: '|-⟩ in +/- basis, result 1' },
+        { quantum: '|-⟩', measurement: '⟨-|', expectedScore: 5, description: '|-⟩ in +/- basis, result 1' }
       ];
 
       testCases.forEach(({ quantum, measurement, expectedScore, description }) => {

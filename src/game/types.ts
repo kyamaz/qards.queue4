@@ -45,7 +45,7 @@ export interface Player {
   passes: number;
 }
 
-export type GamePhase = 'initial_selection' | 'normal_play' | 'ended';
+export type GamePhase = 'initial_selection' | 'normal_play' | 'game_ended';
 
 export interface InitialSelectionState {
   currentPlayerIndex: number; // Index of player currently placing initial cards
@@ -68,7 +68,6 @@ export interface GameState {
   currentPlayerId: string;
   turn: number;
   measurementCount: number;
-  gameEnded: boolean;
   turnDirection: 'forward' | 'backward';
   gamePhase: GamePhase;
   initialSelection?: InitialSelectionState;

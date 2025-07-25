@@ -43,6 +43,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [animatingCard, setAnimatingCard] = useState<string | null>(null);
   const [highlightedSlots, setHighlightedSlots] = useState<{laneIndex: number; position: number}[]>([]);
+  const [selectedPlayerForHandView, setSelectedPlayerForHandView] = useState<string | null>(null);
   const [confirmationPopup, setConfirmationPopup] = useState<{
     isOpen: boolean;
     title: string;
@@ -108,8 +109,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   };
 
   const advanceTurn = () => {
+    // Don't advance turn if game has ended
+    if (gameState?.gamePhase === 'game_ended') {
+      return;
+    }
+    
     setGameState(prevGameState => {
       if (!prevGameState) return null;
+      
+      // Don't advance turn if game has ended
+      if (prevGameState.gamePhase === 'game_ended') {
+        return prevGameState;
+      }
 
       const { players, currentPlayerId, turnDirection } = prevGameState;
       const numPlayers = players.length;
@@ -185,8 +196,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         const precedingQubit = findPrecedingQubit(lane, position);
         if (precedingQubit) {
           const score = calculateMeasurementScore(precedingQubit.value, card.value);
-          const scoreText = score === 3 ? '完全一致(+3)' : 
-                           score === 0 ? '不一致(+0)' : '部分一致(+1)';
+          const scoreText = score === 5 ? '測定結果1(+5)' : '測定結果0(+3)';
           scoreHints.push(`レーン${laneIndex + 1}: ${scoreText}`);
         }
       });
@@ -202,6 +212,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   };
 
   const handleCardSelect = (card: Card) => {
+    // Disable card selection when game is ended
+    if (gameState?.gamePhase === 'game_ended') {
+      showTemporaryMessage('ゲームは終了しています。カードを選択することはできません。');
+      return;
+    }
+    
     if (gameState?.controlTargetPlacement?.waitingForTarget) {
       setMessage('制御カードの配置を完了するか、キャンセルしてください。');
       return;
@@ -233,9 +249,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
 
   // Skip current player in initial selection if they have no initial cards
   const handleSkipInitialPlayer = () => {
-    if (!gameState || gameState.gamePhase !== 'initial_selection') return;
+    if (!gameState || gameState.gamePhase !== 'initial_selection' || !gameState.initialSelection) {
+      showTemporaryMessage('スキップできません：初期配置フェーズではありません。');
+      return;
+    }
 
-    const currentPlayerIndex = gameState.initialSelection?.currentPlayerIndex || 0;
+    const currentPlayerIndex = gameState.initialSelection.currentPlayerIndex;
     const currentPlayer = gameState.players[currentPlayerIndex];
     
     // Skip this player
@@ -252,8 +271,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   };
 
 
+
   const handleCardSlotClick = (laneIndex: number, position: number) => {
     if (!gameState) return;
+    
+    // Disable card placement when game is ended
+    if (gameState.gamePhase === 'game_ended') {
+      showTemporaryMessage('ゲームは終了しています。カードを配置することはできません。');
+      return;
+    }
 
     // Handle target placement for control-target cards
     if (gameState.controlTargetPlacement?.waitingForTarget) {
@@ -324,11 +350,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         }
         
         // Only allow placement by the current initial selection player
-        const currentPlayerIndex = gameState.initialSelection?.currentPlayerIndex || 0;
-        const currentInitialPlayer = gameState.players[currentPlayerIndex];
+        const currentInitialPlayerIndex = gameState.initialSelection?.currentPlayerIndex || 0;
+        const currentInitialPlayer = gameState.players[currentInitialPlayerIndex];
         
-        // currentPlayerId should now be synchronized with initialSelection.currentPlayerIndex
-        if (!currentPlayer || currentPlayer.id !== currentInitialPlayer.id) {
+        // Check if the current player is the one who should be placing initial cards
+        if (gameState.currentPlayerId !== currentInitialPlayer.id) {
           showTemporaryMessage('現在の初期配置プレイヤーのみがカードを配置できます。');
           return;
         }
@@ -361,13 +387,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
 
         let newTurnDirection = prev.turnDirection;
         let newMeasurementCount = prev.measurementCount;
-        let gameEnded = prev.gameEnded;
+        let newGamePhase = prev.gamePhase; // Start with current game phase
         let playersWithUpdatedScore = newPlayers;
 
         // Check for hand empty victory condition
         const currentPlayer = newPlayers.find(p => p.id === currentPlayerId);
         if (currentPlayer && currentPlayer.hand.length === 0) {
-          gameEnded = true;
+          newGamePhase = 'game_ended';
         }
 
         // UNITARY card effect: reverse turn direction and increment counter
@@ -425,7 +451,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           (selectedCard as Card & { measurementScore?: number; quantumComputationUsed?: boolean }).measurementScore = scoreGained;
           (selectedCard as Card & { measurementScore?: number; quantumComputationUsed?: boolean }).quantumComputationUsed = quantumComputationUsed;
           
-          if (newMeasurementCount >= 11) gameEnded = true;
+          if (newMeasurementCount >= 11) newGamePhase = 'game_ended';
         }
         
         // Handle initial phase turn progression
@@ -481,13 +507,16 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           }
         }
 
+        // Update newGamePhase if it was changed by initial selection completion
+        newGamePhase = updatedGameState.gamePhase;
+
         return { 
           ...updatedGameState, 
           players: playersWithUpdatedScore, 
           board: newBoard, 
           turnDirection: newTurnDirection, 
           measurementCount: newMeasurementCount, 
-          gameEnded 
+          gamePhase: newGamePhase // Use newGamePhase which may be updated by measurement completion or initial selection completion
         };
       });
 
@@ -517,8 +546,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       } else if (playedCardType === CardType.MEASUREMENT) {
         const measurementScore = (selectedCard as Card & { measurementScore?: number }).measurementScore || 1;
         const quantumUsed = (selectedCard as Card & { quantumComputationUsed?: boolean }).quantumComputationUsed || false;
-        const compatibilityMessage = measurementScore === 3 ? ' (完全一致!)' : 
-                                   measurementScore === 0 ? ' (不一致)' : ' (部分一致)';
+        const compatibilityMessage = measurementScore === 5 ? ' (測定結果1!)' : ' (測定結果0)';
         const computationMessage = quantumUsed ? ' 🔬' : '';
         showTemporaryMessage(`測定しました。+${measurementScore}点を獲得${compatibilityMessage}${computationMessage}`);
         advanceTurn();
@@ -534,6 +562,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   };
 
   const handlePass = () => {
+    // Disable pass when game is ended
+    if (gameState?.gamePhase === 'game_ended') {
+      showTemporaryMessage('ゲームは終了しています。パスすることはできません。');
+      return;
+    }
+    
     setGameState(prevGameState => {
       if (!prevGameState) return null;
 
@@ -546,12 +580,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       });
 
       const allPlayersPassed = updatedPlayers.every(p => p.passes >= 3);
-      const gameEnded = updatedPlayers.some(p => p.passes >= 4) || allPlayersPassed;
+      const shouldEndGame = updatedPlayers.some(p => p.passes >= 4) || allPlayersPassed;
+      const newGamePhase = shouldEndGame ? 'game_ended' : prevGameState.gamePhase;
 
       return {
         ...prevGameState,
         players: updatedPlayers,
-        gameEnded: gameEnded,
+        gamePhase: newGamePhase,
       };
     });
     
@@ -567,6 +602,28 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     setHighlightedSlots([]);
     setMessage(null);
   };
+
+  const handlePlayerClick = (playerId: string) => {
+    // Only allow player selection when game is in ended phase
+    if (gameState?.gamePhase === 'game_ended') {
+      setSelectedPlayerForHandView(playerId);
+    }
+  };
+
+  // Set default selected player when game ends and clear selected card
+  React.useEffect(() => {
+    if (gameState?.gamePhase === 'game_ended') {
+      // Clear any selected card when game ends
+      setSelectedCard(null);
+      setHighlightedSlots([]);
+      setMessage(null);
+      
+      // Set default selected player for hand viewing
+      if (!selectedPlayerForHandView) {
+        setSelectedPlayerForHandView(gameState.currentPlayerId);
+      }
+    }
+  }, [gameState?.gamePhase, selectedPlayerForHandView, gameState?.currentPlayerId]);
 
   const handleNewGame = () => {
     if (isGameInProgress()) {
@@ -597,6 +654,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       setHighlightedSlots([]);
       setMessage(null);
       setShowMenu(false);
+      setSelectedPlayerForHandView(null); // Reset selected player for hand view
       showTemporaryMessage(`${playerCount}人で新しいゲームを開始しました。`);
     } catch (err) {
       console.error('Failed to initialize game:', err);
@@ -693,9 +751,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
 
   // Check if we're in initial selection phase for UI adjustments
   const isInitialPhase = gameState.gamePhase === 'initial_selection';
+  const isEndPhase = gameState.gamePhase === 'game_ended';
   const currentPlayerIndex = isInitialPhase ? (gameState.initialSelection?.currentPlayerIndex || 0) : 0;
   const activeInitialPlayer = isInitialPhase ? gameState.players[currentPlayerIndex] : null;
   const hasInitialCards = activeInitialPlayer ? hasInitialQubitCards(activeInitialPlayer) : false;
+  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white relative">
@@ -713,6 +773,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                   <span className="bg-blue-600 px-2 py-1 rounded">
                     {currentPlayerIndex + 1}/{gameState.players.length}
                   </span>
+                </>
+              ) : isEndPhase ? (
+                <>
+                  <span className="bg-red-600 px-2 py-1 rounded">ゲーム終了</span>
                 </>
               ) : (
                 <>
@@ -777,14 +841,35 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         {/* Left sidebar: All players */}
         <aside className="lg:w-64 bg-black bg-opacity-20 p-4">
           <h2 className="text-lg font-semibold mb-4">プレイヤー状況</h2>
+          {gameState.gamePhase === 'game_ended' && (
+            <p className="text-xs text-gray-400 mb-3">
+              💡クリックで手札を確認できます (ゲーム終了済み)
+            </p>
+          )}
+          {gameState.gamePhase !== 'game_ended' && (
+            <p className="text-xs text-red-400 mb-3">
+              🔒 ゲーム中 (クリック無効)
+            </p>
+          )}
           <div className="space-y-4">
             {gameState.players.map((player) => (
               <div 
                 key={player.id} 
-                className={`rounded-lg p-3 border transition-all duration-300 ${
+                onClick={() => handlePlayerClick(player.id)}
+                style={{ 
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  MozUserSelect: 'none',
+                  msUserSelect: 'none'
+                }}
+                className={`rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:bg-gray-700 hover:border-gray-500 ${
                   player.id === gameState.currentPlayerId 
                     ? 'bg-blue-700 bg-opacity-60 border-blue-400 shadow-lg' 
                     : 'bg-gray-800 bg-opacity-50 border-gray-600'
+                } ${
+                  gameState.gamePhase === 'game_ended' && selectedPlayerForHandView === player.id
+                    ? 'ring-2 ring-yellow-400 bg-yellow-900 bg-opacity-30'
+                    : ''
                 }`}
               >
                 <p className="font-semibold text-lg flex items-center gap-2">
@@ -795,7 +880,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 </p>
                 <div className="text-sm space-y-1">
                   <p>手札: <span className="font-mono">{player.hand.length}枚</span></p>
-                  <p>パス: <span className="font-mono">{player.passes}/3回</span></p>
+                  <p>パス: <span className="font-mono">{player.passes}/4回</span></p>
                   <p>得点: <span className="font-mono text-green-400">{player.score}点</span></p>
                 </div>
               </div>
@@ -814,6 +899,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 highlightedSlots={highlightedSlots}
                 animatingCard={animatingCard}
                 playerCount={gameState.players.length}
+                gameEnded={gameState.gamePhase === 'game_ended'}
               />
             </div>
           </div>
@@ -840,29 +926,31 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                       )}
                     </div>
                     {/* Initial phase progress indicator */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">進行状況:</span>
-                      {gameState.players.map((player, index) => (
-                        <div
-                          key={player.id}
-                          className={`w-3 h-3 rounded-full ${
-                            gameState.initialSelection?.playersCompleted[index]
-                              ? 'bg-green-500'
-                              : index === currentPlayerIndex
-                              ? 'bg-blue-500'
-                              : 'bg-gray-500'
-                          }`}
-                          title={player.name}
-                        />
-                      ))}
-                    </div>
+                    {gameState.initialSelection && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-400">進行状況:</span>
+                        {gameState.players.map((player, index) => (
+                          <div
+                            key={player.id}
+                            className={`w-3 h-3 rounded-full ${
+                              gameState.initialSelection?.playersCompleted[index]
+                                ? 'bg-green-500'
+                                : index === currentPlayerIndex
+                                ? 'bg-blue-500'
+                                : 'bg-gray-500'
+                            }`}
+                            title={player.name}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
                     <p className="text-xl font-bold">
                       現在のプレイヤー: <span className="text-blue-400">{currentPlayer.name}</span>
                     </p>
-                    {gameState.gameEnded && (
+                    {gameState.gamePhase === 'game_ended' && (
                       <div className="flex flex-col items-center gap-2">
                         <span className="bg-red-600 px-4 py-2 rounded-lg text-xl font-bold animate-pulse">
                           ゲーム終了！
@@ -964,20 +1052,44 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 </div>
               ) : (
                 <>
-                  <PlayerHand
-                    hand={currentPlayer.hand}
-                    playerName={currentPlayer.name}
-                    isCurrentPlayer={true}
-                    onCardClick={handleCardSelect}
-                    selectedCard={selectedCard}
-                  />
+                  {(() => {
+                    // Determine which player's hand to show
+                    let playerToShow = currentPlayer;
+                    let isShowingCurrentPlayer = true;
+                    
+                    if (gameState.gamePhase === 'game_ended') {
+                      if (selectedPlayerForHandView) {
+                        const selectedPlayer = gameState.players.find(p => p.id === selectedPlayerForHandView);
+                        if (selectedPlayer) {
+                          playerToShow = selectedPlayer;
+                          isShowingCurrentPlayer = false; // Always false during game end
+                        }
+                      } else {
+                        // If no player selected yet, show current player
+                        playerToShow = currentPlayer;
+                        isShowingCurrentPlayer = false; // Always false during game end
+                      }
+                    }
+                    
+                    return (
+                      <div>
+                        <PlayerHand
+                          hand={playerToShow.hand}
+                          playerName={playerToShow.name}
+                          isCurrentPlayer={gameState.gamePhase !== 'game_ended' && isShowingCurrentPlayer}
+                          onCardClick={gameState.gamePhase === 'game_ended' ? () => {} : handleCardSelect}
+                          selectedCard={gameState.gamePhase === 'game_ended' ? null : selectedCard}
+                        />
+                      </div>
+                    );
+                  })()}
                   
                   <div className="flex gap-4">
                     <button
                       onClick={handlePass}
-                      disabled={gameState.gameEnded}
+                      disabled={gameState.gamePhase === 'game_ended'}
                       className={`px-6 py-3 text-lg rounded-lg shadow-lg transition duration-300 ${
-                        gameState.gameEnded 
+                        gameState.gamePhase === 'game_ended' 
                           ? 'bg-gray-500 cursor-not-allowed' 
                           : 'bg-yellow-600 hover:bg-yellow-700 text-white'
                       }`}

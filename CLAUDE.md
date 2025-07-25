@@ -58,6 +58,13 @@ npm test         # Run Jest tests
 3. Turn management through `gameState.currentPlayer`
 4. CPU players make automatic moves
 
+### Scoring System
+- **Measurement Cards**: When a measurement card is played, points are awarded based on the quantum measurement outcome:
+  - **Measurement result '1'**: +5 points
+  - **Measurement result '0'**: +3 points
+- **Quantum Integration**: The game includes real quantum computation when possible, falling back to classical simulation
+- **Final Scoring**: Player score minus remaining cards in hand determines the winner
+
 ## Development Guidelines
 
 1. **TypeScript**: Use strict type checking. Import types from `/src/game/types.ts`

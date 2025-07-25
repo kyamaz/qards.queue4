@@ -242,16 +242,50 @@ export const isValidControlCardPlay = (
 // Initialize the game state
 // Calculate measurement score based on qubit and measurement card compatibility
 export const calculateMeasurementScore = (quantumBitValue: string, measurementValue: string): number => {
-  // Define compatibility scores
-  const compatibilityMatrix: Record<string, Record<string, number>> = {
-    '|0⟩': { '⟨0|': 3, '⟨1|': 0, '⟨+|': 1, '⟨-|': 1 },
-    '|1⟩': { '⟨0|': 0, '⟨1|': 3, '⟨+|': 1, '⟨-|': 1 },
-    '|+⟩': { '⟨0|': 1, '⟨1|': 1, '⟨+|': 3, '⟨-|': 0 },
-    '|-⟩': { '⟨0|': 1, '⟨1|': 1, '⟨+|': 0, '⟨-|': 3 }
-  };
+  // New scoring system based on measurement outcomes:
+  // Measurement result '1' = +5 points, measurement result '0' = +3 points
+  
+  // Determine measurement outcome based on quantum state and measurement basis
+  const measurementOutcome = determineMeasurementOutcome(quantumBitValue, measurementValue);
+  
+  return measurementOutcome === '1' ? 5 : 3;
+};
 
-  const score = compatibilityMatrix[quantumBitValue]?.[measurementValue];
-  return score !== undefined ? score : 1;
+/**
+ * Determine the most likely measurement outcome for a given quantum state and measurement basis
+ */
+const determineMeasurementOutcome = (quantumBitValue: string, measurementValue: string): string => {
+  // Based on quantum mechanics, determine the most likely outcome
+  switch (quantumBitValue) {
+    case '|0⟩':
+      // |0⟩ always measures as 0 in computational basis
+      if (measurementValue === '⟨0|' || measurementValue === '⟨1|') return '0';
+      // |0⟩ has 50% probability for both outcomes in +/- basis, return '0' as default
+      return '0';
+    
+    case '|1⟩':
+      // |1⟩ always measures as 1 in computational basis
+      if (measurementValue === '⟨0|' || measurementValue === '⟨1|') return '1';
+      // |1⟩ has 50% probability for both outcomes in +/- basis, return '1' as default
+      return '1';
+    
+    case '|+⟩':
+      // |+⟩ has equal probability for both outcomes in computational basis, return '0' as default
+      if (measurementValue === '⟨0|' || measurementValue === '⟨1|') return '0';
+      // |+⟩ always measures as + (outcome 0) in +/- basis when measuring ⟨+|
+      // |+⟩ always measures as + (outcome 0) in +/- basis when measuring ⟨-|
+      return '0';
+    
+    case '|-⟩':
+      // |-⟩ has equal probability for both outcomes in computational basis, return '0' as default  
+      if (measurementValue === '⟨0|' || measurementValue === '⟨1|') return '0';
+      // |-⟩ always measures as - (outcome 1) in +/- basis when measuring ⟨+|
+      // |-⟩ always measures as - (outcome 1) in +/- basis when measuring ⟨-|
+      return '1';
+    
+    default:
+      return '0';
+  }
 };
 
 // Find the qubit card that precedes a measurement card in a lane
@@ -319,10 +353,9 @@ export const initializeGame = (playerNames: string[]): GameState => {
     players,
     deck: [], // All cards are already distributed
     board,
-    currentPlayerId: players[0].id, // Temporarily set to first player
+    currentPlayerId: players[initialSelectionState.currentPlayerIndex].id, // Set to initial selection player
     turn: 1,
     measurementCount: 0,
-    gameEnded: false,
     turnDirection: 'forward',
     gamePhase: 'initial_selection',
     initialSelection: initialSelectionState,

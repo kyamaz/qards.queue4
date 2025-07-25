@@ -66,7 +66,8 @@ describe('Initial Selection Logic', () => {
       const initialState = initializeInitialSelection(players);
 
       expect(initialState.currentPlayerIndex).toBe(0);
-      expect(initialState.playersCompleted).toEqual([false, false, false]);
+      // player1 and player2 have INITIAL_QUBIT cards (false), player3 doesn't (true)
+      expect(initialState.playersCompleted).toEqual([false, false, true]);
       expect(initialState.firstPlayerCandidates).toEqual([]);
       expect(initialState.phaseComplete).toBe(false);
     });
@@ -256,8 +257,9 @@ describe('Initial Selection Logic', () => {
       const players = createMockPlayers();
       const gameState = createMockGameState(players);
       
-      // Set up completed state
+      // Set up completed state - mark all players as completed
       gameState.initialSelection!.phaseComplete = true;
+      gameState.initialSelection!.playersCompleted = [true, true, true]; // All players completed
       gameState.initialSelection!.firstPlayerCandidates = [players[1].id];
       
       // Place some INITIAL_QUBIT cards on board

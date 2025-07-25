@@ -207,13 +207,10 @@ export class QuantumEngine {
    * Calculate compatibility score for game mechanics
    */
   private calculateCompatibilityScore(state: QuantumState, basis: MeasurementBasis): number {
-    // This matches the existing game logic compatibility matrix
-    // TODO: Use actual quantum probabilities for more realistic scoring
     const measurementResult = this.performMeasurement(state, basis);
     
-    // For now, use the existing compatibility matrix logic
-    // This should be enhanced to use actual quantum probabilities
-    return Math.round(measurementResult.probability * 3);
+    // New scoring system: outcome '1' = +5 points, outcome '0' = +3 points
+    return measurementResult.outcome === '1' ? 5 : 3;
   }
 
   /**

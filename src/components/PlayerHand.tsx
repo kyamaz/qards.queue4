@@ -17,7 +17,7 @@ const PlayerHand: React.FC<PlayerHandProps> = ({ hand, playerName, isCurrentPlay
   return (
     <div className="bg-gray-800 p-4 rounded-lg shadow-lg w-full">
       <h3 className="text-xl font-semibold mb-4 text-white">
-        {playerName}の手札 {isCurrentPlayer && '(あなた)'}
+        {playerName}の手札 {isCurrentPlayer && '(現在のプレイヤー)'}
       </h3>
       <div className="flex flex-wrap gap-3 justify-center">
         {hand.length === 0 ? (

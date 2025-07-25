@@ -11,9 +11,21 @@ import { GameState, Player, Card, CardType, InitialSelectionState } from './type
  * Initialize the initial selection phase
  */
 export const initializeInitialSelection = (players: Player[]): InitialSelectionState => {
+  // Mark players without INITIAL_QUBIT cards as already completed
+  const playersCompleted = players.map(player => !hasInitialQubitCards(player));
+  
+  // Find the first player who has INITIAL_QUBIT cards to start with
+  let currentPlayerIndex = 0;
+  for (let i = 0; i < players.length; i++) {
+    if (hasInitialQubitCards(players[i])) {
+      currentPlayerIndex = i;
+      break;
+    }
+  }
+  
   return {
-    currentPlayerIndex: 0,
-    playersCompleted: new Array(players.length).fill(false),
+    currentPlayerIndex,
+    playersCompleted,
     firstPlayerCandidates: [],
     phaseComplete: false
   };
@@ -147,7 +159,15 @@ export const advanceInitialSelectionPlayer = (gameState: GameState): GameState =
   }
 
   const currentIndex = gameState.initialSelection.currentPlayerIndex;
-  const nextIndex = (currentIndex + 1) % gameState.players.length;
+  
+  // Find the next player who hasn't completed yet
+  let nextIndex = currentIndex;
+  let attempts = 0;
+  do {
+    nextIndex = (nextIndex + 1) % gameState.players.length;
+    attempts++;
+  } while (gameState.initialSelection.playersCompleted[nextIndex] && attempts < gameState.players.length);
+  
   const nextPlayer = gameState.players[nextIndex];
 
   return {
@@ -165,13 +185,14 @@ export const advanceInitialSelectionPlayer = (gameState: GameState): GameState =
  */
 export const determineFirstPlayer = (gameState: GameState): string => {
   if (!gameState.initialSelection) {
-    throw new Error('Initial selection state not initialized');
+    // If initial selection is not available, fallback to first player
+    return gameState.players[0].id;
   }
 
   const { firstPlayerCandidates } = gameState.initialSelection;
 
   // If someone placed a |1⟩ card, they go first
-  if (firstPlayerCandidates.length > 0) {
+  if (firstPlayerCandidates && firstPlayerCandidates.length > 0) {
     // If multiple players have |1⟩ cards, use player order (first in list wins)
     return firstPlayerCandidates[0];
   }
@@ -185,8 +206,14 @@ export const determineFirstPlayer = (gameState: GameState): string => {
  * Note: Main deck distribution should be handled by the caller after this function
  */
 export const completeInitialSelection = (gameState: GameState): GameState => {
-  if (!gameState.initialSelection?.phaseComplete) {
-    throw new Error('Initial selection phase not complete');
+  if (!gameState.initialSelection) {
+    throw new Error('Initial selection state not initialized');
+  }
+  
+  // Check if all players are actually completed
+  const allPlayersCompleted = gameState.initialSelection.playersCompleted.every(completed => completed);
+  if (!allPlayersCompleted) {
+    throw new Error('Initial selection phase not complete - not all players have finished');
   }
 
   const firstPlayerId = determineFirstPlayer(gameState);
@@ -219,5 +246,12 @@ export const shouldPlaceInitialCards = (gameState: GameState): boolean => {
  * Check if all players have completed initial selection
  */
 export const isInitialSelectionComplete = (gameState: GameState): boolean => {
-  return gameState.initialSelection?.phaseComplete || false;
+  if (!gameState.initialSelection) {
+    return false;
+  }
+  
+  // Check if all players are completed
+  const allPlayersCompleted = gameState.initialSelection.playersCompleted.every(completed => completed);
+  
+  return allPlayersCompleted;
 };

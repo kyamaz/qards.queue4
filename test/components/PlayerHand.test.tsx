@@ -34,7 +34,7 @@ describe('PlayerHand Component', () => {
       );
 
       expect(screen.getByText(/Test Player/)).toBeInTheDocument();
-      expect(screen.getByText(/あなた/)).toBeInTheDocument();
+      expect(screen.getByText(/現在のプレイヤー/)).toBeInTheDocument();
     });
 
     it('should render all cards in hand', () => {
@@ -80,7 +80,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText(/あなた/)).toBeInTheDocument();
+      expect(screen.getByText(/現在のプレイヤー/)).toBeInTheDocument();
 
       rerender(
         <PlayerHand
@@ -92,7 +92,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.queryByText(/あなた/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/現在のプレイヤー/)).not.toBeInTheDocument();
     });
 
     it('should apply correct card type colors', () => {
