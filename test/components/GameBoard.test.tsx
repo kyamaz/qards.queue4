@@ -75,8 +75,12 @@ describe('GameBoard Component', () => {
       );
 
       // Empty slots should have specific styling
-      const emptySlots = screen.getAllByText('空');
-      expect(emptySlots.length).toBeGreaterThan(0);
+      const emptySlots = screen.getAllByRole('button');
+      // Filter for empty slots (they should have gray background)
+      const actualEmptySlots = emptySlots.filter(slot => 
+        slot.className.includes('bg-gray-700')
+      );
+      expect(actualEmptySlots.length).toBeGreaterThan(0);
     });
 
     it('should extend lanes to maximum length with empty slots', () => {
@@ -114,7 +118,7 @@ describe('GameBoard Component', () => {
       );
 
       // Click on the first empty slot in lane 1 (position 2)
-      const emptySlots = screen.getAllByText('空');
+      const emptySlots = screen.getAllByText('1-2');
       fireEvent.click(emptySlots[0]);
 
       expect(mockOnCardSlotClick).toHaveBeenCalledWith(0, 2);

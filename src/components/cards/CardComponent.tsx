@@ -13,6 +13,7 @@ import EmptySlot from './EmptySlot';
 interface CardComponentProps {
   card: Card | null;
   position: number;
+  laneIndex?: number;
   onClick?: () => void;
   isSelected?: boolean;
   isHighlighted?: boolean;
@@ -24,6 +25,7 @@ interface CardComponentProps {
 const CardComponent: React.FC<CardComponentProps> = ({
   card,
   position,
+  laneIndex,
   onClick,
   isSelected = false,
   isHighlighted = false,
@@ -35,6 +37,7 @@ const CardComponent: React.FC<CardComponentProps> = ({
     return (
       <EmptySlot
         position={position}
+        laneIndex={laneIndex}
         onClick={onClick}
         isHighlighted={isHighlighted}
         isClickable={isClickable}
@@ -88,7 +91,7 @@ const CardComponent: React.FC<CardComponentProps> = ({
       );
     
     default:
-      return <EmptySlot position={position} onClick={onClick} isClickable={false} />;
+      return <EmptySlot position={position} laneIndex={laneIndex} onClick={onClick} isClickable={false} />;
   }
 };
 

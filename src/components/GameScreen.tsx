@@ -67,10 +67,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         showHints: true,
         animationSpeed: 'normal',
         difficulty: 'normal',
-        playerCount: 4
+        playerCount: 4,
+        allowUnfinalizedMeasurement: false
       };
     } catch {
-      return { showHints: true, animationSpeed: 'normal', difficulty: 'normal', playerCount: 4 };
+      return { showHints: true, animationSpeed: 'normal', difficulty: 'normal', playerCount: 4, allowUnfinalizedMeasurement: false };
     }
   };
 
@@ -179,7 +180,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
             if (!lane[position]) {
               validSlots.push({ laneIndex, position });
             }
-          } else if (isValidPlay(card, laneIndex, position, gameState.board)) {
+          } else if (isValidPlay(card, laneIndex, position, gameState.board, settings.allowUnfinalizedMeasurement)) {
             validSlots.push({ laneIndex, position });
           }
         }
@@ -358,7 +359,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           showTemporaryMessage('現在の初期配置プレイヤーのみがカードを配置できます。');
           return;
         }
-      } else if (!gameState || !isValidPlay(selectedCard, laneIndex, position, gameState.board)) {
+      } else if (!gameState || !isValidPlay(selectedCard, laneIndex, position, gameState.board, settings.allowUnfinalizedMeasurement)) {
         showTemporaryMessage('そのカードはそのレーンに配置できません。');
         return;
       }
@@ -681,9 +682,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     }
   };
 
-  const handleCloseMenu = () => {
-    handleBackToMenu();
-  };
 
   useEffect(() => {
     try {
@@ -827,12 +825,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 メインメニューに戻る
               </button>
             )}
-            <button
-              onClick={handleCloseMenu}
-              className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition duration-300 text-left"
-            >
-              閉じる
-            </button>
           </div>
         </div>
       )}

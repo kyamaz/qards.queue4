@@ -82,6 +82,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                     <CardComponent
                       card={card}
                       position={cardIndex}
+                      laneIndex={laneIndex}
                       onClick={gameEnded ? undefined : () => onCardSlotClick?.(laneIndex, cardIndex)}
                       isHighlighted={isHighlighted}
                       isAnimating={isAnimating}

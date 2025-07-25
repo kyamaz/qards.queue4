@@ -119,8 +119,7 @@ describe('CardComponent', () => {
         />
       );
 
-      expect(screen.getByText('空')).toBeInTheDocument();
-      expect(screen.getByText('6')).toBeInTheDocument(); // position + 1
+      expect(screen.getByText('5')).toBeInTheDocument(); // position (0-based)
     });
   });
 
@@ -171,7 +170,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const emptySlot = screen.getByText('空').parentElement?.parentElement;
+      const emptySlot = screen.getByText('0').parentElement?.parentElement;
       fireEvent.click(emptySlot!);
 
       expect(mockOnClick).toHaveBeenCalledTimes(1);

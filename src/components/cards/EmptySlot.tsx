@@ -4,6 +4,7 @@ import React from 'react';
 
 interface EmptySlotProps {
   position: number;
+  laneIndex?: number;
   onClick?: () => void;
   isHighlighted?: boolean;
   isClickable?: boolean;
@@ -11,6 +12,7 @@ interface EmptySlotProps {
 
 const EmptySlot: React.FC<EmptySlotProps> = ({
   position,
+  laneIndex,
   onClick,
   isHighlighted = false,
   isClickable = true
@@ -43,8 +45,11 @@ const EmptySlot: React.FC<EmptySlotProps> = ({
     >
       <div className="text-center">
         <div className="text-xs">
-          <div>空</div>
-          <div className="text-xs opacity-50">{position + 1}</div>
+          {laneIndex !== undefined ? (
+            <div>{laneIndex + 1}-{position}</div>
+          ) : (
+            <div>{position}</div>
+          )}
         </div>
       </div>
     </div>

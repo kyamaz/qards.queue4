@@ -6,64 +6,90 @@ import { CardType } from '../../src/game/types';
 describe('Measurement Card Placement Rules', () => {
   const measurementCard = { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' as const };
 
-  it('should allow measurement cards after QUBIT cards', () => {
-    const boardWithQubit = {
+  it('should allow measurement cards after QUBIT cards in finalized lane', () => {
+    const boardWithFinalizedQubit = {
       lane: [
-        [{ id: 'q1', type: CardType.QUBIT, value: '|0⟩' as const }],
+        [
+          { id: 'q1', type: CardType.QUBIT, value: '|0⟩' as const },
+          { id: 'u1', type: CardType.UNITARY, value: 'U' as const },
+          { id: 'g1', type: CardType.GATE, value: 'X' as const }
+        ],
       ],
     };
     
-    expect(isValidPlay(measurementCard, 0, 1, boardWithQubit)).toBe(true);
+    expect(isValidPlay(measurementCard, 0, 3, boardWithFinalizedQubit)).toBe(true);
   });
 
-  it('should allow measurement cards after INITIAL_QUBIT cards', () => {
-    const boardWithInitialQubit = {
+  it('should allow measurement cards after INITIAL_QUBIT cards in finalized lane', () => {
+    const boardWithFinalizedInitialQubit = {
       lane: [
-        [{ id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const }],
+        [
+          { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+          { id: 't1', type: CardType.TARGET, value: 'T' as const },
+          { id: 'g1', type: CardType.GATE, value: 'H' as const }
+        ],
       ],
     };
     
-    expect(isValidPlay(measurementCard, 0, 1, boardWithInitialQubit)).toBe(true);
+    expect(isValidPlay(measurementCard, 0, 3, boardWithFinalizedInitialQubit)).toBe(true);
   });
 
-  it('should allow measurement cards after GATE cards', () => {
-    const boardWithGate = {
+  it('should allow measurement cards after GATE cards in finalized lane', () => {
+    const boardWithFinalizedGate = {
       lane: [
-        [{ id: 'g1', type: CardType.GATE, value: 'X' as const }],
+        [
+          { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+          { id: 'g1', type: CardType.GATE, value: 'X' as const },
+          { id: 'u1', type: CardType.UNITARY, value: 'U' as const },
+          { id: 'g2', type: CardType.GATE, value: 'Z' as const }
+        ],
       ],
     };
     
-    expect(isValidPlay(measurementCard, 0, 1, boardWithGate)).toBe(true);
+    expect(isValidPlay(measurementCard, 0, 4, boardWithFinalizedGate)).toBe(true);
   });
 
-  it('should allow measurement cards after UNITARY cards', () => {
-    const boardWithUnitary = {
+  it('should allow measurement cards after overridden UNITARY cards', () => {
+    const boardWithOverriddenUnitary = {
       lane: [
-        [{ id: 'u1', type: CardType.UNITARY, value: 'U' as const }],
+        [
+          { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+          { id: 'u1', type: CardType.UNITARY, value: 'U' as const },
+          { id: 'g1', type: CardType.GATE, value: 'H' as const }
+        ],
       ],
     };
     
-    expect(isValidPlay(measurementCard, 0, 1, boardWithUnitary)).toBe(true);
+    expect(isValidPlay(measurementCard, 0, 3, boardWithOverriddenUnitary)).toBe(true);
   });
 
-  it('should allow measurement cards after CONTROL cards', () => {
-    const boardWithControl = {
+  it('should allow measurement cards after CONTROL cards in finalized lane', () => {
+    const boardWithFinalizedControl = {
       lane: [
-        [{ id: 'c1', type: CardType.CONTROL, value: 'C' as const }],
+        [
+          { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+          { id: 'c1', type: CardType.CONTROL, value: 'C' as const },
+          { id: 't1', type: CardType.TARGET, value: 'T' as const },
+          { id: 'g1', type: CardType.GATE, value: 'X' as const }
+        ],
       ],
     };
     
-    expect(isValidPlay(measurementCard, 0, 1, boardWithControl)).toBe(true);
+    expect(isValidPlay(measurementCard, 0, 4, boardWithFinalizedControl)).toBe(true);
   });
 
-  it('should allow measurement cards after TARGET cards', () => {
-    const boardWithTarget = {
+  it('should allow measurement cards after overridden TARGET cards', () => {
+    const boardWithOverriddenTarget = {
       lane: [
-        [{ id: 't1', type: CardType.TARGET, value: 'T' as const }],
+        [
+          { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+          { id: 't1', type: CardType.TARGET, value: 'T' as const },
+          { id: 'g1', type: CardType.GATE, value: 'Z' as const }
+        ],
       ],
     };
     
-    expect(isValidPlay(measurementCard, 0, 1, boardWithTarget)).toBe(true);
+    expect(isValidPlay(measurementCard, 0, 3, boardWithOverriddenTarget)).toBe(true);
   });
 
   it('should NOT allow measurement cards after other MEASUREMENT cards', () => {
@@ -104,10 +130,15 @@ describe('Measurement Card Placement Rules', () => {
     expect(isValidPlay(measurementCard2, 0, 3, boardWithSequence)).toBe(false);
   });
 
-  it('should validate different measurement card types', () => {
-    const boardWithGate = {
+  it('should validate different measurement card types in finalized lane', () => {
+    const boardWithFinalizedLane = {
       lane: [
-        [{ id: 'g1', type: CardType.GATE, value: 'H' as const }],
+        [
+          { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+          { id: 'g1', type: CardType.GATE, value: 'H' as const },
+          { id: 'u1', type: CardType.UNITARY, value: 'U' as const },
+          { id: 'g2', type: CardType.GATE, value: 'X' as const }
+        ],
       ],
     };
     
@@ -119,7 +150,158 @@ describe('Measurement Card Placement Rules', () => {
     ];
     
     measurementCards.forEach(card => {
-      expect(isValidPlay(card, 0, 1, boardWithGate)).toBe(true);
+      expect(isValidPlay(card, 0, 4, boardWithFinalizedLane)).toBe(true);
+    });
+  });
+
+  describe('Unfinalized Measurement Rule', () => {
+    it('should NOT allow measurement cards in lane with unoverridden UNITARY card', () => {
+      const boardWithUnoverriddenUnitary = {
+        lane: [
+          [
+            { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+            { id: 'u1', type: CardType.UNITARY, value: 'U' as const }
+          ],
+        ],
+      };
+      
+      // Should not allow measurement because UNITARY card is not overridden
+      expect(isValidPlay(measurementCard, 0, 2, boardWithUnoverriddenUnitary, false)).toBe(false);
+      expect(isValidPlay(measurementCard, 0, 2, boardWithUnoverriddenUnitary)).toBe(false); // No parameter (defaults to false)
+    });
+
+    it('should NOT allow measurement cards in lane with unoverridden TARGET card', () => {
+      const boardWithUnoverriddenTarget = {
+        lane: [
+          [
+            { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+            { id: 't1', type: CardType.TARGET, value: 'T' as const }
+          ],
+        ],
+      };
+      
+      // Should not allow measurement because TARGET card is not overridden
+      expect(isValidPlay(measurementCard, 0, 2, boardWithUnoverriddenTarget, false)).toBe(false);
+      expect(isValidPlay(measurementCard, 0, 2, boardWithUnoverriddenTarget)).toBe(false); // No parameter (defaults to false)
+    });
+
+    it('should allow measurement cards in lane with unoverridden UNITARY/TARGET when allowUnfinalizedMeasurement is true', () => {
+      const boardWithUnoverriddenUnitary = {
+        lane: [
+          [
+            { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+            { id: 'u1', type: CardType.UNITARY, value: 'U' as const }
+          ],
+        ],
+      };
+      
+      const boardWithUnoverriddenTarget = {
+        lane: [
+          [
+            { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+            { id: 't1', type: CardType.TARGET, value: 'T' as const }
+          ],
+        ],
+      };
+      
+      // When rule is enabled - should allow measurement even with unoverridden UNITARY/TARGET
+      expect(isValidPlay(measurementCard, 0, 2, boardWithUnoverriddenUnitary, true)).toBe(true);
+      expect(isValidPlay(measurementCard, 0, 2, boardWithUnoverriddenTarget, true)).toBe(true);
+    });
+
+    it('should allow measurement cards in finalized lane regardless of allowUnfinalizedMeasurement setting', () => {
+      const boardWithFinalizedLane = {
+        lane: [
+          [
+            { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+            { id: 'u1', type: CardType.UNITARY, value: 'U' as const },
+            { id: 'g1', type: CardType.GATE, value: 'X' as const }
+          ],
+        ],
+      };
+      
+      // Should work with both settings when lane is finalized (UNITARY is overridden by GATE)
+      expect(isValidPlay(measurementCard, 0, 3, boardWithFinalizedLane, false)).toBe(true);
+      expect(isValidPlay(measurementCard, 0, 3, boardWithFinalizedLane, true)).toBe(true);
+    });
+
+    it('should correctly identify finalized lanes with overridden TARGET cards', () => {
+      const boardWithOverriddenTarget = {
+        lane: [
+          [
+            { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|1⟩' as const },
+            { id: 't1', type: CardType.TARGET, value: 'T' as const },
+            { id: 'g1', type: CardType.GATE, value: 'H' as const }
+          ],
+        ],
+      };
+      
+      // Should be allowed because TARGET card is overridden by GATE card
+      expect(isValidPlay(measurementCard, 0, 3, boardWithOverriddenTarget, false)).toBe(true);
+    });
+
+    it('should correctly identify finalized lanes with only GATE cards after QUBIT', () => {
+      const boardWithGateOnly = {
+        lane: [
+          [
+            { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+            { id: 'g1', type: CardType.GATE, value: 'X' as const }
+          ],
+        ],
+      };
+      
+      // Should be allowed because GATE cards don't need to be overridden
+      expect(isValidPlay(measurementCard, 0, 2, boardWithGateOnly, false)).toBe(true);
+    });
+
+    it('should handle lane without qubit card based on allowUnfinalizedMeasurement setting', () => {
+      const boardWithoutQubit = {
+        lane: [
+          [{ id: 'g1', type: CardType.GATE, value: 'X' as const }],
+        ],
+      };
+      
+      // Should not work when allowUnfinalizedMeasurement is false
+      expect(isValidPlay(measurementCard, 0, 1, boardWithoutQubit, false)).toBe(false);
+      // Should work when allowUnfinalizedMeasurement is true (allows measurement in any lane)
+      expect(isValidPlay(measurementCard, 0, 1, boardWithoutQubit, true)).toBe(true);
+    });
+
+    it('should handle complex lane with multiple UNITARY/TARGET cards', () => {
+      const boardWithComplexLane = {
+        lane: [
+          [
+            { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+            { id: 'u1', type: CardType.UNITARY, value: 'U' as const },
+            { id: 'g1', type: CardType.GATE, value: 'X' as const },
+            { id: 't1', type: CardType.TARGET, value: 'T' as const }
+          ],
+        ],
+      };
+      
+      // Should not allow measurement because TARGET card at the end is not overridden
+      expect(isValidPlay(measurementCard, 0, 4, boardWithComplexLane, false)).toBe(false);
+      
+      // Should allow when rule is disabled
+      expect(isValidPlay(measurementCard, 0, 4, boardWithComplexLane, true)).toBe(true);
+    });
+
+    it('should handle complex lane where all UNITARY/TARGET cards are overridden', () => {
+      const boardWithFullyOverriddenLane = {
+        lane: [
+          [
+            { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+            { id: 'u1', type: CardType.UNITARY, value: 'U' as const },
+            { id: 'g1', type: CardType.GATE, value: 'X' as const },
+            { id: 't1', type: CardType.TARGET, value: 'T' as const },
+            { id: 'g2', type: CardType.GATE, value: 'Z' as const }
+          ],
+        ],
+      };
+      
+      // Should allow measurement because all UNITARY/TARGET cards are overridden
+      expect(isValidPlay(measurementCard, 0, 5, boardWithFullyOverriddenLane, false)).toBe(true);
+      expect(isValidPlay(measurementCard, 0, 5, boardWithFullyOverriddenLane, true)).toBe(true);
     });
   });
 });

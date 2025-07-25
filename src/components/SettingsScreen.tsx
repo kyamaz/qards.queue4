@@ -14,6 +14,7 @@ interface SettingsData {
   playerCount: 3 | 4 | 5 | 6;
   comPlayerCount: number;
   controlledHadamard: boolean;
+  allowUnfinalizedMeasurement: boolean;
 }
 
 interface SettingsScreenProps {
@@ -32,6 +33,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
     playerCount: 4 as const,
     comPlayerCount: 0,
     controlledHadamard: false,
+    allowUnfinalizedMeasurement: false,
   }), []);
 
   const [settings, setSettings] = useState<SettingsData>(defaultSettings);
@@ -164,6 +166,20 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               <span className="text-lg">制御アダマール使用</span>
             </label>
             <p className="text-sm text-gray-400 mt-1">制御アダマールゲートカードを使用可能にします</p>
+          </div>
+
+          {/* Allow Unfinalized Measurement */}
+          <div className="mb-4">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.allowUnfinalizedMeasurement}
+                onChange={(e) => updateSetting('allowUnfinalizedMeasurement', e.target.checked)}
+                className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <span className="text-lg">確定していないレーンに測定カードを出せる</span>
+            </label>
+            <p className="text-sm text-gray-400 mt-1">量子ビットカードが配置されていないレーンでも測定カードを配置可能にします</p>
           </div>
         </div>
 

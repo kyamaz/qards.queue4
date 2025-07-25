@@ -31,10 +31,19 @@ describe('INITIAL_QUBIT Card Placement Rules', () => {
     expect(isValidPlay(unitaryCard, 0, 1, mockBoardWithInitialQubit)).toBe(true);
   });
 
-  it('should allow MEASUREMENT cards after INITIAL_QUBIT cards', () => {
+  it('should allow MEASUREMENT cards after INITIAL_QUBIT cards in finalized lane', () => {
     const measurementCard = { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' as const };
+    const mockBoardWithFinalizedInitialQubit = {
+      lane: [
+        [
+          { id: 'initial1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
+          { id: 'u1', type: CardType.UNITARY, value: 'U' as const },
+          { id: 'g1', type: CardType.GATE, value: 'H' as const }
+        ]
+      ],
+    };
     
-    expect(isValidPlay(measurementCard, 0, 1, mockBoardWithInitialQubit)).toBe(true);
+    expect(isValidPlay(measurementCard, 0, 3, mockBoardWithFinalizedInitialQubit)).toBe(true);
   });
 
   it('should not allow CONTROL cards after INITIAL_QUBIT cards', () => {
