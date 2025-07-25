@@ -30,7 +30,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
     showHints: true,
     language: 'ja' as const,
     playerCount: 4 as const,
-    comPlayerCount: 3,
+    comPlayerCount: 0,
     controlledHadamard: false,
   }), []);
 
@@ -53,12 +53,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
     setSettings(prev => {
       const newSettings = { ...prev, [key]: value };
       
-      // When player count changes, adjust COM player count if needed
+      // When player count changes, set COM player count to playerCount - 1
       if (key === 'playerCount') {
-        const maxComPlayers = (value as number) - 1;
-        if (newSettings.comPlayerCount > maxComPlayers) {
-          newSettings.comPlayerCount = maxComPlayers;
-        }
+        newSettings.comPlayerCount = (value as number) - 1;
       }
       
       return newSettings;
@@ -99,7 +96,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
             >
               <option value={3}>3人</option>
-              <option value={4}>4人（推奨）</option>
+              <option value={4}>4人</option>
               <option value={5}>5人</option>
               <option value={6}>6人</option>
             </select>
@@ -113,10 +110,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               onChange={(e) => updateSetting('comPlayerCount', parseInt(e.target.value))}
               className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
             >
-              <option value={0}>0人（1人プレイ）</option>
+              <option value={0}>0人（COMプレイヤーなし）</option>
               {Array.from({ length: settings.playerCount - 1 }, (_, i) => i + 1).map(count => (
                 <option key={count} value={count}>
-                  {count}人{count === Math.min(3, settings.playerCount - 1) ? '（推奨）' : ''}
+                  {count}人{count === settings.playerCount - 1 ? '（1人プレイ）' : ''}
                 </option>
               ))}
             </select>

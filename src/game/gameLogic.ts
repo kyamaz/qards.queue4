@@ -327,6 +327,7 @@ export const initializeGame = (playerNames: string[]): GameState => {
     gamePhase: 'initial_selection',
     initialSelection: initialSelectionState,
     unitaryCardsPlayedThisTurn: {},
+    firstPlayerId: undefined, // Will be set after initial selection
   };
 };
 

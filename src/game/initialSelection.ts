@@ -176,27 +176,7 @@ export const determineFirstPlayer = (gameState: GameState): string => {
     return firstPlayerCandidates[0];
   }
 
-  // If no one has |1⟩, find the first player who placed any INITIAL_QUBIT card
-  for (const player of gameState.players) {
-    const playerHasPlacedCard = gameState.board.lane.some(lane => 
-      lane.length > 0 && 
-      lane[0]?.type === CardType.INITIAL_QUBIT
-    );
-    
-    if (playerHasPlacedCard) {
-      // Check if this player placed any card by checking if they have fewer INITIAL_QUBIT cards
-      const originalInitialCards = 4; // Total INITIAL_QUBIT cards in deck
-      const playerInitialCards = player.hand.filter(c => c.type === CardType.INITIAL_QUBIT).length;
-      
-      // This is a simplified check - in reality we'd need to track who placed what
-      // For now, return the first player who had INITIAL_QUBIT cards
-      if (playerInitialCards < originalInitialCards) {
-        return player.id;
-      }
-    }
-  }
-
-  // Fallback: first player in list
+  // If no one has |1⟩, use the first player in the player list as fallback
   return gameState.players[0].id;
 };
 
@@ -215,6 +195,7 @@ export const completeInitialSelection = (gameState: GameState): GameState => {
     ...gameState,
     gamePhase: 'normal_play' as const,
     currentPlayerId: firstPlayerId,
+    firstPlayerId, // Store the first player ID for turn counting
     initialSelection: undefined // Clear initial selection state
   };
 };

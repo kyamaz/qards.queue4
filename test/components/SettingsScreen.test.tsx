@@ -76,14 +76,14 @@ describe('SettingsScreen Component', () => {
     it('should render player count selector with default value', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const playerCountSelect = screen.getByDisplayValue('4人（推奨）');
+      const playerCountSelect = screen.getByDisplayValue('4人');
       expect(playerCountSelect).toBeInTheDocument();
     });
 
     it('should render COM player count selector with default value', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const comPlayerCountSelect = screen.getByDisplayValue('3人（推奨）');
+      const comPlayerCountSelect = screen.getByDisplayValue('0人（COMプレイヤーなし）');
       expect(comPlayerCountSelect).toBeInTheDocument();
     });
   });
@@ -157,7 +157,7 @@ describe('SettingsScreen Component', () => {
     it('should update player count when selector is changed', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const playerCountSelect = screen.getByDisplayValue('4人（推奨）');
+      const playerCountSelect = screen.getByDisplayValue('4人');
       fireEvent.change(playerCountSelect, { target: { value: '6' } });
       
       expect(screen.getByDisplayValue('6人')).toBeInTheDocument();
@@ -166,7 +166,7 @@ describe('SettingsScreen Component', () => {
     it('should update COM player count when selector is changed', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const comPlayerCountSelect = screen.getByDisplayValue('3人（推奨）');
+      const comPlayerCountSelect = screen.getByDisplayValue('0人（COMプレイヤーなし）');
       fireEvent.change(comPlayerCountSelect, { target: { value: '2' } });
       
       expect(screen.getByDisplayValue('2人')).toBeInTheDocument();
@@ -175,25 +175,16 @@ describe('SettingsScreen Component', () => {
     it('should allow 0 COM players for single player mode', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const comPlayerCountSelect = screen.getByDisplayValue('3人（推奨）');
-      fireEvent.change(comPlayerCountSelect, { target: { value: '0' } });
-      
-      expect(screen.getByDisplayValue('0人（1人プレイ）')).toBeInTheDocument();
+      // Default is already 0 COM players
+      expect(screen.getByDisplayValue('0人（COMプレイヤーなし）')).toBeInTheDocument();
       expect(screen.getByText('1人プレイモード（人間プレイヤーのみ）')).toBeInTheDocument();
     });
 
     it('should disable difficulty setting when COM players is 0', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      // Initially difficulty should be enabled
+      // Default is already 0 COM players, so difficulty should be disabled
       const difficultySelect = screen.getByDisplayValue('中級 - 標準的な難易度');
-      expect(difficultySelect).not.toBeDisabled();
-      
-      // Set COM players to 0
-      const comPlayerCountSelect = screen.getByDisplayValue('3人（推奨）');
-      fireEvent.change(comPlayerCountSelect, { target: { value: '0' } });
-      
-      // Difficulty should now be disabled
       expect(difficultySelect).toBeDisabled();
       expect(screen.getByText('1人プレイモードでは難易度設定は無効です')).toBeInTheDocument();
     });
@@ -201,15 +192,15 @@ describe('SettingsScreen Component', () => {
     it('should adjust COM player count when total player count changes', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      // Initially 4 total players, 3 COM players
-      expect(screen.getByDisplayValue('3人（推奨）')).toBeInTheDocument();
+      // Initially 4 total players, 0 COM players
+      expect(screen.getByDisplayValue('0人（COMプレイヤーなし）')).toBeInTheDocument();
       
       // Change total players to 3
-      const playerCountSelect = screen.getByDisplayValue('4人（推奨）');
+      const playerCountSelect = screen.getByDisplayValue('4人');
       fireEvent.change(playerCountSelect, { target: { value: '3' } });
       
-      // COM players should be reduced to max 2 (3 total - 1 human)
-      expect(screen.getByDisplayValue('2人（推奨）')).toBeInTheDocument();
+      // COM players should automatically adjust to 2 (3 - 1)
+      expect(screen.getByDisplayValue('2人（1人プレイ）')).toBeInTheDocument();
     });
   });
 
@@ -249,7 +240,7 @@ describe('SettingsScreen Component', () => {
       const parsedSettings = JSON.parse(savedSettings!);
       expect(parsedSettings.soundVolume).toBe(80);
       expect(parsedSettings.playerCount).toBe(4); // Default value
-      expect(parsedSettings.comPlayerCount).toBe(3); // Default value
+      expect(parsedSettings.comPlayerCount).toBe(0); // Default value
       
       expect(mockOnBack).toHaveBeenCalledTimes(1);
     });
@@ -271,8 +262,8 @@ describe('SettingsScreen Component', () => {
       // Check if settings are back to defaults
       expect(screen.getByText('効果音音量: 50%')).toBeInTheDocument();
       expect(screen.getByDisplayValue('中級 - 標準的な難易度')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('4人（推奨）')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('3人（推奨）')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('4人')).toBeInTheDocument();
+      expect(screen.getByDisplayValue('0人（COMプレイヤーなし）')).toBeInTheDocument();
     });
   });
 

@@ -124,9 +124,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       
       const nextPlayerId = players[nextPlayerIndex].id;
 
-      // Only increment turn when we complete a full round (back to first player)
-      const shouldIncrementTurn = (turnDirection === 'forward' && nextPlayerIndex === 0) || 
-                                  (turnDirection === 'backward' && nextPlayerIndex === numPlayers - 1);
+      // Increment turn counter when the first player's turn comes around
+      const shouldIncrementTurn = prevGameState.firstPlayerId && 
+                                 nextPlayerId === prevGameState.firstPlayerId;
 
       let updatedGameState = {
         ...prevGameState,
@@ -251,41 +251,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     setGameState(newState);
   };
 
-  // Check if an initial qubit card was just placed
-  const checkInitialCardPlacement = (playerId: string) => {
-    if (!gameState || gameState.gamePhase !== 'initial_selection') return;
-    
-    const currentPlayerIndex = gameState.initialSelection?.currentPlayerIndex || 0;
-    const currentPlayer = gameState.players[currentPlayerIndex];
-    
-    if (currentPlayer.id === playerId) {
-      // Check if this player now has no more initial qubit cards
-      if (!hasInitialQubitCards(currentPlayer)) {
-        // Mark this player as completed
-        const playerIndex = gameState.players.findIndex(p => p.id === playerId);
-        const newPlayersCompleted = [...(gameState.initialSelection?.playersCompleted || [])];
-        newPlayersCompleted[playerIndex] = true;
-        
-        let newState: GameState = {
-          ...gameState,
-          initialSelection: {
-            ...gameState.initialSelection!,
-            playersCompleted: newPlayersCompleted,
-            phaseComplete: newPlayersCompleted.every(completed => completed)
-          }
-        };
-        
-        if (isInitialSelectionComplete(newState)) {
-          newState = completeInitialSelection(newState);
-          showTemporaryMessage('初期配置完了！ゲーム開始です');
-        } else {
-          newState = advanceInitialSelectionPlayer(newState);
-        }
-        
-        setGameState(newState);
-      }
-    }
-  };
 
   const handleCardSlotClick = (laneIndex: number, position: number) => {
     if (!gameState) return;
@@ -463,6 +428,59 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           if (newMeasurementCount >= 11) gameEnded = true;
         }
         
+        // Handle initial phase turn progression
+        if (isInitialPhase && playedCardType === CardType.INITIAL_QUBIT) {
+          // Update firstPlayerCandidates if a |1⟩ card was placed
+          const firstPlayerCandidates = [...(updatedGameState.initialSelection?.firstPlayerCandidates || [])];
+          if (selectedCard.value === '|1⟩' && !firstPlayerCandidates.includes(currentPlayerId)) {
+            firstPlayerCandidates.push(currentPlayerId);
+          }
+          
+          // Check if current player has any more initial qubit cards
+          const currentPlayer = newPlayers.find(p => p.id === currentPlayerId);
+          const hasMoreInitialCards = currentPlayer ? hasInitialQubitCards(currentPlayer) : false;
+          
+          if (!hasMoreInitialCards) {
+            // Mark this player as completed
+            const playerIndex = updatedGameState.players.findIndex(p => p.id === currentPlayerId);
+            const newPlayersCompleted = [...(updatedGameState.initialSelection?.playersCompleted || [])];
+            newPlayersCompleted[playerIndex] = true;
+            const phaseComplete = newPlayersCompleted.every(completed => completed);
+            
+            // Check if we should complete initial selection or advance player
+            if (phaseComplete) {
+              // Make sure the gameState has the updated firstPlayerCandidates before completing
+              const stateWithUpdatedCandidates = {
+                ...updatedGameState,
+                initialSelection: {
+                  ...updatedGameState.initialSelection!,
+                  playersCompleted: newPlayersCompleted,
+                  firstPlayerCandidates,
+                  phaseComplete
+                }
+              };
+              updatedGameState = completeInitialSelection(stateWithUpdatedCandidates);
+              setTimeout(() => showTemporaryMessage('初期配置完了！ゲーム開始です'), 0);
+            } else {
+              // Update initial selection state and advance player
+              updatedGameState.initialSelection = {
+                ...updatedGameState.initialSelection!,
+                playersCompleted: newPlayersCompleted,
+                firstPlayerCandidates,
+                phaseComplete
+              };
+              updatedGameState = advanceInitialSelectionPlayer(updatedGameState);
+            }
+          } else {
+            // Player still has initial cards, just update firstPlayerCandidates but DON'T advance
+            updatedGameState.initialSelection = {
+              ...updatedGameState.initialSelection!,
+              firstPlayerCandidates
+            };
+            // Don't advance turn - let the player place more cards
+          }
+        }
+
         return { 
           ...updatedGameState, 
           players: playersWithUpdatedScore, 
@@ -476,10 +494,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       setSelectedCard(null);
       setHighlightedSlots([]);
 
-      // Handle initial qubit card placement in initial phase
+      // Handle initial qubit card placement message
       if (isInitialPhase && playedCardType === CardType.INITIAL_QUBIT) {
-        showTemporaryMessage(`初期量子ビットカード ${selectedCard.value} を配置しました。`);
-        checkInitialCardPlacement(currentPlayerId);
+        if (selectedCard.value === '|1⟩') {
+          showTemporaryMessage(`初期量子ビットカード ${selectedCard.value} を配置しました。あなたからゲームがスタートします！`);
+        } else {
+          showTemporaryMessage(`初期量子ビットカード ${selectedCard.value} を配置しました。`);
+        }
         return;
       }
 
@@ -603,20 +624,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   };
 
   const handleCloseMenu = () => {
-    if (isGameInProgress()) {
-      showConfirmationPopup(
-        'ゲームを終了しますか？',
-        '現在のゲームを終了します。進行中のゲームは失われます。',
-        () => {
-          setShowMenu(false);
-          closeConfirmationPopup();
-          // In a real app, this might close the window or navigate away
-          showTemporaryMessage('ゲームを終了しました。');
-        }
-      );
-    } else {
-      setShowMenu(false);
-    }
+    handleBackToMenu();
   };
 
   useEffect(() => {
@@ -696,7 +704,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold">
-              量子ゲート並べ{isInitialPhase && ' - 初期配置フェーズ'}
+              量子ゲート並べ
             </h1>
             <div className="flex items-center gap-2 text-sm">
               {isInitialPhase ? (
@@ -818,7 +826,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 {isInitialPhase ? (
                   <div className="flex flex-col items-center gap-2">
                     <p className="text-xl font-bold">
-                      初期配置: <span className="text-green-400">{activeInitialPlayer?.name}</span>
+                      現在のプレイヤー: <span className="text-green-400">{activeInitialPlayer?.name}</span>
                     </p>
                     <div className="flex items-center gap-4">
                       {hasInitialCards ? (

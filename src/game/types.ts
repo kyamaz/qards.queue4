@@ -74,5 +74,6 @@ export interface GameState {
   initialSelection?: InitialSelectionState;
   controlTargetPlacement?: ControlTargetPlacement;
   unitaryCardsPlayedThisTurn: { [playerId: string]: number }; // Track Unitary cards played per player per turn
+  firstPlayerId?: string; // ID of the first player (who placed |1⟩ or fallback)
   // Add other game state properties as needed
 }
