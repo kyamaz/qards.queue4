@@ -172,6 +172,7 @@ export class QuantumEngine {
       
       for (let i = 0; i < context.measurementPosition; i++) {
         const element = lane[i];
+        
         if (element && element.type === 'gate') {
           const gate = this.getGateMatrix(element.value as GateType);
           currentState = this.applyGate(currentState, gate);

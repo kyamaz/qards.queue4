@@ -33,6 +33,11 @@ export class QuantumGameIntegration {
         const card = lane[position];
         if (!card) continue;
 
+        // Skip TARGET, CONTROL, and UNITARY cards as they are not actual quantum gate operations  
+        if (card.type === CardType.TARGET || card.type === CardType.CONTROL || card.type === CardType.UNITARY) {
+          continue;
+        }
+
         const element: QuantumCircuitElement = {
           type: this.cardTypeToCircuitType(card.type),
           value: card.value,

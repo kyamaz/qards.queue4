@@ -215,18 +215,18 @@ describe('Game Logic Edge Cases', () => {
 
     it('should allow measurement card placement after non-measurement cards in finalized lane', () => {
       const measurementCard: Card = { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' };
+      // When UNITARY is overridden by GATE, only GATE remains in the lane
       const mockBoardWithFinalizedQubit = {
         lane: [
           [
             { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' },
-            { id: 'u1', type: CardType.UNITARY, value: 'U' },
-            { id: 'g1', type: CardType.GATE, value: 'I' }
+            { id: 'g1', type: CardType.GATE, value: 'I' } // UNITARY was replaced by GATE
           ]
         ]
       };
       
       // Lane is finalized because UNITARY card is overridden by GATE card
-      expect(isValidPlay(measurementCard, 0, 3, mockBoardWithFinalizedQubit)).toBe(true);
+      expect(isValidPlay(measurementCard, 0, 2, mockBoardWithFinalizedQubit)).toBe(true);
     });
 
     it('should handle unknown card type', () => {

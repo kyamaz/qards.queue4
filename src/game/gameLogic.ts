@@ -56,61 +56,41 @@ export const shuffleDeck = (deck: Card[]): Card[] => {
 };
 
 /**
- * Check if a lane is "finalized" - meaning all UNITARY and TARGET cards after the latest QUBIT card are overridden
+ * Check if a lane is "finalized" - meaning all UNITARY and TARGET cards are overridden
  * A lane is finalized when:
  * 1. It has a QUBIT or INITIAL_QUBIT card
- * 2. All UNITARY and TARGET cards after the latest QUBIT card have been overridden (have other cards placed on top)
- * 
- * TODO: Issue reported - measurement cards can still be placed in unfinalized lanes despite this logic.
- *       Need to investigate UI/game state synchronization or other parts of the validation chain.
- *       Tests pass but actual gameplay still allows invalid placements.
+ * 2. All UNITARY and TARGET cards in the lane have been overridden (replaced by other cards)
  */
 const isLaneFinalized = (lane: (Card | null)[]): boolean => {
-  // Find the latest QUBIT or INITIAL_QUBIT card in the lane
-  let latestQubitIndex = -1;
-  for (let i = lane.length - 1; i >= 0; i--) {
-    const card = lane[i];
-    if (card && (card.type === CardType.QUBIT || card.type === CardType.INITIAL_QUBIT)) {
-      latestQubitIndex = i;
-      break;
-    }
-  }
   
-  // If no QUBIT card found, lane is not finalized
-  if (latestQubitIndex === -1) {
+  // Check if there's at least one QUBIT or INITIAL_QUBIT card in the lane
+  const hasQubitCard = lane.some(card => 
+    card && (card.type === CardType.QUBIT || card.type === CardType.INITIAL_QUBIT)
+  );
+  
+  if (!hasQubitCard) {
     return false;
   }
   
-  // Check all positions after the latest QUBIT card
-  for (let i = latestQubitIndex + 1; i < lane.length; i++) {
+  // Check ALL UNITARY and TARGET cards in the entire lane to see if they are overridden
+  // A UNITARY or TARGET card is considered "overridden" only if there is a card placed ON TOP of it (same position)
+  // Cards in later positions do NOT override cards in earlier positions
+  for (let i = 0; i < lane.length; i++) {
     const card = lane[i];
     if (card && (card.type === CardType.UNITARY || card.type === CardType.TARGET)) {
-      // If we found a UNITARY or TARGET card, check if it's at the end of the lane
-      // If it's at the end (not overridden), the lane is not finalized
-      if (i === lane.length - 1) {
-        return false; // UNITARY or TARGET card is not overridden
-      }
-      
-      // Check if there's actually a card placed on top of this UNITARY/TARGET card
-      let hasOverridingCard = false;
-      for (let j = i + 1; j < lane.length; j++) {
-        if (lane[j] !== null) {
-          hasOverridingCard = true;
-          break;
-        }
-      }
-      
-      if (!hasOverridingCard) {
-        return false; // UNITARY or TARGET card is not overridden
-      }
+      // A UNITARY/TARGET card is NOT overridden if it's still visible in the lane
+      // In this game, cards can only be overridden by placing another card on top (same position)
+      // Since we're checking the visible cards in the lane, any UNITARY/TARGET card we see is NOT overridden
+      return false; // This UNITARY or TARGET card is not overridden
     }
   }
   
   // Lane is finalized if:
-  // 1. There's a QUBIT card, AND
-  // 2. All UNITARY/TARGET cards after it are overridden (or there are none)
+  // 1. There's at least one QUBIT card, AND
+  // 2. ALL UNITARY/TARGET cards in the lane are overridden (or there are none)
   return true;
 };
+
 
 // Validate if a card can be played at a specific position on the board
 export const isValidPlay = (
@@ -198,19 +178,20 @@ export const isValidPlay = (
           return false; // Cannot place after another Measurement card
         }
         
-        // Check if lane is finalized if allowUnfinalizedMeasurement is false (default)
-        // TODO: User reports this validation is not working in actual gameplay - investigate
         if (!allowUnfinalizedMeasurement) {
           // Check if lane has any qubit card first
           const hasQubitCard = lane.some(card => 
             card && (card.type === CardType.QUBIT || card.type === CardType.INITIAL_QUBIT)
           );
           
-          if (hasQubitCard && !isLaneFinalized(lane)) {
-            return false; // Cannot place measurement card in unfinalized lane that has qubit cards
-          }
-          
-          if (!hasQubitCard) {
+          if (hasQubitCard) {
+            // Check if the ENTIRE lane is finalized (no unoverridden UNITARY/TARGET anywhere)
+            const laneFinalized = isLaneFinalized(lane);
+            
+            if (!laneFinalized) {
+              return false; // Cannot place measurement card in unfinalized lane that has qubit cards
+            }
+          } else {
             return false; // Cannot place measurement card in lane without qubit cards
           }
         }

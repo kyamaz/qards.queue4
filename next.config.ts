@@ -5,10 +5,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Fix for ENOENT buildManifest.js.tmp errors during development
   experimental: {
-    // Disable build cache optimizations that can cause file conflicts
-    turbotrace: {
-      logLevel: 'error'
-    }
+    // Other experimental features can be added here
   },
   // Ensure stable file generation during hot reloads
   generateBuildId: async () => {
