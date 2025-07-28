@@ -8,7 +8,6 @@ interface SettingsData {
   soundVolume: number;
   musicVolume: number;
   difficulty: 'easy' | 'normal' | 'hard';
-  animationSpeed: 'slow' | 'normal' | 'fast';
   showHints: boolean;
   language: 'ja' | 'en';
   playerCount: 3 | 4 | 5 | 6;
@@ -27,7 +26,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
     soundVolume: 50,
     musicVolume: 30,
     difficulty: 'normal' as const,
-    animationSpeed: 'normal' as const,
     showHints: true,
     language: 'ja' as const,
     playerCount: 4 as const,
@@ -213,50 +211,39 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
             </select>
           </div>
 
-          {/* Animation Speed */}
-          <div className="mb-4">
-            <label className="block text-lg mb-2">アニメーション速度</label>
-            <select
-              value={settings.animationSpeed}
-              onChange={(e) => updateSetting('animationSpeed', e.target.value as 'slow' | 'normal' | 'fast')}
-              className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
-            >
-              <option value="slow">ゆっくり</option>
-              <option value="normal">標準</option>
-              <option value="fast">高速</option>
-            </select>
-          </div>
 
-          {/* Audio Settings */}
-          <div className="mb-4">
-            <h3 className="text-lg font-medium mb-3">オーディオ設定</h3>
-            
-            {/* Sound Volume */}
-            <div className="mb-3">
-              <label className="block text-base mb-2">効果音音量: {settings.soundVolume}%</label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={settings.soundVolume}
-                onChange={(e) => updateSetting('soundVolume', parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-              />
-            </div>
+          {/* Audio Settings - Hidden for future implementation */}
+          {false && (
+            <div className="mb-4">
+              <h3 className="text-lg font-medium mb-3">オーディオ設定</h3>
+              
+              {/* Sound Volume */}
+              <div className="mb-3">
+                <label className="block text-base mb-2">効果音音量: {settings.soundVolume}%</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={settings.soundVolume}
+                  onChange={(e) => updateSetting('soundVolume', parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+              </div>
 
-            {/* Music Volume */}
-            <div className="mb-0">
-              <label className="block text-base mb-2">BGM音量: {settings.musicVolume}%</label>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={settings.musicVolume}
-                onChange={(e) => updateSetting('musicVolume', parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-              />
+              {/* Music Volume */}
+              <div className="mb-0">
+                <label className="block text-base mb-2">BGM音量: {settings.musicVolume}%</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={settings.musicVolume}
+                  onChange={(e) => updateSetting('musicVolume', parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Action Buttons */}

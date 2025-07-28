@@ -25,13 +25,14 @@ describe('SettingsScreen Component', () => {
     it('should render all setting sections', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      expect(screen.getByText('オーディオ設定')).toBeInTheDocument();
+      // Note: Audio settings are hidden for future implementation
       expect(screen.getByText('ゲーム設定')).toBeInTheDocument();
       expect(screen.getByText('ルール設定')).toBeInTheDocument();
       expect(screen.getByText('システム設定')).toBeInTheDocument();
     });
 
-    it('should render volume sliders with default values', () => {
+    // Audio settings are hidden for future implementation
+    it.skip('should render volume sliders with default values', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       expect(screen.getByText('効果音音量: 50%')).toBeInTheDocument();
@@ -45,12 +46,6 @@ describe('SettingsScreen Component', () => {
       expect(difficultySelect).toBeInTheDocument();
     });
 
-    it('should render animation speed selector with default value', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
-      
-      const animationSelect = screen.getByDisplayValue('標準');
-      expect(animationSelect).toBeInTheDocument();
-    });
 
     it('should render hints checkbox checked by default', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
@@ -89,7 +84,8 @@ describe('SettingsScreen Component', () => {
   });
 
   describe('User Interactions', () => {
-    it('should update sound volume when slider is moved', () => {
+    // Audio settings are hidden for future implementation
+    it.skip('should update sound volume when slider is moved', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const soundSlider = screen.getAllByRole('slider')[0];
@@ -98,7 +94,7 @@ describe('SettingsScreen Component', () => {
       expect(screen.getByText('効果音音量: 75%')).toBeInTheDocument();
     });
 
-    it('should update music volume when slider is moved', () => {
+    it.skip('should update music volume when slider is moved', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const musicSlider = screen.getAllByRole('slider')[1];
@@ -116,14 +112,6 @@ describe('SettingsScreen Component', () => {
       expect(screen.getByDisplayValue('上級 - CPUが強く、ヒントが少ない')).toBeInTheDocument();
     });
 
-    it('should update animation speed when selector is changed', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
-      
-      const animationSelect = screen.getByDisplayValue('標準');
-      fireEvent.change(animationSelect, { target: { value: 'fast' } });
-      
-      expect(screen.getByDisplayValue('高速')).toBeInTheDocument();
-    });
 
     it('should toggle hints checkbox', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
@@ -226,9 +214,9 @@ describe('SettingsScreen Component', () => {
     it('should save settings to localStorage and call onBack when save button is clicked', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      // Change a setting
-      const soundSlider = screen.getAllByRole('slider')[0];
-      fireEvent.change(soundSlider, { target: { value: '80' } });
+      // Change a non-audio setting (since audio controls are hidden)
+      const difficultySelect = screen.getByDisplayValue('中級 - 標準的な難易度');
+      fireEvent.change(difficultySelect, { target: { value: 'hard' } });
       
       const saveButton = screen.getByText('保存してタイトルに戻る');
       fireEvent.click(saveButton);
@@ -238,9 +226,12 @@ describe('SettingsScreen Component', () => {
       expect(savedSettings).toBeTruthy();
       
       const parsedSettings = JSON.parse(savedSettings!);
-      expect(parsedSettings.soundVolume).toBe(80);
+      expect(parsedSettings.difficulty).toBe('hard');
       expect(parsedSettings.playerCount).toBe(4); // Default value
       expect(parsedSettings.comPlayerCount).toBe(0); // Default value
+      // Audio settings should still be preserved internally
+      expect(parsedSettings.soundVolume).toBe(50); // Default value
+      expect(parsedSettings.musicVolume).toBe(30); // Default value
       
       expect(mockOnBack).toHaveBeenCalledTimes(1);
     });
@@ -248,10 +239,7 @@ describe('SettingsScreen Component', () => {
     it('should reset all settings when reset button is clicked', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      // Change some settings
-      const soundSlider = screen.getAllByRole('slider')[0];
-      fireEvent.change(soundSlider, { target: { value: '90' } });
-      
+      // Change a non-audio setting (since audio controls are hidden)
       const difficultySelect = screen.getByDisplayValue('中級 - 標準的な難易度');
       fireEvent.change(difficultySelect, { target: { value: 'hard' } });
       
@@ -259,8 +247,7 @@ describe('SettingsScreen Component', () => {
       const resetButton = screen.getByText('リセット');
       fireEvent.click(resetButton);
       
-      // Check if settings are back to defaults
-      expect(screen.getByText('効果音音量: 50%')).toBeInTheDocument();
+      // Check if settings are back to defaults (audio settings are internal only)
       expect(screen.getByDisplayValue('中級 - 標準的な難易度')).toBeInTheDocument();
       expect(screen.getByDisplayValue('4人')).toBeInTheDocument();
       expect(screen.getByDisplayValue('0人（COMプレイヤーなし）')).toBeInTheDocument();

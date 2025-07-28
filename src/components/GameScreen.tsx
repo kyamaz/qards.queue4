@@ -65,13 +65,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       const settingsStr = localStorage.getItem('qards4-settings');
       return settingsStr ? JSON.parse(settingsStr) : {
         showHints: true,
-        animationSpeed: 'normal',
         difficulty: 'normal',
         playerCount: 4,
         allowUnfinalizedMeasurement: false
       };
     } catch {
-      return { showHints: true, animationSpeed: 'normal', difficulty: 'normal', playerCount: 4, allowUnfinalizedMeasurement: false };
+      return { showHints: true, difficulty: 'normal', playerCount: 4, allowUnfinalizedMeasurement: false };
     }
   };
 
@@ -243,8 +242,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
 
   const animateCardPlacement = (cardId: string) => {
     setAnimatingCard(cardId);
-    const duration = settings.animationSpeed === 'fast' ? 300 : 
-                    settings.animationSpeed === 'slow' ? 800 : 500;
+    const duration = 500; // Fixed animation duration
     setTimeout(() => setAnimatingCard(null), duration);
   };
 

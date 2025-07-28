@@ -16,6 +16,9 @@
 # next.js
 /.next/
 /out/
+# Ignore temporary build files that cause ENOENT errors
+/.next/**/*.tmp.*
+/.next/static/**/_buildManifest.js.tmp.*
 
 # production
 /build
