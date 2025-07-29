@@ -259,13 +259,12 @@ describe('isValidPlay', () => {
         [
           { id: 'i1', type: CardType.GATE, value: 'I' }, 
           { id: 'q1', type: CardType.QUBIT, value: '|0⟩' },
-          { id: 'u1', type: CardType.UNITARY, value: 'U' },
-          { id: 'g1', type: CardType.GATE, value: 'X' }
+          { id: 'g1', type: CardType.GATE, value: 'X' } // UNITARY was overridden by this GATE
         ],
       ],
     };
     const measurementCard: Card = { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' };
-    expect(isValidPlay(measurementCard, 0, 4, boardWithFinalizedQuantumBit)).toBe(true);
+    expect(isValidPlay(measurementCard, 0, 3, boardWithFinalizedQuantumBit)).toBe(true);
   });
 
   it('should allow MEASUREMENT after GATE in finalized lane', () => {
@@ -274,13 +273,12 @@ describe('isValidPlay', () => {
         [
           { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' }, 
           { id: 'x1', type: CardType.GATE, value: 'X' },
-          { id: 't1', type: CardType.TARGET, value: 'T' },
-          { id: 'g1', type: CardType.GATE, value: 'Z' }
+          { id: 'g1', type: CardType.GATE, value: 'Z' } // TARGET was overridden by this GATE
         ],
       ],
     };
     const measurementCard: Card = { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' };
-    expect(isValidPlay(measurementCard, 0, 4, boardWithFinalizedGate)).toBe(true);
+    expect(isValidPlay(measurementCard, 0, 3, boardWithFinalizedGate)).toBe(true);
   });
 
   it('should not allow MEASUREMENT after MEASUREMENT', () => {

@@ -62,8 +62,13 @@ npm test         # Run Jest tests
 - **Measurement Cards**: When a measurement card is played, points are awarded based on the quantum measurement outcome:
   - **Measurement result '1'**: +5 points
   - **Measurement result '0'**: +3 points
+- **Hand Penalty System**: Remaining cards in hand apply penalties at game end:
+  - **Quantum Gate Cards (I, X, Z, H)**: 5 cards per -2 points (rounded up)
+    - Examples: 1-5 cards = -2 pts, 6-10 cards = -4 pts, 11-15 cards = -6 pts
+  - **All Other Cards (Qubit, Measurement, Unitary, Control, Target)**: 1 card per -2 points
+    - Examples: 1 card = -2 pts, 3 cards = -6 pts, 5 cards = -10 pts
 - **Quantum Integration**: The game includes real quantum computation when possible, falling back to classical simulation
-- **Final Scoring**: Player score minus remaining cards in hand determines the winner
+- **Final Scoring**: Measurement points minus hand penalty determines the winner
 
 ## Development Guidelines
 

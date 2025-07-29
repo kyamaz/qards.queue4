@@ -610,11 +610,37 @@ export const isValidTargetLane = (
 };
 
 
+/**
+ * Calculate hand penalty based on new penalty system:
+ * - Quantum gate cards (GATE type): 5 cards per -2 points
+ * - All other cards: 1 card per -2 points
+ */
+export const calculateHandPenalty = (hand: Card[]): number => {
+  let gateCards = 0;
+  let otherCards = 0;
+  
+  hand.forEach(card => {
+    if (card.type === CardType.GATE) {
+      gateCards++;
+    } else {
+      otherCards++;
+    }
+  });
+  
+  // Gate cards: 5 cards per -2 points (rounded up)
+  const gatePenalty = Math.ceil(gateCards / 5) * 2;
+  
+  // Other cards: 1 card per -2 points
+  const otherPenalty = otherCards * 2;
+  
+  return gatePenalty + otherPenalty;
+};
+
 // Calculate final scores and determine winner
 export const calculateFinalScores = (gameState: GameState): { player: Player; finalScore: number }[] => {
   return gameState.players.map(player => {
     const measurementScore = player.score; // Points earned from measurements
-    const handPenalty = player.hand.length; // 1 point deduction per remaining card
+    const handPenalty = calculateHandPenalty(player.hand); // New penalty system
     const finalScore = measurementScore - handPenalty;
     
     return {

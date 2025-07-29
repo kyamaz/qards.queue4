@@ -15,7 +15,8 @@ import {
   determineWinner,
   canPlayUnitaryCard,
   incrementUnitaryCardCounter,
-  resetUnitaryCardCounters
+  resetUnitaryCardCounters,
+  calculateHandPenalty
 } from '../game/gameLogic';
 import { 
   hasInitialQubitCards, 
@@ -957,12 +958,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                               </div>
                               <div className="text-sm text-gray-300">
                                 <div className="grid grid-cols-1 gap-1">
-                                  {finalScores.map(({ player, finalScore }) => (
-                                    <div key={player.id} className={`flex justify-between ${player.id === winner.id ? 'text-yellow-400 font-bold' : ''}`}>
-                                      <span>{player.name}:</span>
-                                      <span>{player.score}点 - {player.hand.length}枚 = {finalScore}点</span>
-                                    </div>
-                                  ))}
+                                  {finalScores.map(({ player, finalScore }) => {
+                                    const penalty = calculateHandPenalty(player.hand);
+                                    return (
+                                      <div key={player.id} className={`flex justify-between ${player.id === winner.id ? 'text-yellow-400 font-bold' : ''}`}>
+                                        <span>{player.name}:</span>
+                                        <span>{player.score}点 - {penalty}点 = {finalScore}点</span>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             </div>

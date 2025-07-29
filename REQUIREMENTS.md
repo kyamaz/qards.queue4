@@ -213,8 +213,18 @@ Total Deck: 60 cards
 #### 2.6.1 Final Scoring System
 When game ends (any condition above), winner is determined by:
 - **Positive Points**: Measurement card scores earned during gameplay
-- **Negative Points**: Remaining cards in hand (1 point deduction per card)
+- **Hand Penalty**: Remaining cards in hand apply penalties based on card type:
+  - **Quantum Gate Cards (I, X, Z, H)**: 5 cards per -2 points (rounded up)
+    - Examples: 1-5 cards = -2 points, 6-10 cards = -4 points, 11-15 cards = -6 points
+  - **All Other Cards (Qubit, Measurement, Unitary, Control, Target)**: 1 card per -2 points
+    - Examples: 1 card = -2 points, 3 cards = -6 points, 5 cards = -10 points
 - **Winner**: Player with highest total score (positive points - hand penalty)
+
+**Example Final Score Calculation**:
+- Player has 15 measurement points
+- Remaining hand: 3 Gate cards + 2 Qubit cards  
+- Penalty: ceil(3/5) × 2 + 2 × 2 = 2 + 4 = 6 points
+- Final score: 15 - 6 = 9 points
 
 ## 3. Non-Functional Requirements
 
