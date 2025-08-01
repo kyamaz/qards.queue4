@@ -16,7 +16,12 @@ import {
   canPlayUnitaryCard,
   incrementUnitaryCardCounter,
   resetUnitaryCardCounters,
-  calculateHandPenalty
+  calculateHandPenalty,
+  getGameEndReason,
+  eliminatePlayer,
+  getNextActivePlayer,
+  shouldEliminatePlayer,
+  checkGameEndConditions
 } from '../game/gameLogic';
 import { 
   hasInitialQubitCards, 
@@ -571,6 +576,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     setGameState(prevGameState => {
       if (!prevGameState) return null;
 
+      const currentPlayer = prevGameState.players.find(p => p.id === prevGameState.currentPlayerId);
+      if (!currentPlayer) return prevGameState;
+
+      // Update pass count for current player
       const updatedPlayers = prevGameState.players.map(player => {
         if (player.id === prevGameState.currentPlayerId) {
           const newPasses = player.passes + 1;
@@ -579,18 +588,34 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         return player;
       });
 
-      const allPlayersPassed = updatedPlayers.every(p => p.passes >= 3);
-      const shouldEndGame = updatedPlayers.some(p => p.passes >= 4) || allPlayersPassed;
-      const newGamePhase = shouldEndGame ? 'game_ended' : prevGameState.gamePhase;
-
-      return {
+      let newGameState = {
         ...prevGameState,
         players: updatedPlayers,
+      };
+
+      // Check if current player should be eliminated (4 passes)
+      const updatedCurrentPlayer = updatedPlayers.find(p => p.id === prevGameState.currentPlayerId);
+      if (updatedCurrentPlayer && shouldEliminatePlayer(updatedCurrentPlayer)) {
+        newGameState = eliminatePlayer(newGameState, prevGameState.currentPlayerId);
+        showTemporaryMessage(`${updatedCurrentPlayer.name} が4回パスして脱落しました。`);
+      } else {
+        showTemporaryMessage('パスしました。');
+      }
+
+      // Check if game should end
+      const shouldEndGame = checkGameEndConditions(newGameState);
+      const newGamePhase = shouldEndGame ? 'game_ended' : newGameState.gamePhase;
+
+      // Get next active player
+      const nextPlayerId = getNextActivePlayer(newGameState, prevGameState.currentPlayerId);
+      
+      return {
+        ...newGameState,
         gamePhase: newGamePhase,
+        currentPlayerId: nextPlayerId || prevGameState.currentPlayerId,
       };
     });
     
-    showTemporaryMessage('パスしました。');
     advanceTurn();
   };
 
@@ -854,9 +879,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                   msUserSelect: 'none'
                 }}
                 className={`rounded-lg p-3 border transition-all duration-300 cursor-pointer hover:bg-gray-700 hover:border-gray-500 ${
-                  player.id === gameState.currentPlayerId 
-                    ? 'bg-blue-700 bg-opacity-60 border-blue-400 shadow-lg' 
-                    : 'bg-gray-800 bg-opacity-50 border-gray-600'
+                  player.eliminated
+                    ? 'bg-red-900 bg-opacity-30 border-red-600 opacity-60'
+                    : player.id === gameState.currentPlayerId 
+                      ? 'bg-blue-700 bg-opacity-60 border-blue-400 shadow-lg' 
+                      : 'bg-gray-800 bg-opacity-50 border-gray-600'
                 } ${
                   gameState.gamePhase === 'game_ended' && selectedPlayerForHandView === player.id
                     ? 'ring-2 ring-yellow-400 bg-yellow-900 bg-opacity-30'
@@ -865,7 +892,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
               >
                 <p className="font-semibold text-lg flex items-center gap-2">
                   {player.name}
-                  {player.id === gameState.currentPlayerId && (
+                  {player.eliminated && (
+                    <span className="text-xs bg-red-600 px-2 py-1 rounded">脱落</span>
+                  )}
+                  {!player.eliminated && player.id === gameState.currentPlayerId && (
                     <span className="text-xs bg-blue-500 px-2 py-1 rounded">現在のターン</span>
                   )}
                 </p>
@@ -948,8 +978,28 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                         </span>
                         {(() => {
                           const { winner, finalScores } = determineWinner(gameState);
+                          const endReason = getGameEndReason(gameState);
+                          
+                          const getEndReasonMessage = (reason: string): string => {
+                            switch (reason) {
+                              case 'measurement_limit':
+                                return '測定回数上限に達しました（11回）';
+                              case 'insufficient_players':
+                                return 'アクティブなプレイヤーが1人以下になりました';
+                              case 'all_active_players_pass':
+                                return '全アクティブプレイヤーが3回以上パスしました';
+                              case 'empty_hand':
+                                return 'プレイヤーの手札が空になりました';
+                              default:
+                                return 'ゲーム終了';
+                            }
+                          };
+                          
                           return (
                             <div className="bg-black bg-opacity-80 rounded-lg p-4 text-center">
+                              <div className="text-sm text-gray-400 mb-2">
+                                {getEndReasonMessage(endReason)}
+                              </div>
                               <div className="text-2xl font-bold text-yellow-400 mb-2">
                                 🏆 勝者: {winner.name}
                               </div>
@@ -1088,7 +1138,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                           : 'bg-yellow-600 hover:bg-yellow-700 text-white'
                       }`}
                     >
-                      パス ({currentPlayer.passes}/3)
+                      パス ({currentPlayer.passes}/4)
                     </button>
                     
                     {settings.showHints && (

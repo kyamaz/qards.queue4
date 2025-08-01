@@ -369,6 +369,7 @@ export const initializeGame = (playerNames: string[]): GameState => {
     hand: [],
     score: 0,
     passes: 0,
+    eliminated: false,
   }));
 
   // 2. Create complete deck including INITIAL_QUBIT cards
@@ -726,4 +727,109 @@ export const distributeMainDeck = (gameState: GameState): GameState => {
     players,
     deck: [] // Deck is now empty as all cards are distributed
   };
+};
+
+/**
+ * Check if the game should end based on various end conditions
+ */
+export const checkGameEndConditions = (gameState: GameState): boolean => {
+  // Get active (non-eliminated) players
+  const activePlayers = gameState.players.filter(player => !player.eliminated);
+
+  // Condition 1: 11 measurements completed
+  if (gameState.measurementCount >= 11) {
+    return true;
+  }
+
+  // Condition 2: Only one or no active players remain
+  if (activePlayers.length <= 1) {
+    return true;
+  }
+
+  // Condition 3: All active players pass 3 or more times
+  if (activePlayers.length > 0 && activePlayers.every(player => player.passes >= 3)) {
+    return true;
+  }
+
+  // Condition 4: Any player has empty hand
+  if (gameState.players.some(player => player.hand.length === 0)) {
+    return true;
+  }
+
+  return false;
+};
+
+/**
+ * Get the reason why the game ended
+ */
+export const getGameEndReason = (gameState: GameState): string => {
+  const activePlayers = gameState.players.filter(player => !player.eliminated);
+
+  if (gameState.measurementCount >= 11) {
+    return 'measurement_limit';
+  }
+
+  if (activePlayers.length <= 1) {
+    return 'insufficient_players';
+  }
+
+  if (activePlayers.length > 0 && activePlayers.every(player => player.passes >= 3)) {
+    return 'all_active_players_pass';
+  }
+
+  if (gameState.players.some(player => player.hand.length === 0)) {
+    return 'empty_hand';
+  }
+
+  return 'unknown';
+};
+
+/**
+ * Eliminate a player who has passed 4 times
+ */
+export const eliminatePlayer = (gameState: GameState, playerId: string): GameState => {
+  const updatedPlayers = gameState.players.map(player => {
+    if (player.id === playerId && player.passes >= 4) {
+      return { ...player, eliminated: true };
+    }
+    return player;
+  });
+
+  return {
+    ...gameState,
+    players: updatedPlayers
+  };
+};
+
+/**
+ * Get the next active player in turn order
+ */
+export const getNextActivePlayer = (gameState: GameState, currentPlayerId: string): string | null => {
+  const activePlayers = gameState.players.filter(player => !player.eliminated);
+  
+  if (activePlayers.length === 0) {
+    return null;
+  }
+
+  const currentIndex = activePlayers.findIndex(player => player.id === currentPlayerId);
+  
+  if (currentIndex === -1) {
+    // Current player is eliminated, return first active player
+    return activePlayers[0].id;
+  }
+
+  if (gameState.turnDirection === 'forward') {
+    const nextIndex = (currentIndex + 1) % activePlayers.length;
+    return activePlayers[nextIndex].id;
+  } else {
+    const nextIndex = (currentIndex - 1 + activePlayers.length) % activePlayers.length;
+    return activePlayers[nextIndex].id;
+  }
+};
+
+/**
+ * Check if a player should be eliminated (has passed 4 times)
+ */
+export const shouldEliminatePlayer = (player: Player): boolean => {
+  return player.passes >= 4 && !player.eliminated;
 };

@@ -22,7 +22,7 @@ Develop a card game application that allows players to learn fundamental quantum
 - **Player Count**: 3-6 players (default: 4 players)
 - **Player Names**: Customizable player names
 - **Score Management**: Point system based on measurement card interactions
-- **Pass System**: Game ends when a player passes 4 times
+- **Pass System**: Player elimination when passing 4 times (individual elimination, game continues with remaining players)
 
 #### 2.1.2 Initial Player Selection Process
 - **Card Distribution Phase**: Distribute all cards (including INITIAL_QUBIT cards) randomly to all players
@@ -207,8 +207,15 @@ Total Deck: 60 cards
 ### 2.6 Game End Conditions
 1. **Hand Empty Trigger**: When any player empties their hand, game ends and final scoring occurs
 2. **Measurement Count**: 11 measurements completed
-3. **Pass Limit**: Any player passes 4 times
-4. **All Players Pass**: All players have passed 3+ times
+3. **Insufficient Active Players**: Only 1 or fewer active (non-eliminated) players remain
+4. **All Active Players Pass**: All active players have passed 3+ times
+
+### 2.7 Player Elimination System
+- **Elimination Trigger**: Player is eliminated when they pass 4 times
+- **Individual Elimination**: Only the passing player is eliminated; game continues with remaining active players
+- **Visual Indication**: Eliminated players shown with red styling and "脱落" badge
+- **Turn Skipping**: Eliminated players are automatically skipped during turn progression
+- **Game Continuation**: Game only ends when insufficient active players remain (≤1) or other end conditions are met
 
 #### 2.6.1 Final Scoring System
 When game ends (any condition above), winner is determined by:

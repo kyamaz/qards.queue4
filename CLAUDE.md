@@ -47,16 +47,18 @@ npm test         # Run Jest tests
 ## Game-Specific Context
 
 ### Game Elements
-- **Cards**: Number cards (0-6 in 4 colors) and Quantum cards (H, X, Y, Z gates)
-- **Players**: 4 players (Human at position 0, CPUs at positions 1-3)
-- **Board**: 7x4 grid for placing cards
-- **Win Condition**: First player to empty their hand wins
+- **Cards**: Quantum cards (Qubit, Gate, Unitary, Control, Target, Measurement cards)
+- **Players**: 3-6 players with elimination system for players who pass 4 times
+- **Board**: 4-lane quantum circuit board
+- **Win Condition**: Based on measurement points minus hand penalties when game ends
+- **Elimination System**: Players who pass 4 times are eliminated individually; game continues with remaining players
 
 ### Core Game Flow
 1. Game initialization in `gameLogic.ts:initializeGame()`
-2. Card placement validation in `isValidMove()`
-3. Turn management through `gameState.currentPlayer`
-4. CPU players make automatic moves
+2. Card placement validation in `isValidPlay()`
+3. Turn management through `gameState.currentPlayerId` with active player filtering
+4. Player elimination system when passing 4 times
+5. Game ends when insufficient active players remain or other end conditions are met
 
 ### Scoring System
 - **Measurement Cards**: When a measurement card is played, points are awarded based on the quantum measurement outcome:

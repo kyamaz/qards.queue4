@@ -43,6 +43,7 @@ export interface Player {
   hand: Card[];
   score: number;
   passes: number;
+  eliminated: boolean; // true if player has passed 4 times
 }
 
 export type GamePhase = 'initial_selection' | 'normal_play' | 'game_ended';
