@@ -128,18 +128,16 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         return prevGameState;
       }
 
-      const { players, currentPlayerId, turnDirection } = prevGameState;
-      const numPlayers = players.length;
-      const currentPlayerIndex = players.findIndex(p => p.id === currentPlayerId);
-
-      let nextPlayerIndex: number;
-      if (turnDirection === 'forward') {
-        nextPlayerIndex = (currentPlayerIndex + 1) % numPlayers;
-      } else {
-        nextPlayerIndex = (currentPlayerIndex - 1 + numPlayers) % numPlayers;
-      }
+      // Use the new active player logic to skip eliminated players
+      const nextPlayerId = getNextActivePlayer(prevGameState, prevGameState.currentPlayerId);
       
-      const nextPlayerId = players[nextPlayerIndex].id;
+      if (!nextPlayerId) {
+        // No active players left, game should end
+        return {
+          ...prevGameState,
+          gamePhase: 'game_ended'
+        };
+      }
 
       // Increment turn counter when the first player's turn comes around
       const shouldIncrementTurn = prevGameState.firstPlayerId && 
@@ -615,8 +613,6 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         currentPlayerId: nextPlayerId || prevGameState.currentPlayerId,
       };
     });
-    
-    advanceTurn();
   };
 
   const handleCancelAction = () => {
@@ -634,6 +630,27 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       setSelectedPlayerForHandView(playerId);
     }
   };
+
+  // Check if current player is eliminated and automatically switch to next active player
+  React.useEffect(() => {
+    if (gameState && gameState.gamePhase === 'normal_play') {
+      const currentPlayer = gameState.players.find(p => p.id === gameState.currentPlayerId);
+      
+      if (currentPlayer && currentPlayer.eliminated) {
+        // Current player is eliminated, switch to next active player
+        const nextPlayerId = getNextActivePlayer(gameState, gameState.currentPlayerId);
+        if (nextPlayerId && nextPlayerId !== gameState.currentPlayerId) {
+          setGameState(prevState => {
+            if (!prevState) return null;
+            return {
+              ...prevState,
+              currentPlayerId: nextPlayerId
+            };
+          });
+        }
+      }
+    }
+  }, [gameState]);
 
   // Set default selected player when game ends and clear selected card
   React.useEffect(() => {
@@ -1120,9 +1137,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                         <PlayerHand
                           hand={playerToShow.hand}
                           playerName={playerToShow.name}
-                          isCurrentPlayer={gameState.gamePhase !== 'game_ended' && isShowingCurrentPlayer}
-                          onCardClick={gameState.gamePhase === 'game_ended' ? () => {} : handleCardSelect}
-                          selectedCard={gameState.gamePhase === 'game_ended' ? null : selectedCard}
+                          isCurrentPlayer={gameState.gamePhase !== 'game_ended' && isShowingCurrentPlayer && !currentPlayer.eliminated}
+                          onCardClick={gameState.gamePhase === 'game_ended' || currentPlayer.eliminated ? () => {} : handleCardSelect}
+                          selectedCard={gameState.gamePhase === 'game_ended' || currentPlayer.eliminated ? null : selectedCard}
                         />
                       </div>
                     );
@@ -1131,14 +1148,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                   <div className="flex gap-4">
                     <button
                       onClick={handlePass}
-                      disabled={gameState.gamePhase === 'game_ended'}
+                      disabled={gameState.gamePhase === 'game_ended' || currentPlayer.eliminated}
                       className={`px-6 py-3 text-lg rounded-lg shadow-lg transition duration-300 ${
-                        gameState.gamePhase === 'game_ended' 
+                        gameState.gamePhase === 'game_ended' || currentPlayer.eliminated
                           ? 'bg-gray-500 cursor-not-allowed' 
                           : 'bg-yellow-600 hover:bg-yellow-700 text-white'
                       }`}
                     >
-                      パス ({currentPlayer.passes}/4)
+                      {currentPlayer.eliminated ? '脱落済み' : `パス (${currentPlayer.passes}/4)`}
                     </button>
                     
                     {settings.showHints && (
