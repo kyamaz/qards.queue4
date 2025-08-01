@@ -73,14 +73,41 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         showHints: true,
         difficulty: 'normal',
         playerCount: 4,
-        allowUnfinalizedMeasurement: false
+        allowUnfinalizedMeasurement: false,
+        controlledHadamard: false
       };
     } catch {
-      return { showHints: true, difficulty: 'normal', playerCount: 4, allowUnfinalizedMeasurement: false };
+      return { showHints: true, difficulty: 'normal', playerCount: 4, allowUnfinalizedMeasurement: false, controlledHadamard: false };
     }
   };
 
-  const [settings] = useState(getSettings());
+  const [settings, setSettings] = useState(getSettings());
+  
+  // Reload settings when component mounts or when needed
+  useEffect(() => {
+    const currentSettings = getSettings();
+    setSettings(currentSettings);
+  }, []);
+
+  // Listen for storage changes to update settings in real-time
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const updatedSettings = getSettings();
+      setSettings(updatedSettings);
+    };
+
+    // Listen for storage events (when settings are saved in SettingsScreen)
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for custom events (for same-tab updates)
+    window.addEventListener('settingsUpdated', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('settingsUpdated', handleStorageChange);
+    };
+  }, []);
+  
 
   // Check if game is in progress (not initial state, has moves made)
   const isGameInProgress = () => {
@@ -183,7 +210,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
             if (!lane[position]) {
               validSlots.push({ laneIndex, position });
             }
-          } else if (isValidPlay(card, laneIndex, position, gameState.board, settings.allowUnfinalizedMeasurement)) {
+          } else if (isValidPlay(card, laneIndex, position, gameState.board, settings.allowUnfinalizedMeasurement, settings.controlledHadamard)) {
             validSlots.push({ laneIndex, position });
           }
         }
@@ -361,7 +388,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           showTemporaryMessage('現在の初期配置プレイヤーのみがカードを配置できます。');
           return;
         }
-      } else if (!gameState || !isValidPlay(selectedCard, laneIndex, position, gameState.board, settings.allowUnfinalizedMeasurement)) {
+      } else if (!gameState || !isValidPlay(selectedCard, laneIndex, position, gameState.board, settings.allowUnfinalizedMeasurement, settings.controlledHadamard)) {
         showTemporaryMessage('そのカードはそのレーンに配置できません。');
         return;
       }
@@ -513,7 +540,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         // Update newGamePhase if it was changed by initial selection completion
         newGamePhase = updatedGameState.gamePhase;
 
-        return { 
+        const finalGameState = { 
           ...updatedGameState, 
           players: playersWithUpdatedScore, 
           board: newBoard, 
@@ -521,6 +548,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           measurementCount: newMeasurementCount, 
           gamePhase: newGamePhase // Use newGamePhase which may be updated by measurement completion or initial selection completion
         };
+        
+        // Store if game ended due to measurement for later check
+        (selectedCard as Card & { gameEndedDueToMeasurement?: boolean }).gameEndedDueToMeasurement = 
+          playedCardType === CardType.MEASUREMENT && newMeasurementCount >= 11;
+          
+        return finalGameState;
       });
 
       setSelectedCard(null);
@@ -549,10 +582,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       } else if (playedCardType === CardType.MEASUREMENT) {
         const measurementScore = (selectedCard as Card & { measurementScore?: number }).measurementScore || 1;
         const quantumUsed = (selectedCard as Card & { quantumComputationUsed?: boolean }).quantumComputationUsed || false;
+        const gameEndedDueToMeasurement = (selectedCard as Card & { gameEndedDueToMeasurement?: boolean }).gameEndedDueToMeasurement || false;
         const compatibilityMessage = measurementScore === 5 ? ' (測定結果1!)' : ' (測定結果0)';
         const computationMessage = quantumUsed ? ' 🔬' : '';
         showTemporaryMessage(`測定しました。+${measurementScore}点を獲得${compatibilityMessage}${computationMessage}`);
-        advanceTurn();
+        
+        // Only advance turn if game didn't end due to measurement limit
+        if (!gameEndedDueToMeasurement) {
+          advanceTurn();
+        }
       } else {
         advanceTurn();
       }
@@ -1146,17 +1184,38 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                   })()}
                   
                   <div className="flex gap-4">
-                    <button
-                      onClick={handlePass}
-                      disabled={gameState.gamePhase === 'game_ended' || currentPlayer.eliminated}
-                      className={`px-6 py-3 text-lg rounded-lg shadow-lg transition duration-300 ${
-                        gameState.gamePhase === 'game_ended' || currentPlayer.eliminated
-                          ? 'bg-gray-500 cursor-not-allowed' 
-                          : 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                      }`}
-                    >
-                      {currentPlayer.eliminated ? '脱落済み' : `パス (${currentPlayer.passes}/4)`}
-                    </button>
+                    {(() => {
+                      // Determine which player's information to show for the pass button
+                      let playerForPassDisplay = currentPlayer;
+                      
+                      if (gameState.gamePhase === 'game_ended') {
+                        if (selectedPlayerForHandView) {
+                          const selectedPlayer = gameState.players.find(p => p.id === selectedPlayerForHandView);
+                          if (selectedPlayer) {
+                            playerForPassDisplay = selectedPlayer;
+                          }
+                        }
+                      }
+                      
+                      return (
+                        <button
+                          onClick={handlePass}
+                          disabled={gameState.gamePhase === 'game_ended' || currentPlayer.eliminated}
+                          className={`px-6 py-3 text-lg rounded-lg shadow-lg transition duration-300 ${
+                            gameState.gamePhase === 'game_ended' || currentPlayer.eliminated
+                              ? 'bg-gray-500 cursor-not-allowed' 
+                              : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                          }`}
+                        >
+                          {gameState.gamePhase === 'game_ended' 
+                            ? `パス数: ${playerForPassDisplay.passes}/4`
+                            : playerForPassDisplay.eliminated 
+                              ? '脱落済み' 
+                              : `パス (${playerForPassDisplay.passes}/4)`
+                          }
+                        </button>
+                      );
+                    })()}
                     
                     {settings.showHints && (
                       <div className="text-sm text-gray-400 flex items-center">

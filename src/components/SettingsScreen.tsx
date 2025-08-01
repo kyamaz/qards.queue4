@@ -66,6 +66,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
     try {
       localStorage.setItem('qards4-settings', JSON.stringify(settings));
       console.log('Settings saved successfully:', settings);
+      
+      // Dispatch custom event to notify other components of settings change
+      window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: settings }));
+      
       onBack();
     } catch (error) {
       console.error('Failed to save settings to localStorage:', error);

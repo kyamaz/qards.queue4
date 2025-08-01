@@ -98,7 +98,8 @@ export const isValidPlay = (
   targetLaneIndex: number,
   targetPosition: number, // Position within the lane (0-indexed)
   currentBoard: GameState['board'],
-  allowUnfinalizedMeasurement?: boolean
+  allowUnfinalizedMeasurement?: boolean,
+  controlledHadamard?: boolean
 ): boolean => {
   // Rule: Position must be non-negative
   if (targetPosition < 0) {
@@ -222,7 +223,19 @@ export const isValidPlay = (
     switch (card.type) {
       case CardType.GATE:
         // Gate Cards: Can be placed on a Unitary card or Target card.
-        return existingCard.type === CardType.UNITARY || existingCard.type === CardType.TARGET;
+        if (existingCard.type === CardType.UNITARY) {
+          return true;
+        }
+        if (existingCard.type === CardType.TARGET) {
+          // Special rule: H gate on TARGET card requires controlledHadamard setting to be enabled
+          // Default controlledHadamard to false if undefined
+          const hadamardAllowed = controlledHadamard === true;
+          if (card.value === 'H' && !hadamardAllowed) {
+            return false; // H gate cannot be placed on TARGET card when controlledHadamard is disabled
+          }
+          return true;
+        }
+        return false;
 
       // Other card types cannot be placed on top of existing cards by default.
       default:
