@@ -19,8 +19,10 @@ npm run lint     # Run ESLint
 ### Testing
 ```bash
 npm test         # Run Jest tests (unit and integration tests)
-npx cypress open  # Open Cypress Test Runner for E2E tests
-npx cypress run   # Run Cypress E2E tests headlessly
+npm run e2e      # Run Cypress E2E tests interactively
+npm run e2e:headless  # Run Cypress E2E tests headlessly
+npm run cypress:open  # Open Cypress Test Runner (dev server must be running)
+npm run cypress:run   # Run Cypress tests headlessly (dev server must be running)
 ```
 
 ## Architecture Overview

@@ -1,0 +1,10 @@
+{
+  "players": ["Player 1", "Player 2", "Player 3", "Player 4"],
+  "settings": {
+    "difficulty": "normal",
+    "playerCount": 4,
+    "comPlayerCount": 3,
+    "showHints": true,
+    "controlledHadamard": false
+  }
+}
