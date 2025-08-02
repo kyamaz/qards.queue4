@@ -33,13 +33,9 @@ export class QuantumEngine {
   private C1 = complex(1);
   private INV_SQRT2 = complex(1 / Math.sqrt(2));
 
-  /**
-   * Creates the initial state vector from individual qubit states.
-   * @param initialQubits An array of initial states for each qubit.
-   */
   public createInitialState(initialQubits: QubitState[]): QuantumState {
     const numQubits = initialQubits.length;
-    let amplitudes = [this.C1]; // Start with a |⟩ state for tensor product
+    let amplitudes = [this.C1];
 
     for (const qubitState of initialQubits) {
       const qubitAmplitudes = this.qubitStateToAmplitudes(qubitState);
@@ -69,141 +65,97 @@ export class QuantumEngine {
     return result;
   }
 
-  /**
-   * Get quantum gate matrix
-   */
   private getGateMatrix(gateType: GateType): QuantumGate {
     switch (gateType) {
-      case 'I':
-        return { matrix: [[this.C1, this.C0], [this.C0, this.C1]] };
-      case 'X':
-        return { matrix: [[this.C0, this.C1], [this.C1, this.C0]] };
-      case 'Z':
-        return { matrix: [[this.C1, this.C0], [this.C0, complex(-1)]] };
-      case 'H':
-        return { matrix: [[this.INV_SQRT2, this.INV_SQRT2], [this.INV_SQRT2, complex(-1 / Math.sqrt(2))]] };
-      case 'CNOT':
-        return {
-          matrix: [
-            [this.C1, this.C0, this.C0, this.C0],
-            [this.C0, this.C1, this.C0, this.C0],
-            [this.C0, this.C0, this.C0, this.C1],
-            [this.C0, this.C0, this.C1, this.C0],
-          ],
-        };
-      default:
-        throw new Error(`Unknown gate type: ${gateType}`);
+      case 'I': return { matrix: [[this.C1, this.C0], [this.C0, this.C1]] };
+      case 'X': return { matrix: [[this.C0, this.C1], [this.C1, this.C0]] };
+      case 'Z': return { matrix: [[this.C1, this.C0], [this.C0, complex(-1)]] };
+      case 'H': return { matrix: [[this.INV_SQRT2, this.INV_SQRT2], [this.INV_SQRT2, complex(-1 / Math.sqrt(2))]] };
+      case 'CNOT': return { matrix: [] }; // Not used directly in the new approach
+      default: throw new Error(`Unknown gate type: ${gateType}`);
     }
   }
 
-  /**
-   * Apply a quantum gate to the system's state vector.
-   */
   private applyGate(state: QuantumState, element: QuantumCircuitElement): QuantumState {
-    const { numQubits } = state;
-    const gate = this.getGateMatrix(element.value as GateType);
-    let operator: Complex[][];
+    const { amplitudes, numQubits } = state;
+    const numStates = 1 << numQubits;
+    const newAmplitudes: Complex[] = Array(numStates).fill(this.C0);
 
-    if (element.controlLane !== undefined) { // Two-qubit gate
-      operator = this.createTwoQubitGateOperator(gate, element.controlLane, element.targetLane, numQubits);
-    } else { // Single-qubit gate
-      operator = this.createSingleQubitGateOperator(gate, element.targetLane, numQubits);
-    }
-    
-    const newAmplitudes = this.applyMatrix(operator, state.amplitudes);
-    return { ...state, amplitudes: newAmplitudes };
-  }
-
-  private applyMatrix(matrix: Complex[][], vector: Complex[]): Complex[] {
-    const newVector: Complex[] = Array(vector.length).fill(this.C0);
-    for (let i = 0; i < matrix.length; i++) {
-      for (let j = 0; j < vector.length; j++) {
-        newVector[i] = add(newVector[i], mul(matrix[i][j], vector[j]));
+    if (element.value === 'CNOT') {
+      const { controlLane, targetLane } = element;
+      if (controlLane === undefined || targetLane === undefined) {
+        throw new Error('CNOT gate requires control and target lanes.');
       }
-    }
-    return newVector;
-  }
+      const controlBit = 1 << (numQubits - 1 - controlLane);
+      const targetBit = 1 << (numQubits - 1 - targetLane);
 
-  private createSingleQubitGateOperator(gate: QuantumGate, target: number, numQubits: number): Complex[][] {
-    let operator = gate.matrix;
-    const I = this.getGateMatrix('I').matrix;
+      for (let i = 0; i < numStates; i++) {
+        if ((i & controlBit) !== 0) { // If control bit is 1
+          newAmplitudes[i ^ targetBit] = add(newAmplitudes[i ^ targetBit], amplitudes[i]);
+        } else { // If control bit is 0
+          newAmplitudes[i] = add(newAmplitudes[i], amplitudes[i]);
+        }
+      }
+    } else { // Single-qubit gate
+      const { targetLane } = element;
+      const gate = this.getGateMatrix(element.value as GateType);
+      const [[a, b], [c, d]] = gate.matrix;
+      const targetBit = 1 << (numQubits - 1 - targetLane);
 
-    for (let i = numQubits - 1; i >= 0; i--) {
-      if (i === target) continue;
-      const currentGate = (i < target) ? operator : I;
-      const nextGate = (i < target) ? I : operator;
-      operator = this.tensorProductMatrix(currentGate, nextGate);
-    }
-    return operator;
-  }
-  
-  private createTwoQubitGateOperator(gate: QuantumGate, control: number, target: number, numQubits: number): Complex[][] {
-    // This is a simplified placeholder. A full implementation requires handling permutations
-    // for arbitrary control/target pairs, which is significantly more complex.
-    // This version assumes control=0, target=1 for a 2-qubit system.
-    if (numQubits !== 2 || control !== 0 || target !== 1) {
-        this.computationSteps.push(`Warning: CNOT is only implemented for control=0, target=1 on a 2-qubit system. Ignoring gate.`);
-        return this.getGateMatrix('I').matrix; // Return identity for non-supported cases
-    }
-    return gate.matrix;
-  }
-
-  private tensorProductMatrix(A: Complex[][], B: Complex[][]): Complex[][] {
-    const result: Complex[][] = [];
-    for (let i = 0; i < A.length * B.length; i++) {
-      result[i] = [];
-    }
-
-    for (let i = 0; i < A.length; i++) {
-      for (let j = 0; j < A[i].length; j++) {
-        for (let k = 0; k < B.length; k++) {
-          for (let l = 0; l < B[k].length; l++) {
-            result[i * B.length + k][j * B[k].length + l] = mul(A[i][j], B[k][l]);
-          }
+      for (let i = 0; i < numStates; i++) {
+        const isTargetOne = (i & targetBit) !== 0;
+        const basisStateWithoutTarget = i & ~targetBit;
+        
+        if (!isTargetOne) { // Target is |0⟩
+          const state0 = basisStateWithoutTarget;
+          const state1 = basisStateWithoutTarget | targetBit;
+          newAmplitudes[state0] = add(newAmplitudes[state0], mul(a, amplitudes[i]));
+          newAmplitudes[state1] = add(newAmplitudes[state1], mul(c, amplitudes[i]));
+        } else { // Target is |1⟩
+          const state0 = basisStateWithoutTarget;
+          const state1 = basisStateWithoutTarget | targetBit;
+          newAmplitudes[state0] = add(newAmplitudes[state0], mul(b, amplitudes[i]));
+          newAmplitudes[state1] = add(newAmplitudes[state1], mul(d, amplitudes[i]));
         }
       }
     }
-    return result;
+    return { ...state, amplitudes: newAmplitudes };
   }
 
-  /**
-   * Perform measurement on a specific qubit in a specified basis.
-   */
   private performMeasurement(state: QuantumState, targetQubit: number, basis: MeasurementBasis): MeasurementResult {
-    // For now, we only support measurement in the Z-basis ('⟨0|' or '⟨1|').
-    // A full implementation would apply a basis change unitary for other bases.
     if (basis === '⟨+|' || basis === '⟨-|') {
-        this.computationSteps.push(`Warning: Measurement in ${basis} basis is not fully implemented. Defaulting to Z-basis.`);
+      this.computationSteps.push(`Warning: Measurement in ${basis} basis is not fully implemented. Defaulting to Z-basis.`);
     }
 
     const { amplitudes, numQubits } = state;
     const numStates = 1 << numQubits;
     let prob0 = 0;
+    const targetBit = 1 << (numQubits - 1 - targetQubit);
 
-    // Calculate the probability of measuring the targetQubit as '0'
     for (let i = 0; i < numStates; i++) {
-      // Check if the targetQubit is 0 in the current basis state `i`
-      if (((i >> (numQubits - 1 - targetQubit)) & 1) === 0) {
+      if ((i & targetBit) === 0) {
         prob0 += amplitudes[i].real ** 2 + amplitudes[i].imaginary ** 2;
       }
     }
-    const prob1 = 1 - prob0;
 
     const random = Math.random();
     const outcome = random < prob0 ? '0' : '1';
-    const probability = outcome === '0' ? prob0 : prob1;
+    const probability = outcome === '0' ? prob0 : 1 - prob0;
 
-    // Collapse the state
     const newAmplitudes = Array(numStates).fill(this.C0);
     const norm = Math.sqrt(probability);
-    for (let i = 0; i < numStates; i++) {
-        if (((i >> (numQubits - 1 - targetQubit)) & 1) === (outcome === '0' ? 0 : 1)) {
-            newAmplitudes[i] = complex(amplitudes[i].real / norm, amplitudes[i].imaginary / norm);
-        }
+    if (norm === 0) { // Should not happen in a valid state
+        return { outcome, probability, finalState: { ...state, amplitudes: newAmplitudes } };
     }
 
-    const finalState: QuantumState = { amplitudes: newAmplitudes, numQubits };
-    return { outcome, probability, finalState };
+    for (let i = 0; i < numStates; i++) {
+      const isTargetOne = (i & targetBit) !== 0;
+      if ((outcome === '0' && !isTargetOne) || (outcome === '1' && isTargetOne)) {
+        newAmplitudes[i] = complex(amplitudes[i].real / norm, amplitudes[i].imaginary / norm);
+      }
+    }
+
+    return { outcome, probability, finalState: { ...state, amplitudes: newAmplitudes } };
   }
 
   public executeQuantumComputation(context: QuantumComputationContext): QuantumComputationResult {
@@ -220,7 +172,8 @@ export class QuantumEngine {
       for (const element of elementsToMeasure) {
         if (element.type === 'gate') {
           currentState = this.applyGate(currentState, element);
-          this.computationSteps.push(`Applied ${element.value} on target ${element.targetLane}: |ψ⟩ = ${this.stateToString(currentState)}`);
+          const target = element.controlLane !== undefined ? `${element.controlLane},${element.targetLane}` : `${element.targetLane}`;
+          this.computationSteps.push(`Applied ${element.value} on qubit(s) ${target}: |ψ⟩ = ${this.stateToString(currentState)}`);
         }
       }
 
