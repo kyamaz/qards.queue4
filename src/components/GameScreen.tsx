@@ -481,6 +481,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           (selectedCard as Card & { measurementScore?: number; quantumComputationUsed?: boolean }).measurementScore = scoreGained;
           (selectedCard as Card & { measurementScore?: number; quantumComputationUsed?: boolean }).quantumComputationUsed = quantumComputationUsed;
           
+          // Display measurement score message
+          const compatibilityMessage = scoreGained === 5 ? ' (測定結果1!)' : scoreGained === 3 ? ' (測定結果0)' : '';
+          const computationMessage = quantumComputationUsed ? ' 🔬' : '';
+          setTimeout(() => {
+            showTemporaryMessage(`測定しました。+${scoreGained}点を獲得${compatibilityMessage}${computationMessage}`);
+          }, 0);
+          
           if (newMeasurementCount >= 11) newGamePhase = 'game_ended';
         }
         
@@ -580,12 +587,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         showTemporaryMessage('ゲートカードをターゲットカードに配置しました。ターン順は変わりません。');
         advanceTurn();
       } else if (playedCardType === CardType.MEASUREMENT) {
-        const measurementScore = (selectedCard as Card & { measurementScore?: number }).measurementScore || 1;
-        const quantumUsed = (selectedCard as Card & { quantumComputationUsed?: boolean }).quantumComputationUsed || false;
         const gameEndedDueToMeasurement = (selectedCard as Card & { gameEndedDueToMeasurement?: boolean }).gameEndedDueToMeasurement || false;
-        const compatibilityMessage = measurementScore === 5 ? ' (測定結果1!)' : ' (測定結果0)';
-        const computationMessage = quantumUsed ? ' 🔬' : '';
-        showTemporaryMessage(`測定しました。+${measurementScore}点を獲得${compatibilityMessage}${computationMessage}`);
         
         // Only advance turn if game didn't end due to measurement limit
         if (!gameEndedDueToMeasurement) {
