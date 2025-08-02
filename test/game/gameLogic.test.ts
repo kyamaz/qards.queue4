@@ -374,3 +374,580 @@ describe('isValidControlCardPlay', () => {
     expect(isValidControlCardPlay(0, 1, 5, boardWithCards)).toBe(false);
   });
 });
+
+// Import additional functions for testing
+import {
+  calculateMeasurementScore,
+  findPrecedingQubit,
+  calculateHandPenalty,
+  determineWinner,
+  canPlayUnitaryCard,
+  resetUnitaryCardCounters,
+  incrementUnitaryCardCounter,
+  checkGameEndConditions,
+  getGameEndReason,
+  eliminatePlayer,
+  getNextActivePlayer,
+  shouldEliminatePlayer,
+  startControlTargetPlacement,
+  completeControlTargetPlacement,
+  cancelControlTargetPlacement,
+  isValidTargetLane
+} from '../../src/game/gameLogic';
+
+describe('calculateMeasurementScore', () => {
+  it('should return correct scores for compatible qubit-measurement pairs', () => {
+    expect(calculateMeasurementScore('|0⟩', '⟨0|')).toBe(3); // outcome '0' → 3 points
+    expect(calculateMeasurementScore('|1⟩', '⟨1|')).toBe(5); // outcome '1' → 5 points
+    expect(calculateMeasurementScore('|+⟩', '⟨+|')).toBe(3); // outcome '0' → 3 points
+    expect(calculateMeasurementScore('|-⟩', '⟨-|')).toBe(5); // outcome '1' → 5 points
+  });
+
+  it('should return correct scores for different qubit-measurement pairs', () => {
+    expect(calculateMeasurementScore('|0⟩', '⟨1|')).toBe(3); // |0⟩ always gives outcome '0' → 3 points
+    expect(calculateMeasurementScore('|1⟩', '⟨0|')).toBe(5); // |1⟩ always gives outcome '1' → 5 points
+    expect(calculateMeasurementScore('|+⟩', '⟨-|')).toBe(3); // |+⟩ gives outcome '0' → 3 points
+    expect(calculateMeasurementScore('|-⟩', '⟨+|')).toBe(5); // |-⟩ gives outcome '1' → 5 points
+  });
+
+  it('should return correct scores for orthogonal qubit-measurement pairs', () => {
+    expect(calculateMeasurementScore('|0⟩', '⟨+|')).toBe(3); // outcome '0' → 3 points
+    expect(calculateMeasurementScore('|0⟩', '⟨-|')).toBe(3); // outcome '0' → 3 points
+    expect(calculateMeasurementScore('|1⟩', '⟨+|')).toBe(5); // outcome '1' → 5 points
+    expect(calculateMeasurementScore('|1⟩', '⟨-|')).toBe(5); // outcome '1' → 5 points
+    expect(calculateMeasurementScore('|+⟩', '⟨0|')).toBe(3); // outcome '0' → 3 points
+    expect(calculateMeasurementScore('|+⟩', '⟨1|')).toBe(3); // outcome '0' → 3 points
+    expect(calculateMeasurementScore('|-⟩', '⟨0|')).toBe(3); // outcome '0' → 3 points
+    expect(calculateMeasurementScore('|-⟩', '⟨1|')).toBe(3); // outcome '0' → 3 points
+  });
+
+  it('should return 3 for unknown qubit or measurement values', () => {
+    expect(calculateMeasurementScore('unknown', '⟨0|')).toBe(3); // default case returns '0' → 3 points
+    expect(calculateMeasurementScore('|0⟩', 'unknown')).toBe(3); // |0⟩ always returns '0' → 3 points
+    expect(calculateMeasurementScore('unknown', 'unknown')).toBe(3); // default case returns '0' → 3 points
+  });
+});
+
+describe('findPrecedingQubit', () => {
+  it('should find the preceding qubit card in a lane', () => {
+    const lane = [
+      { id: 'i1', type: CardType.GATE, value: 'I' },
+      { id: 'q1', type: CardType.QUBIT, value: '|0⟩' },
+      { id: 'g1', type: CardType.GATE, value: 'X' },
+      null // measurement position
+    ];
+    
+    const result = findPrecedingQubit(lane, 3);
+    expect(result).toEqual({ id: 'q1', type: CardType.QUBIT, value: '|0⟩' });
+  });
+
+  it('should find the preceding initial qubit card', () => {
+    const lane = [
+      { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|1⟩' },
+      { id: 'g1', type: CardType.GATE, value: 'H' },
+      null // measurement position
+    ];
+    
+    const result = findPrecedingQubit(lane, 2);
+    expect(result).toEqual({ id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|1⟩' });
+  });
+
+  it('should return null if no preceding qubit found', () => {
+    const lane = [
+      { id: 'g1', type: CardType.GATE, value: 'X' },
+      { id: 'g2', type: CardType.GATE, value: 'Z' },
+      null // measurement position
+    ];
+    
+    const result = findPrecedingQubit(lane, 2);
+    expect(result).toBeNull();
+  });
+
+  it('should return null for empty lane', () => {
+    const lane: (Card | null)[] = [];
+    
+    const result = findPrecedingQubit(lane, 0);
+    expect(result).toBeNull();
+  });
+
+  it('should search backwards correctly', () => {
+    const lane = [
+      { id: 'g1', type: CardType.GATE, value: 'I' },
+      { id: 'q1', type: CardType.QUBIT, value: '|+⟩' },
+      { id: 'g2', type: CardType.GATE, value: 'X' },
+      { id: 'q2', type: CardType.QUBIT, value: '|0⟩' },
+      null // measurement position
+    ];
+    
+    const result = findPrecedingQubit(lane, 4);
+    expect(result).toEqual({ id: 'q2', type: CardType.QUBIT, value: '|0⟩' });
+  });
+});
+
+describe('calculateHandPenalty', () => {
+  it('should calculate penalty for different card types', () => {
+    const hand = [
+      { id: '1', type: CardType.GATE, value: 'X' }, // Gate card
+      { id: '2', type: CardType.QUBIT, value: '|0⟩' }, // Other card 
+      { id: '3', type: CardType.UNITARY, value: 'U' }, // Other card
+      { id: '4', type: CardType.CONTROL, value: 'C' }, // Other card
+      { id: '5', type: CardType.MEASUREMENT, value: '⟨0|' }, // Other card
+      { id: '6', type: CardType.INITIAL_QUBIT, value: '|1⟩' } // Other card
+    ];
+    
+    const penalty = calculateHandPenalty(hand);
+    // 1 gate card: ceil(1/5) * 2 = 2 points
+    // 5 other cards: 5 * 2 = 10 points
+    // Total: 12 points
+    expect(penalty).toBe(12);
+  });
+
+  it('should return 0 for empty hand', () => {
+    const penalty = calculateHandPenalty([]);
+    expect(penalty).toBe(0);
+  });
+
+  it('should handle unknown card types', () => {
+    const hand = [
+      { id: '1', type: 'UNKNOWN' as any, value: 'test' }
+    ];
+    
+    const penalty = calculateHandPenalty(hand);
+    expect(penalty).toBe(2); // Unknown cards count as "other" cards: 1 * 2 = 2 points
+  });
+});
+
+describe('shouldEliminatePlayer', () => {
+  it('should eliminate player with 4 or more passes', () => {
+    const player = {
+      id: '1',
+      name: 'Player 1',
+      hand: [],
+      score: 0,
+      passes: 4,
+      eliminated: false
+    };
+    
+    expect(shouldEliminatePlayer(player)).toBe(true);
+  });
+
+  it('should not eliminate player with less than 4 passes', () => {
+    const player = {
+      id: '1',
+      name: 'Player 1',
+      hand: [],
+      score: 0,
+      passes: 3,
+      eliminated: false
+    };
+    
+    expect(shouldEliminatePlayer(player)).toBe(false);
+  });
+
+  it('should handle edge case of exactly 4 passes', () => {
+    const player = {
+      id: '1',
+      name: 'Player 1',
+      hand: [],
+      score: 0,
+      passes: 4,
+      eliminated: false
+    };
+    
+    expect(shouldEliminatePlayer(player)).toBe(true);
+  });
+});
+
+describe('canPlayUnitaryCard', () => {
+  it('should allow unitary card if player has not played one this turn', () => {
+    const gameState = {
+      unitaryCardsPlayedThisTurn: {},
+      players: [{ id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false }]
+    } as any;
+    
+    expect(canPlayUnitaryCard(gameState, 'player1')).toBe(true);
+  });
+
+  it('should not allow unitary card if player already played one this turn', () => {
+    const gameState = {
+      unitaryCardsPlayedThisTurn: { player1: 1 },
+      players: [{ id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false }]
+    } as any;
+    
+    expect(canPlayUnitaryCard(gameState, 'player1')).toBe(false);
+  });
+
+  it('should allow unitary card if other players played but not current player', () => {
+    const gameState = {
+      unitaryCardsPlayedThisTurn: { player2: 1 },
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [], score: 0, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    expect(canPlayUnitaryCard(gameState, 'player1')).toBe(true);
+  });
+});
+
+describe('incrementUnitaryCardCounter', () => {
+  it('should increment counter for player', () => {
+    const gameState = {
+      unitaryCardsPlayedThisTurn: {},
+      players: [{ id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false }]
+    } as any;
+    
+    const result = incrementUnitaryCardCounter(gameState, 'player1');
+    expect(result.unitaryCardsPlayedThisTurn.player1).toBe(1);
+  });
+
+  it('should increment existing counter', () => {
+    const gameState = {
+      unitaryCardsPlayedThisTurn: { player1: 1 },
+      players: [{ id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false }]
+    } as any;
+    
+    const result = incrementUnitaryCardCounter(gameState, 'player1');
+    expect(result.unitaryCardsPlayedThisTurn.player1).toBe(2);
+  });
+});
+
+describe('resetUnitaryCardCounters', () => {
+  it('should reset all unitary card counters', () => {
+    const gameState = {
+      unitaryCardsPlayedThisTurn: { player1: 2, player2: 1 },
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [], score: 0, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    const result = resetUnitaryCardCounters(gameState);
+    expect(result.unitaryCardsPlayedThisTurn).toEqual({});
+  });
+});
+
+describe('eliminatePlayer', () => {
+  it('should mark player as eliminated', () => {
+    const gameState = {
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 4, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [], score: 0, passes: 0, eliminated: false }
+      ],
+      currentPlayerId: 'player1'
+    } as any;
+    
+    const result = eliminatePlayer(gameState, 'player1');
+    expect(result.players[0].eliminated).toBe(true);
+  });
+
+  it('should not eliminate non-existent player', () => {
+    const gameState = {
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false }
+      ],
+      currentPlayerId: 'player1'
+    } as any;
+    
+    const result = eliminatePlayer(gameState, 'nonexistent');
+    expect(result.players[0].eliminated).toBe(false);
+  });
+});
+
+describe('getNextActivePlayer', () => {
+  it('should get next active player in forward direction', () => {
+    const gameState = {
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [], score: 0, passes: 0, eliminated: false },
+        { id: 'player3', name: 'P3', hand: [], score: 0, passes: 0, eliminated: true }
+      ],
+      turnDirection: 'forward'
+    } as any;
+    
+    const result = getNextActivePlayer(gameState, 'player1');
+    expect(result).toBe('player2');
+  });
+
+  it('should skip eliminated players', () => {
+    const gameState = {
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [], score: 0, passes: 0, eliminated: true },
+        { id: 'player3', name: 'P3', hand: [], score: 0, passes: 0, eliminated: false }
+      ],
+      turnDirection: 'forward'
+    } as any;
+    
+    const result = getNextActivePlayer(gameState, 'player1');
+    expect(result).toBe('player3');
+  });
+
+  it('should handle backward turn direction', () => {
+    const gameState = {
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [], score: 0, passes: 0, eliminated: false },
+        { id: 'player3', name: 'P3', hand: [], score: 0, passes: 0, eliminated: false }
+      ],
+      turnDirection: 'backward'
+    } as any;
+    
+    const result = getNextActivePlayer(gameState, 'player2');
+    expect(result).toBe('player1');
+  });
+
+  it('should return null if no active players', () => {
+    const gameState = {
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: true },
+        { id: 'player2', name: 'P2', hand: [], score: 0, passes: 0, eliminated: true }
+      ],
+      turnDirection: 'forward'
+    } as any;
+    
+    const result = getNextActivePlayer(gameState, 'player1');
+    expect(result).toBeNull();
+  });
+});
+
+describe('checkGameEndConditions', () => {
+  it('should return true when measurement limit reached', () => {
+    const gameState = {
+      measurementCount: 11,
+      players: [
+        { id: 'player1', name: 'P1', hand: [{ id: '1', type: CardType.GATE, value: 'X' }], score: 0, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    expect(checkGameEndConditions(gameState)).toBe(true);
+  });
+
+  it('should return true when all players eliminated', () => {
+    const gameState = {
+      measurementCount: 5,
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 4, eliminated: true },
+        { id: 'player2', name: 'P2', hand: [], score: 0, passes: 4, eliminated: true }
+      ]
+    } as any;
+    
+    expect(checkGameEndConditions(gameState)).toBe(true);
+  });
+
+  it('should return true when player has empty hand', () => {
+    const gameState = {
+      measurementCount: 5,
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [{ id: '1', type: CardType.GATE, value: 'X' }], score: 0, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    expect(checkGameEndConditions(gameState)).toBe(true);
+  });
+
+  it('should return false when game should continue', () => {
+    const gameState = {
+      measurementCount: 5,
+      players: [
+        { id: 'player1', name: 'P1', hand: [{ id: '1', type: CardType.GATE, value: 'X' }], score: 0, passes: 0, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [{ id: '2', type: CardType.GATE, value: 'Z' }], score: 0, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    expect(checkGameEndConditions(gameState)).toBe(false);
+  });
+});
+
+describe('getGameEndReason', () => {
+  it('should return measurement_limit when limit reached', () => {
+    const gameState = {
+      measurementCount: 11,
+      players: [
+        { id: 'player1', name: 'P1', hand: [{ id: '1', type: CardType.GATE, value: 'X' }], score: 0, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    expect(getGameEndReason(gameState)).toBe('measurement_limit');
+  });
+
+  it('should return insufficient_players when no active players', () => {
+    const gameState = {
+      measurementCount: 5,
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 4, eliminated: true }
+      ]
+    } as any;
+    
+    expect(getGameEndReason(gameState)).toBe('insufficient_players');
+  });
+
+  it('should return empty_hand when a player has no cards', () => {
+    const gameState = {
+      measurementCount: 5,
+      players: [
+        { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [{ id: '1', type: CardType.GATE, value: 'X' }], score: 0, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    expect(getGameEndReason(gameState)).toBe('empty_hand');
+  });
+
+  it('should return unknown for unclear end conditions', () => {
+    const gameState = {
+      measurementCount: 5, // Less than 11
+      players: [
+        { id: 'player1', name: 'P1', hand: [{ id: '1', type: CardType.GATE, value: 'X' }], score: 0, passes: 0, eliminated: false },
+        { id: 'player2', name: 'P2', hand: [{ id: '2', type: CardType.GATE, value: 'Y' }], score: 0, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    expect(getGameEndReason(gameState)).toBe('unknown');
+  });
+});
+
+describe('determineWinner', () => {
+  it('should determine winner based on highest final score', () => {
+    const gameState = {
+      players: [
+        { id: 'player1', name: 'Player 1', hand: [], score: 10, passes: 0, eliminated: false },
+        { id: 'player2', name: 'Player 2', hand: [{ id: '1', type: CardType.GATE, value: 'X' }], score: 8, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    const result = determineWinner(gameState);
+    expect(result.winner.id).toBe('player1');
+    expect(result.finalScores).toHaveLength(2);
+    expect(result.finalScores[0].finalScore).toBe(10); // 10 - 0 (no cards)
+    expect(result.finalScores[1].finalScore).toBe(6); // 8 - 2 (gate card penalty)
+  });
+
+  it('should handle tie-breaking by original score', () => {
+    const gameState = {
+      players: [
+        { id: 'player1', name: 'Player 1', hand: [{ id: '1', type: CardType.GATE, value: 'X' }], score: 9, passes: 0, eliminated: false },
+        { id: 'player2', name: 'Player 2', hand: [{ id: '2', type: CardType.GATE, value: 'Z' }], score: 8, passes: 0, eliminated: false }
+      ]
+    } as any;
+    
+    const result = determineWinner(gameState);
+    expect(result.winner.id).toBe('player1'); // Both have final score 8, but player1 has higher original score
+  });
+});
+
+describe('Control Target Placement', () => {
+  const mockGameState = {
+    players: [
+      { id: 'player1', name: 'P1', hand: [], score: 0, passes: 0, eliminated: false }
+    ],
+    board: {
+      lane: [
+        [{ id: 'i1', type: CardType.GATE, value: 'I' }],
+        [{ id: 'i2', type: CardType.GATE, value: 'I' }],
+        [{ id: 'i3', type: CardType.GATE, value: 'I' }],
+        [{ id: 'i4', type: CardType.GATE, value: 'I' }]
+      ]
+    },
+    currentPlayerId: 'player1'
+  } as any;
+
+  describe('startControlTargetPlacement', () => {
+    it('should start control target placement', () => {
+      const controlCard = { id: 'c1', type: CardType.CONTROL, value: 'C' };
+      
+      const result = startControlTargetPlacement(mockGameState, controlCard, 0, 1);
+      
+      expect(result.controlTargetPlacement).toBeDefined();
+      expect(result.controlTargetPlacement?.waitingForTarget).toBe(true);
+      expect(result.controlTargetPlacement?.controlCard).toEqual(controlCard);
+      expect(result.controlTargetPlacement?.controlLane).toBe(0);
+      expect(result.controlTargetPlacement?.controlPosition).toBe(1);
+    });
+
+    it('should throw error if control slot is occupied', () => {
+      const controlCard = { id: 'c1', type: CardType.CONTROL, value: 'C' };
+      
+      expect(() => {
+        startControlTargetPlacement(mockGameState, controlCard, 0, 0); // Position 0 has I gate
+      }).toThrow();
+    });
+  });
+
+  describe('completeControlTargetPlacement', () => {
+    it('should complete control target placement', () => {
+      const gameStateWithControl = {
+        ...mockGameState,
+        controlTargetPlacement: {
+          waitingForTarget: true,
+          controlCard: { id: 'c1', type: CardType.CONTROL, value: 'C', controlLink: undefined },
+          controlLane: 0,
+          controlPosition: 1
+        }
+      };
+      
+      const result = completeControlTargetPlacement(gameStateWithControl, 1);
+      
+      expect(result.controlTargetPlacement).toBeUndefined();
+      expect(result.board.lane[0][1]).toBeDefined();
+      expect(result.board.lane[0][1]?.type).toBe(CardType.CONTROL);
+      expect(result.board.lane[0][1]?.controlLink?.targetLaneIndex).toBe(1);
+      expect(result.board.lane[1][1]).toBeDefined();
+      expect(result.board.lane[1][1]?.type).toBe(CardType.TARGET);
+    });
+  });
+
+  describe('cancelControlTargetPlacement', () => {
+    it('should cancel control target placement', () => {
+      const gameStateWithControl = {
+        ...mockGameState,
+        controlTargetPlacement: {
+          waitingForTarget: true,
+          controlCard: { id: 'c1', type: CardType.CONTROL, value: 'C' },
+          controlLane: 0,
+          controlPosition: 1
+        }
+      };
+      
+      const result = cancelControlTargetPlacement(gameStateWithControl);
+      
+      expect(result.controlTargetPlacement).toBeUndefined();
+    });
+  });
+
+  describe('isValidTargetLane', () => {
+    it('should validate adjacent target lanes', () => {
+      // Create a board state where lanes have cards at position 0 and position 1 can be placed
+      const mockGameStateWithCards = {
+        ...mockGameState,
+        board: {
+          lane: [
+            [{ id: 'i1', type: CardType.GATE, value: 'I' }], // Lane 0 has card at position 0
+            [{ id: 'i2', type: CardType.GATE, value: 'I' }], // Lane 1 has card at position 0  
+            [{ id: 'i3', type: CardType.GATE, value: 'I' }], // Lane 2 has card at position 0
+            [{ id: 'i4', type: CardType.GATE, value: 'I' }]  // Lane 3 has card at position 0
+          ]
+        }
+      };
+      
+      const gameStateWithControl = {
+        ...mockGameStateWithCards,
+        controlTargetPlacement: {
+          waitingForTarget: true,
+          controlCard: { id: 'c1', type: CardType.CONTROL, value: 'C' },
+          controlLane: 1,
+          controlPosition: 1
+        }
+      };
+      
+      expect(isValidTargetLane(gameStateWithControl, 0)).toBe(true); // Adjacent above
+      expect(isValidTargetLane(gameStateWithControl, 2)).toBe(true); // Adjacent below
+      expect(isValidTargetLane(gameStateWithControl, 3)).toBe(false); // Not adjacent
+    });
+
+    it('should return false if no control target placement', () => {
+      expect(isValidTargetLane(mockGameState, 0)).toBe(false);
+    });
+  });
+});

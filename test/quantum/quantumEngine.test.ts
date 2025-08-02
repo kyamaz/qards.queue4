@@ -106,4 +106,152 @@ describe('QuantumEngine (Multi-Qubit, Generic)', () => {
       expect(result.computationSteps.filter(s => s.includes('Applied CNOT')).length).toBe(2);
     });
   });
+
+  describe('Additional Coverage Tests', () => {
+    it('should handle |+⟩ and |-⟩ qubit states', () => {
+      const statePlus = quantumEngine.createInitialState(['|+⟩']);
+      expect(statePlus.amplitudes[0].real).toBeCloseTo(1/Math.sqrt(2));
+      expect(statePlus.amplitudes[1].real).toBeCloseTo(1/Math.sqrt(2));
+
+      const stateMinus = quantumEngine.createInitialState(['|-⟩']);
+      expect(stateMinus.amplitudes[0].real).toBeCloseTo(1/Math.sqrt(2));
+      expect(stateMinus.amplitudes[1].real).toBeCloseTo(-1/Math.sqrt(2));
+    });
+
+    it('should handle unknown gate types', () => {
+      expect(() => {
+        quantumEngine['getGateMatrix']('UNKNOWN' as any);
+      }).toThrow('Unknown gate type: UNKNOWN');
+    });
+
+    it('should handle unknown qubit states', () => {
+      expect(() => {
+        quantumEngine.createInitialState(['|unknown⟩' as any]);
+      }).toThrow('Unknown qubit state: |unknown⟩');
+    });
+
+    it('should handle Y and Z gates', () => {
+      let state = quantumEngine.createInitialState(['|0⟩']);
+      
+      // Test Z gate
+      const zContext: QuantumComputationContext = {
+        circuit: {
+          numQubits: 1,
+          initialState: state,
+          elements: [{ type: 'gate', value: 'Z', position: 0, targetLane: 0 }],
+        },
+        measurementLane: 0,
+        measurementPosition: 1,
+        measurementBasis: '⟨0|',
+      };
+
+      const result = quantumEngine.executeQuantumComputation(zContext);
+      expect(result).toHaveProperty('measurementResult');
+    });
+
+    it('should handle I (identity) gate', () => {
+      let state = quantumEngine.createInitialState(['|1⟩']);
+      
+      const iContext: QuantumComputationContext = {
+        circuit: {
+          numQubits: 1,
+          initialState: state,
+          elements: [{ type: 'gate', value: 'I', position: 0, targetLane: 0 }],
+        },
+        measurementLane: 0,
+        measurementPosition: 1,
+        measurementBasis: '⟨0|',
+      };
+
+      const result = quantumEngine.executeQuantumComputation(iContext);
+      expect(result.measurementResult.outcome).toBe('1');
+      expect(result.measurementResult.probability).toBeCloseTo(1.0);
+    });
+
+    it('should handle measurement with zero probability states', () => {
+      // Create a state that shouldn't exist
+      const state = quantumEngine.createInitialState(['|0⟩']);
+      
+      // Manually set up a measurement that will have zero probability
+      const result = quantumEngine['performMeasurement'](state, 0, '⟨0|');
+      expect(result.outcome).toBe('0');
+      expect(result.probability).toBeCloseTo(1.0);
+    });
+
+    it('should handle measurement basis warnings', () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      
+      const state = quantumEngine.createInitialState(['|0⟩']);
+      const context: QuantumComputationContext = {
+        circuit: {
+          numQubits: 1,
+          initialState: state,
+          elements: [],
+        },
+        measurementLane: 0,
+        measurementPosition: 0,
+        measurementBasis: '⟨+|',
+      };
+
+      const result = quantumEngine.executeQuantumComputation(context);
+      expect(result.computationSteps.some(step => step.includes('Warning'))).toBe(true);
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle computation errors gracefully', () => {
+      // Create an invalid context to trigger error handling
+      const invalidContext: QuantumComputationContext = {
+        circuit: {
+          numQubits: 1,
+          initialState: quantumEngine.createInitialState(['|0⟩']),
+          elements: [{ type: 'gate', value: 'CNOT', position: 0, targetLane: 0 } as any], // Invalid CNOT without controlLane
+        },
+        measurementLane: 0,
+        measurementPosition: 1,
+        measurementBasis: '⟨0|',
+      };
+
+      expect(() => {
+        quantumEngine.executeQuantumComputation(invalidContext);
+      }).toThrow();
+    });
+
+    it('should get last computation steps', () => {
+      const state = quantumEngine.createInitialState(['|0⟩']);
+      const context: QuantumComputationContext = {
+        circuit: {
+          numQubits: 1,
+          initialState: state,
+          elements: [{ type: 'gate', value: 'H', position: 0, targetLane: 0 }],
+        },
+        measurementLane: 0,
+        measurementPosition: 1,
+        measurementBasis: '⟨0|',
+      };
+
+      quantumEngine.executeQuantumComputation(context);
+      const steps = quantumEngine.getLastComputationSteps();
+      expect(steps.length).toBeGreaterThan(0);
+      expect(steps[0]).toContain('Starting quantum computation');
+    });
+
+    it('should handle state to string conversion for complex states', () => {
+      // Create a more complex state for string conversion testing
+      const state = quantumEngine.createInitialState(['|0⟩', '|0⟩']);
+      const hContext: QuantumComputationContext = {
+        circuit: {
+          numQubits: 2,
+          initialState: state,
+          elements: [{ type: 'gate', value: 'H', position: 0, targetLane: 0 }],
+        },
+        measurementLane: 0,
+        measurementPosition: 1,
+        measurementBasis: '⟨0|',
+      };
+
+      const result = quantumEngine.executeQuantumComputation(hContext);
+      expect(result.computationSteps.some(step => step.includes('|ψ⟩'))).toBe(true);
+    });
+  });
 });

@@ -4,6 +4,7 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { I18nProvider, useTranslation } from '../../src/i18n';
+import { getTranslation, getStoredLocale, setStoredLocale } from '../../src/i18n/utils';
 
 // Test component to verify i18n functionality
 const TestComponent: React.FC = () => {
@@ -192,11 +193,16 @@ describe('i18n System', () => {
     it('should handle malformed localStorage data gracefully', () => {
       mockLocalStorage.getItem.mockReturnValue('invalid json');
       
+      // Mock console.warn to suppress expected error messages during error handling tests
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      
       render(
         <I18nProvider>
           <TestComponent />
         </I18nProvider>
       );
+      
+      consoleWarnSpy.mockRestore();
       
       // Should fall back to default Japanese locale
       expect(screen.getByTestId('current-locale')).toHaveTextContent('ja');
@@ -320,6 +326,202 @@ describe('i18n System', () => {
       
       // Should not have caused excessive re-renders
       expect(renderCount - initialRenderCount).toBeLessThanOrEqual(1);
+    });
+  });
+});
+
+describe('i18n Utility Functions', () => {
+  describe('getTranslation', () => {
+    it('should return correct translation for valid key', () => {
+      const result = getTranslation('en', 'common.gameTitle');
+      expect(result).toBe('Quantum Gate Card Game');
+    });
+
+    it('should fallback to Japanese when key missing in target locale', () => {
+      const result = getTranslation('en', 'common.settings');
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should return key if translation not found anywhere', () => {
+      const result = getTranslation('en', 'completely.nonexistent.key');
+      expect(result).toBe('completely.nonexistent.key');
+    });
+
+    it('should handle nested translation keys', () => {
+      const result = getTranslation('en', 'game.turn');
+      expect(result).toBe('Turn');
+    });
+
+    it('should replace parameters in translations', () => {
+      const result = getTranslation('en', 'player.playerName', { letter: 'A' });
+      expect(result).toBe('Player A');
+    });
+
+    it('should handle multiple parameter replacements', () => {
+      const result = getTranslation('en', 'gameMessages.measurementGainedPoints', { 
+        points: 5, 
+        compatibility: ' (test)', 
+        computation: ' 🔬' 
+      });
+      expect(typeof result).toBe('string');
+    });
+
+    it('should handle empty parameters object', () => {
+      const result = getTranslation('en', 'common.gameTitle', {});
+      expect(result).toBe('Quantum Gate Card Game');
+    });
+
+    it('should handle non-string translation values', () => {
+      const result = getTranslation('en', 'common');
+      expect(result).toBe('common'); // Should return key when value is not string
+    });
+
+    it('should handle empty key', () => {
+      const result = getTranslation('en', '');
+      expect(typeof result).toBe('string');
+    });
+
+    it('should handle deep nested missing keys', () => {
+      const result = getTranslation('en', 'deep.nested.missing.key');
+      expect(result).toBe('deep.nested.missing.key');
+    });
+  });
+
+  describe('getStoredLocale', () => {
+    const originalWindow = global.window;
+
+    beforeEach(() => {
+      delete (global as any).window;
+    });
+
+    afterEach(() => {
+      (global as any).window = originalWindow;
+    });
+
+    it('should return default locale on server (no window)', () => {
+      const result = getStoredLocale();
+      expect(result).toBe('ja');
+    });
+
+    it('should handle window with localStorage', () => {
+      (global as any).window = {
+        localStorage: {
+          getItem: jest.fn().mockReturnValue(null)
+        }
+      };
+
+      const result = getStoredLocale();
+      expect(result).toBe('ja');
+    });
+
+    it('should handle function execution', () => {
+      (global as any).window = {
+        localStorage: {
+          getItem: jest.fn().mockReturnValue(null)
+        }
+      };
+
+      expect(() => getStoredLocale()).not.toThrow();
+    });
+
+    it('should handle invalid JSON in settings', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      
+      (global as any).window = {
+        localStorage: {
+          getItem: jest.fn().mockImplementation((key) => {
+            if (key === 'qards4-settings') return 'invalid json';
+            return null;
+          })
+        }
+      };
+
+      const result = getStoredLocale();
+      expect(result).toBe('ja'); // Should default to Japanese
+      
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle invalid language values', () => {
+      (global as any).window = {
+        localStorage: {
+          getItem: jest.fn().mockImplementation((key) => {
+            if (key === 'qards4-settings') {
+              return JSON.stringify({ language: 'invalid' });
+            }
+            return null;
+          })
+        }
+      };
+
+      const result = getStoredLocale();
+      expect(result).toBe('ja'); // Should default to Japanese
+    });
+  });
+
+  describe('setStoredLocale', () => {
+    const originalWindow = global.window;
+
+    beforeEach(() => {
+      delete (global as any).window;
+    });
+
+    afterEach(() => {
+      (global as any).window = originalWindow;
+    });
+
+    it('should do nothing on server (no window)', () => {
+      expect(() => setStoredLocale('en')).not.toThrow();
+    });
+
+    it('should handle window with localStorage', () => {
+      const mockSetItem = jest.fn();
+      const mockDispatchEvent = jest.fn();
+      
+      (global as any).window = {
+        localStorage: {
+          getItem: jest.fn().mockReturnValue(null),
+          setItem: mockSetItem
+        },
+        dispatchEvent: mockDispatchEvent
+      };
+
+      setStoredLocale('en');
+
+      expect(mockDispatchEvent).toHaveBeenCalled();
+    });
+
+    it('should execute without errors', () => {
+      (global as any).window = {
+        localStorage: {
+          getItem: jest.fn().mockReturnValue(null),
+          setItem: jest.fn()
+        },
+        dispatchEvent: jest.fn()
+      };
+
+      expect(() => setStoredLocale('en')).not.toThrow();
+    });
+
+    it('should handle localStorage errors', () => {
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      
+      (global as any).window = {
+        localStorage: {
+          getItem: jest.fn().mockImplementation(() => {
+            throw new Error('Storage error');
+          }),
+          setItem: jest.fn().mockImplementation(() => {
+            throw new Error('Storage error');
+          })
+        },
+        dispatchEvent: jest.fn()
+      };
+
+      expect(() => setStoredLocale('en')).not.toThrow();
+      
+      consoleSpy.mockRestore();
     });
   });
 });

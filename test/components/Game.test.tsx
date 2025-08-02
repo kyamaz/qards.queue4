@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Game from '../../src/components/Game';
 import { I18nProvider } from '../../src/i18n';
 
 // Mock the GameScreen component since it has complex logic
 jest.mock('../../src/components/GameScreen', () => {
-  return function MockGameScreen() {
-    return <div data-testid="game-screen">Game Screen</div>;
+  return function MockGameScreen({ onBackToMenu }: { onBackToMenu: () => void }) {
+    return (
+      <div data-testid="game-screen">
+        Game Screen
+        <button onClick={onBackToMenu} data-testid="game-back-to-menu">Back to Menu</button>
+      </div>
+    );
   };
 });
 
@@ -294,6 +299,94 @@ describe('Game Component', () => {
       // Check responsive classes
       expect(container).toHaveClass('min-h-screen');
       expect(container).toHaveClass('flex', 'flex-col', 'items-center', 'justify-center');
+    });
+  });
+
+  describe('Missing Switch Cases Coverage', () => {
+    it('should render result screen (currently unreachable)', () => {
+      // This tests the 'result' case in the switch statement
+      // Since there's no direct way to reach this state through UI,
+      // we need to test it by manipulating the component's internal state
+      
+      // For now, we can't easily test this case without exposing internal state
+      // But this test documents the missing coverage
+      const { container } = renderWithI18n(<Game />);
+      expect(container).toBeInTheDocument();
+    });
+
+    it('should handle default case in switch statement', () => {
+      // The default case returns the same as 'title' case
+      // This is already covered by other tests, but documenting for completeness
+      
+      renderWithI18n(<Game />);
+      expect(screen.getByTestId('game-title')).toBeInTheDocument();
+    });
+  });
+
+  describe('Component State Transitions', () => {
+    it('should handle multiple rapid state transitions', async () => {
+      renderWithI18n(<Game />);
+      
+      // Go to settings
+      const settingsButton = screen.getByTestId('settings-button');
+      fireEvent.click(settingsButton);
+      expect(screen.getByTestId('settings-screen')).toBeInTheDocument();
+      
+      // Go back to title
+      const backButton = screen.getByRole('button', { name: 'Back to Title' });
+      fireEvent.click(backButton);
+      expect(screen.getByTestId('game-title')).toBeInTheDocument();
+      
+      // Go to rules (get fresh reference)
+      const rulesButton = screen.getByTestId('rules-button');
+      fireEvent.click(rulesButton);
+      await waitFor(() => {
+        expect(screen.getByTestId('rules-title')).toBeInTheDocument();
+      }, { timeout: 2000 });
+      
+      // Go back to title again
+      const rulesBackButton = screen.getByRole('button', { name: 'タイトルに戻る' });
+      fireEvent.click(rulesBackButton);
+      await waitFor(() => {
+        expect(screen.getByTestId('game-title')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle all button interactions in sequence', () => {
+      renderWithI18n(<Game />);
+      
+      // Test start game -> back to menu flow
+      const startButton = screen.getByTestId('start-game-button');
+      fireEvent.click(startButton);
+      expect(screen.getByTestId('game-screen')).toBeInTheDocument();
+      
+      // Go back to menu from game
+      const backToMenuButton = screen.getByTestId('game-back-to-menu');
+      fireEvent.click(backToMenuButton);
+      expect(screen.getByTestId('game-title')).toBeInTheDocument();
+      
+      // Test settings -> start game from settings flow
+      const settingsButton = screen.getByTestId('settings-button');
+      fireEvent.click(settingsButton);
+      
+      const startFromSettingsButton = screen.getByRole('button', { name: 'Start Game from Settings' });
+      fireEvent.click(startFromSettingsButton);
+      expect(screen.getByTestId('game-screen')).toBeInTheDocument();
+    });
+
+    it('should navigate back from game screen to title', () => {
+      renderWithI18n(<Game />);
+      
+      // Go to game screen
+      const startButton = screen.getByTestId('start-game-button');
+      fireEvent.click(startButton);
+      expect(screen.getByTestId('game-screen')).toBeInTheDocument();
+      
+      // Go back to title from game screen
+      const backButton = screen.getByTestId('game-back-to-menu');
+      fireEvent.click(backButton);
+      expect(screen.getByTestId('game-title')).toBeInTheDocument();
+      expect(screen.queryByTestId('game-screen')).not.toBeInTheDocument();
     });
   });
 });

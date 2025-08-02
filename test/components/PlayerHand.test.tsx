@@ -329,5 +329,75 @@ describe('PlayerHand Component', () => {
       // Should not throw error when clicking
       expect(() => fireEvent.click(card)).not.toThrow();
     });
+
+    it('should handle null selectedCard properly', () => {
+      renderWithI18n(
+        <PlayerHand
+          hand={mockCards}
+          playerName="Test Player"
+          isCurrentPlayer={true}
+          onCardClick={mockOnCardClick}
+          selectedCard={null}
+        />
+      );
+
+      // No cards should be selected
+      mockCards.forEach((card) => {
+        const cardElement = screen.getByTestId(`card-${card.type.toLowerCase()}-${card.id}`);
+        expect(cardElement).not.toHaveClass('ring-4', 'ring-cyan-400');
+      });
+    });
+
+    it('should handle undefined selectedCard properly', () => {
+      renderWithI18n(
+        <PlayerHand
+          hand={mockCards}
+          playerName="Test Player"
+          isCurrentPlayer={true}
+          onCardClick={mockOnCardClick}
+          selectedCard={undefined}
+        />
+      );
+
+      // No cards should be selected
+      mockCards.forEach((card) => {
+        const cardElement = screen.getByTestId(`card-${card.type.toLowerCase()}-${card.id}`);
+        expect(cardElement).not.toHaveClass('ring-4', 'ring-cyan-400');
+      });
+    });
+
+    it('should apply opacity for non-current player cards', () => {
+      renderWithI18n(
+        <PlayerHand
+          hand={mockCards}
+          playerName="Other Player"
+          isCurrentPlayer={false}
+          onCardClick={mockOnCardClick}
+          selectedCard={null}
+        />
+      );
+
+      mockCards.forEach((card) => {
+        const cardElement = screen.getByTestId(`card-${card.type.toLowerCase()}-${card.id}`);
+        expect(cardElement).toHaveClass('opacity-75');
+      });
+    });
+
+    it('should not apply opacity for current player cards', () => {
+      renderWithI18n(
+        <PlayerHand
+          hand={mockCards}
+          playerName="Current Player"
+          isCurrentPlayer={true}
+          onCardClick={mockOnCardClick}
+          selectedCard={null}
+        />
+      );
+
+      mockCards.forEach((card) => {
+        const cardElement = screen.getByTestId(`card-${card.type.toLowerCase()}-${card.id}`);
+        expect(cardElement).not.toHaveClass('opacity-75');
+      });
+    });
   });
 });

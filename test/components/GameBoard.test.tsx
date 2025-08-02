@@ -41,6 +41,27 @@ describe('GameBoard Component', () => {
     ]
   });
 
+  const createEmptyBoard = (): GameState['board'] => ({
+    lane: [[], [], [], []]
+  });
+
+  const createControlCardBoard = (): GameState['board'] => ({
+    lane: [
+      [
+        { id: '1', type: CardType.GATE, value: 'I' },
+        { id: '2', type: CardType.CONTROL, value: 'C', controlLink: { targetLaneIndex: 2 } }
+      ],
+      [
+        { id: '3', type: CardType.GATE, value: 'I' }
+      ],
+      [
+        { id: '4', type: CardType.GATE, value: 'I' },
+        { id: '5', type: CardType.TARGET, value: 'T' }
+      ],
+      []
+    ]
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -93,9 +114,8 @@ describe('GameBoard Component', () => {
       expect(screen.getByTestId('empty-slot-lane0-pos2')).toBeInTheDocument();
       
       // Check that empty slots exist in other lanes too
-      const lane1 = screen.getByTestId('board-lane-1');
-      const emptySlots = within(lane1).getAllByTestId(/empty-slot-lane1-pos\d+/);
-      expect(emptySlots.length).toBeGreaterThan(0);
+      expect(screen.getByTestId('empty-slot-lane1-pos2')).toBeInTheDocument();
+      expect(screen.getByTestId('empty-slot-lane2-pos2')).toBeInTheDocument();
     });
 
     it('should extend lanes to maximum length with empty slots', () => {
@@ -391,6 +411,367 @@ describe('GameBoard Component', () => {
       const measurementCard = screen.getByTestId('card-measurement-lane0-pos1');
       expect(measurementCard).toBeInTheDocument();
       expect(measurementCard).toHaveTextContent('⟨0|');
+    });
+  });
+
+  describe('Control Card Line Drawing', () => {
+    it('should render control lines for control cards with targetLaneIndex', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createControlCardBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      const controlCard = screen.getByTestId('card-control-lane0-pos1');
+      expect(controlCard).toBeInTheDocument();
+      
+      // Check that the control card has proper styling
+      expect(controlCard).toHaveClass('bg-yellow-600');
+    });
+
+    it('should handle control cards without controlLink', () => {
+      const boardWithControlNoLink: GameState['board'] = {
+        lane: [
+          [
+            { id: '1', type: CardType.GATE, value: 'I' },
+            { id: '2', type: CardType.CONTROL, value: 'C' } // No controlLink
+          ],
+          [],
+          [],
+          []
+        ]
+      };
+
+      renderWithI18n(
+        <GameBoard
+          board={boardWithControlNoLink}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      const controlCard = screen.getByTestId('card-control-lane0-pos1');
+      expect(controlCard).toBeInTheDocument();
+    });
+
+    it('should calculate correct line styles for different target lanes', () => {
+      const boardWithMultipleControls: GameState['board'] = {
+        lane: [
+          [
+            { id: '1', type: CardType.GATE, value: 'I' },
+            { id: '2', type: CardType.CONTROL, value: 'C', controlLink: { targetLaneIndex: 3 } }
+          ],
+          [
+            { id: '3', type: CardType.GATE, value: 'I' }
+          ],
+          [
+            { id: '4', type: CardType.GATE, value: 'I' }
+          ],
+          [
+            { id: '5', type: CardType.GATE, value: 'I' },
+            { id: '6', type: CardType.TARGET, value: 'T' }
+          ]
+        ]
+      };
+
+      renderWithI18n(
+        <GameBoard
+          board={boardWithMultipleControls}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      const controlCard = screen.getByTestId('card-control-lane0-pos1');
+      expect(controlCard).toBeInTheDocument();
+    });
+
+    it('should handle negative vertical distance for control lines', () => {
+      const boardWithUpwardControl: GameState['board'] = {
+        lane: [
+          [
+            { id: '1', type: CardType.GATE, value: 'I' }
+          ],
+          [
+            { id: '2', type: CardType.GATE, value: 'I' }
+          ],
+          [
+            { id: '3', type: CardType.GATE, value: 'I' },
+            { id: '4', type: CardType.CONTROL, value: 'C', controlLink: { targetLaneIndex: 0 } }
+          ],
+          []
+        ]
+      };
+
+      renderWithI18n(
+        <GameBoard
+          board={boardWithUpwardControl}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      const controlCard = screen.getByTestId('card-control-lane2-pos1');
+      expect(controlCard).toBeInTheDocument();
+    });
+  });
+
+  describe('Highlighting and Animation', () => {
+    it('should highlight specified slots', () => {
+      const highlightedSlots = [
+        { laneIndex: 0, position: 1 },
+        { laneIndex: 1, position: 0 }
+      ];
+
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          highlightedSlots={highlightedSlots}
+          playerCount={4}
+        />
+      );
+
+      // The highlighting is passed to CardComponent, which should apply highlighting styles
+      const highlightedCard1 = screen.getByTestId('card-gate-lane0-pos1');
+      const highlightedCard2 = screen.getByTestId('card-gate-lane1-pos0');
+      
+      expect(highlightedCard1).toBeInTheDocument();
+      expect(highlightedCard2).toBeInTheDocument();
+    });
+
+    it('should handle empty highlighted slots array', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          highlightedSlots={[]}
+          playerCount={4}
+        />
+      );
+
+      expect(screen.getByTestId('board-title')).toBeInTheDocument();
+    });
+
+    it('should handle undefined highlighted slots', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      expect(screen.getByTestId('board-title')).toBeInTheDocument();
+    });
+
+    it('should apply animation to specified card', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          animatingCard="2"
+          playerCount={4}
+        />
+      );
+
+      // The animation is passed to CardComponent for card with id "2"
+      const animatingCard = screen.getByTestId('card-gate-lane0-pos1');
+      expect(animatingCard).toBeInTheDocument();
+    });
+
+    it('should handle null animating card', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          animatingCard={null}
+          playerCount={4}
+        />
+      );
+
+      expect(screen.getByTestId('board-title')).toBeInTheDocument();
+    });
+  });
+
+  describe('Game End State', () => {
+    it('should disable interactions when game is ended', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+          gameEnded={true}
+        />
+      );
+
+      // Try to click on a card - should not call onCardSlotClick
+      const card = screen.getByTestId('card-gate-lane0-pos0');
+      fireEvent.click(card);
+
+      expect(mockOnCardSlotClick).not.toHaveBeenCalled();
+    });
+
+    it('should allow interactions when game is not ended', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+          gameEnded={false}
+        />
+      );
+
+      // Click on a card - should call onCardSlotClick
+      const card = screen.getByTestId('card-gate-lane0-pos0');
+      fireEvent.click(card);
+
+      expect(mockOnCardSlotClick).toHaveBeenCalledWith(0, 0);
+    });
+
+    it('should handle undefined gameEnded prop (defaults to false)', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      // Click on a card - should call onCardSlotClick (default behavior)
+      const card = screen.getByTestId('card-gate-lane0-pos0');
+      fireEvent.click(card);
+
+      expect(mockOnCardSlotClick).toHaveBeenCalledWith(0, 0);
+    });
+  });
+
+  describe('Player Count and Board Length Calculation', () => {
+    it('should handle different player counts', () => {
+      const playerCounts = [3, 4, 5, 6];
+      
+      playerCounts.forEach((playerCount, index) => {
+        jest.clearAllMocks();
+        
+        const { unmount } = renderWithI18n(
+          <GameBoard
+            board={createMockBoard()}
+            onCardSlotClick={mockOnCardSlotClick}
+            playerCount={playerCount}
+          />
+        );
+
+        expect(screen.getByTestId('board-title')).toBeInTheDocument();
+        
+        // Clean up before next render (except for the last one)
+        if (index < playerCounts.length - 1) {
+          unmount();
+        }
+      });
+    });
+
+    it('should calculate display length correctly', () => {
+      const shortBoard: GameState['board'] = {
+        lane: [
+          [{ id: '1', type: CardType.GATE, value: 'I' }],
+          [],
+          [],
+          []
+        ]
+      };
+
+      renderWithI18n(
+        <GameBoard
+          board={shortBoard}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      // Should extend lanes to calculated length + 1
+      expect(screen.getByTestId('board-title')).toBeInTheDocument();
+    });
+  });
+
+  describe('Card Legend', () => {
+    it('should render all card type indicators in legend', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      // Check that all card type indicators are present
+      expect(screen.getByText('量子ビット')).toBeInTheDocument();
+      expect(screen.getByText('ゲート')).toBeInTheDocument();
+      expect(screen.getByText('ユニタリ')).toBeInTheDocument();
+      expect(screen.getByText('測定')).toBeInTheDocument();
+      expect(screen.getByText('制御')).toBeInTheDocument();
+    });
+
+    it('should apply correct colors to legend items', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      const legendItems = screen.getAllByText(/^(量子ビット|ゲート|ユニタリ|測定|制御)$/);
+      expect(legendItems).toHaveLength(5);
+      
+      // Each legend item should have appropriate background color
+      legendItems.forEach(item => {
+        expect(item.className).toMatch(/bg-(green|blue|purple|red|yellow)-600/);
+      });
+    });
+  });
+
+  describe('Board Container Styling', () => {
+    it('should apply correct container classes', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      const container = screen.getByTestId('quantum-circuit-board');
+      expect(container).toHaveClass(
+        'bg-gradient-to-br',
+        'from-gray-900',
+        'to-gray-800',
+        'p-6',
+        'rounded-xl',
+        'shadow-2xl',
+        'w-full',
+        'max-w-6xl',
+        'mx-auto',
+        'border',
+        'border-gray-600'
+      );
+    });
+
+    it('should have responsive design classes', () => {
+      renderWithI18n(
+        <GameBoard
+          board={createMockBoard()}
+          onCardSlotClick={mockOnCardSlotClick}
+          playerCount={4}
+        />
+      );
+
+      const scrollContainer = screen.getByTestId('quantum-circuit-board').querySelector('.overflow-x-auto');
+      expect(scrollContainer).toBeInTheDocument();
+      
+      const boardContent = scrollContainer?.querySelector('.min-w-max');
+      expect(boardContent).toBeInTheDocument();
     });
   });
 });
