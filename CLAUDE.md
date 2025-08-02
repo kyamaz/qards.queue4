@@ -18,7 +18,9 @@ npm run lint     # Run ESLint
 
 ### Testing
 ```bash
-npm test         # Run Jest tests
+npm test         # Run Jest tests (unit and integration tests)
+npx cypress open  # Open Cypress Test Runner for E2E tests
+npx cypress run   # Run Cypress E2E tests headlessly
 ```
 
 ## Architecture Overview
@@ -33,6 +35,10 @@ npm test         # Run Jest tests
   - `types.ts` - All TypeScript types and interfaces
   - `gameLogic.ts` - Game state management and rules
 - `/test/` - Jest unit tests mirroring `/src/` structure
+- `/cypress/` - Cypress E2E tests
+  - `/cypress/e2e/` - End-to-end test scenarios
+  - `/cypress/fixtures/` - Test data and mock data
+  - `/cypress/support/` - Custom commands and utilities
 
 ### Key Architectural Decisions
 
@@ -84,7 +90,10 @@ TARGET cards are displayed with the symbol 'O' rather than 'T' to represent "any
 ## Development Guidelines
 
 1. **TypeScript**: Use strict type checking. Import types from `/src/game/types.ts`
-2. **Testing**: Write tests for any new game logic in `/test/game/`
+2. **Testing**: 
+   - Write unit tests for any new game logic in `/test/game/`
+   - Write component tests in `/test/components/`
+   - Write E2E tests using Cypress in `/cypress/e2e/`
 3. **Path Imports**: Use `@/` alias for imports (maps to `./src/`)
 4. **Client Components**: Add 'use client' directive for interactive components
 5. **Styling**: Use Tailwind CSS v4 classes for all styling

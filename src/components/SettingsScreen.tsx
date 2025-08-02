@@ -70,11 +70,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
       // Dispatch custom event to notify other components of settings change
       window.dispatchEvent(new CustomEvent('settingsUpdated', { detail: settings }));
       
-      onBack();
+      // Just show a success message, don't navigate back
     } catch (error) {
       console.error('Failed to save settings to localStorage:', error);
-      // Still navigate back even if save fails
-      onBack();
     }
   };
 
@@ -256,25 +254,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
             onClick={handleReset}
             className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
           >
-            リセット
+            初期設定に戻す
           </button>
           <button
             onClick={handleSave}
             className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
           >
-            保存してタイトルに戻る
-          </button>
-          <button
-            onClick={onStartGame}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
-          >
-            ゲーム開始
+            設定を保存
           </button>
           <button
             onClick={onBack}
             className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
           >
-            戻る
+            タイトルに戻る
           </button>
         </div>
       </div>

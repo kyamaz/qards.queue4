@@ -196,29 +196,22 @@ describe('SettingsScreen Component', () => {
     it('should call onBack when back button is clicked', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const backButton = screen.getByText('戻る');
+      const backButton = screen.getByText('タイトルに戻る');
       fireEvent.click(backButton);
       
       expect(mockOnBack).toHaveBeenCalledTimes(1);
     });
 
-    it('should call onStartGame when start game button is clicked', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
-      
-      const startButton = screen.getByText('ゲーム開始');
-      fireEvent.click(startButton);
-      
-      expect(mockOnStartGame).toHaveBeenCalledTimes(1);
-    });
+    // Game start button has been removed from the UI
 
-    it('should save settings to localStorage and call onBack when save button is clicked', () => {
+    it('should save settings to localStorage when save button is clicked', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Change a non-audio setting (since audio controls are hidden)
       const difficultySelect = screen.getByDisplayValue('中級 - 標準的な難易度');
       fireEvent.change(difficultySelect, { target: { value: 'hard' } });
       
-      const saveButton = screen.getByText('保存してタイトルに戻る');
+      const saveButton = screen.getByText('設定を保存');
       fireEvent.click(saveButton);
       
       // Check if settings were saved to localStorage
@@ -233,7 +226,8 @@ describe('SettingsScreen Component', () => {
       expect(parsedSettings.soundVolume).toBe(50); // Default value
       expect(parsedSettings.musicVolume).toBe(30); // Default value
       
-      expect(mockOnBack).toHaveBeenCalledTimes(1);
+      // Save button no longer calls onBack - it just saves settings
+      expect(mockOnBack).toHaveBeenCalledTimes(0);
     });
 
     it('should reset all settings when reset button is clicked', () => {
@@ -244,7 +238,7 @@ describe('SettingsScreen Component', () => {
       fireEvent.change(difficultySelect, { target: { value: 'hard' } });
       
       // Reset settings
-      const resetButton = screen.getByText('リセット');
+      const resetButton = screen.getByText('初期設定に戻す');
       fireEvent.click(resetButton);
       
       // Check if settings are back to defaults (audio settings are internal only)
@@ -258,21 +252,20 @@ describe('SettingsScreen Component', () => {
     it('should apply correct button colors', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const resetButton = screen.getByText('リセット');
-      const saveButton = screen.getByText('保存してタイトルに戻る');
-      const startButton = screen.getByText('ゲーム開始');
-      const backButton = screen.getByText('戻る');
+      const resetButton = screen.getByText('初期設定に戻す');
+      const saveButton = screen.getByText('設定を保存');
+      const backButton = screen.getByText('タイトルに戻る');
       
       expect(resetButton).toHaveClass('bg-red-600');
       expect(saveButton).toHaveClass('bg-green-600');
-      expect(startButton).toHaveClass('bg-blue-600');
       expect(backButton).toHaveClass('bg-gray-600');
+      // Game start button has been removed
     });
 
     it('should have hover effects on buttons', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const resetButton = screen.getByText('リセット');
+      const resetButton = screen.getByText('初期設定に戻す');
       expect(resetButton).toHaveClass('hover:bg-red-700');
     });
 
@@ -293,7 +286,7 @@ describe('SettingsScreen Component', () => {
     it('should handle undefined callbacks gracefully', () => {
       render(<SettingsScreen onBack={undefined as any} onStartGame={undefined as any} />);
       
-      const backButton = screen.getByText('戻る');
+      const backButton = screen.getByText('タイトルに戻る');
       
       expect(() => fireEvent.click(backButton)).not.toThrow();
     });
@@ -307,7 +300,7 @@ describe('SettingsScreen Component', () => {
       
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const saveButton = screen.getByText('保存してタイトルに戻る');
+      const saveButton = screen.getByText('設定を保存');
       
       expect(() => fireEvent.click(saveButton)).not.toThrow();
       
