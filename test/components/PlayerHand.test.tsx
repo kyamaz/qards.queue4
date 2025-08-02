@@ -5,6 +5,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import PlayerHand from '../../src/components/PlayerHand';
 import { Card, CardType } from '../../src/game/types';
+import { I18nProvider } from '../../src/i18n';
 
 describe('PlayerHand Component', () => {
   const mockCards: Card[] = [
@@ -16,6 +17,15 @@ describe('PlayerHand Component', () => {
   ];
 
   const mockOnCardClick = jest.fn();
+  
+  // Test wrapper that provides I18nProvider context
+  const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <I18nProvider>{children}</I18nProvider>
+  );
+
+  const renderWithI18n = (ui: React.ReactElement) => {
+    return render(ui, { wrapper: TestWrapper });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -23,7 +33,7 @@ describe('PlayerHand Component', () => {
 
   describe('Rendering', () => {
     it('should render player name', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Test Player"
@@ -39,7 +49,7 @@ describe('PlayerHand Component', () => {
     });
 
     it('should render all cards in hand', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Test Player"
@@ -69,7 +79,7 @@ describe('PlayerHand Component', () => {
     });
 
     it('should render empty hand message when no cards', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={[]}
           playerName="Test Player"
@@ -85,7 +95,7 @@ describe('PlayerHand Component', () => {
     });
 
     it('should show current player indicator', () => {
-      const { rerender } = render(
+      const { rerender } = renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Current Player"
@@ -99,13 +109,15 @@ describe('PlayerHand Component', () => {
       expect(playerTitle).toHaveTextContent('現在のプレイヤー');
 
       rerender(
-        <PlayerHand
-          hand={mockCards}
-          playerName="Other Player"
-          isCurrentPlayer={false}
-          onCardClick={mockOnCardClick}
-          selectedCard={null}
-        />
+        <TestWrapper>
+          <PlayerHand
+            hand={mockCards}
+            playerName="Other Player"
+            isCurrentPlayer={false}
+            onCardClick={mockOnCardClick}
+            selectedCard={null}
+          />
+        </TestWrapper>
       );
 
       const updatedTitle = screen.getByTestId('player-hand-title');
@@ -113,7 +125,7 @@ describe('PlayerHand Component', () => {
     });
 
     it('should apply correct card type colors', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Test Player"
@@ -141,7 +153,7 @@ describe('PlayerHand Component', () => {
         { id: '1', type: CardType.INITIAL_QUBIT, value: '|0⟩' },
       ];
 
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={initialQubitCards}
           playerName="Test Player"
@@ -159,7 +171,7 @@ describe('PlayerHand Component', () => {
 
   describe('Card Selection', () => {
     it('should call onCardClick when card is clicked for current player', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Test Player"
@@ -177,7 +189,7 @@ describe('PlayerHand Component', () => {
     });
 
     it('should not call onCardClick for other players cards', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Other Player"
@@ -194,7 +206,7 @@ describe('PlayerHand Component', () => {
     });
 
     it('should highlight selected card', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Test Player"
@@ -209,7 +221,7 @@ describe('PlayerHand Component', () => {
     });
 
     it('should not show cursor-pointer for non-current player', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Other Player"
@@ -228,7 +240,7 @@ describe('PlayerHand Component', () => {
 
   describe('Accessibility', () => {
     it('should have appropriate hover states for current player', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Test Player"
@@ -244,7 +256,7 @@ describe('PlayerHand Component', () => {
 
     it('should handle keyboard navigation if implemented', () => {
       // This test is a placeholder for future keyboard navigation implementation
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Test Player"
@@ -262,7 +274,7 @@ describe('PlayerHand Component', () => {
   describe('Edge Cases', () => {
     it('should handle very long player names', () => {
       const longName = 'A'.repeat(50);
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName={longName}
@@ -283,7 +295,7 @@ describe('PlayerHand Component', () => {
         value: 'X' as const,
       }));
 
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={manyCards}
           playerName="Test Player"
@@ -302,7 +314,7 @@ describe('PlayerHand Component', () => {
     });
 
     it('should handle undefined onCardClick gracefully', () => {
-      render(
+      renderWithI18n(
         <PlayerHand
           hand={mockCards}
           playerName="Test Player"

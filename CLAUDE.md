@@ -137,6 +137,50 @@ This project is licensed under the MIT License. All source code files include SP
 - **JSON files**: Skip JSON files as they don't support comments
 - **Generated files**: Skip auto-generated files like `next-env.d.ts`
 
+## Internationalization (i18n)
+
+### Implementation Approach
+The project uses a lightweight custom i18n implementation using React Context API instead of external libraries. This approach is chosen for:
+- Limited translation scope (UI elements and game terms only)
+- Support for only 2 languages (Japanese and English)
+- Static content without dynamic translation requirements
+- Minimal dependencies for better performance
+
+### i18n Structure
+```
+src/i18n/
+├── translations/
+│   ├── ja.json    # Japanese translations (default)
+│   └── en.json    # English translations
+├── context.tsx    # Language Context definition
+├── provider.tsx   # Language Provider component
+└── useTranslation.ts  # Custom hook for translations
+```
+
+### Usage in Components
+```typescript
+import { useTranslation } from '@/i18n/useTranslation';
+
+function Component() {
+  const { t } = useTranslation();
+  return <h1>{t('common.gameTitle')}</h1>;
+}
+```
+
+### Translation Key Structure
+- `common.*` - Common UI elements (buttons, titles)
+- `game.*` - Game-specific terms (turn, score, etc.)
+- `cards.*` - Card type names and descriptions
+- `settings.*` - Settings screen labels
+- `rules.*` - Game rules and instructions
+- `messages.*` - System messages and notifications
+
+### Important Notes
+- Quantum notation symbols (|0⟩, |1⟩, etc.) remain unchanged across languages
+- Number formatting is consistent across languages
+- Language preference is stored in localStorage
+- Language changes apply immediately without page reload
+
 ## Memories
 
 - to memorize

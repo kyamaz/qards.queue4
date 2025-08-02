@@ -3,6 +3,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n';
 
 interface SettingsData {
   soundVolume: number;
@@ -18,9 +19,11 @@ interface SettingsData {
 
 interface SettingsScreenProps {
   onBack: () => void;
+  onStartGame?: () => void;
 }
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) => {
+  const { t, locale, setLocale } = useTranslation();
   const defaultSettings = React.useMemo(() => ({
     soundVolume: 50,
     musicVolume: 30,
@@ -57,6 +60,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
         newSettings.comPlayerCount = (value as number) - 1;
       }
       
+      // When language changes, sync with i18n system
+      if (key === 'language') {
+        setLocale(value as 'ja' | 'en');
+      }
+      
       return newSettings;
     });
   };
@@ -82,49 +90,52 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-800 text-white p-6" data-testid="settings-screen">
       <div className="max-w-2xl mx-auto w-full">
-        <h1 className="text-4xl font-bold mb-8 text-center" data-testid="settings-title">設定</h1>
+        <h1 className="text-4xl font-bold mb-8 text-center" data-testid="settings-title">{t('settings.title')}</h1>
         
 
         <div className="bg-gray-900 rounded-lg p-6 mb-6" data-testid="game-settings-section">
-          <h2 className="text-2xl font-semibold mb-4" data-testid="game-settings-title">ゲーム設定</h2>
+          <h2 className="text-2xl font-semibold mb-4" data-testid="game-settings-title">{t('settings.gameSettings')}</h2>
           
           {/* Player Count */}
           <div className="mb-4">
-            <label className="block text-lg mb-2">プレイヤー人数</label>
+            <label className="block text-lg mb-2">{t('settings.playerCount')}</label>
             <select
               value={settings.playerCount}
               onChange={(e) => updateSetting('playerCount', parseInt(e.target.value) as 3 | 4 | 5 | 6)}
               className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
               data-testid="player-count-select"
             >
-              <option value={3}>3人</option>
-              <option value={4}>4人</option>
-              <option value={5}>5人</option>
-              <option value={6}>6人</option>
+              <option value={3}>{t('settings.playerCountOption', { count: 3 })}</option>
+              <option value={4}>{t('settings.playerCountOption', { count: 4 })}</option>
+              <option value={5}>{t('settings.playerCountOption', { count: 5 })}</option>
+              <option value={6}>{t('settings.playerCountOption', { count: 6 })}</option>
             </select>
           </div>
 
           {/* COM Player Count */}
           <div className="mb-4">
-            <label className="block text-lg mb-2">COMプレイヤー人数</label>
+            <label className="block text-lg mb-2">{t('settings.comPlayerCount')}</label>
             <select
               value={settings.comPlayerCount}
               onChange={(e) => updateSetting('comPlayerCount', parseInt(e.target.value))}
               className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
               data-testid="com-player-count-select"
             >
-              <option value={0}>0人（COMプレイヤーなし）</option>
+              <option value={0}>0{locale === 'ja' ? '人（COMプレイヤーなし）' : ' (No COM players)'}</option>
               {Array.from({ length: settings.playerCount - 1 }, (_, i) => i + 1).map(count => (
                 <option key={count} value={count}>
-                  {count}人{count === settings.playerCount - 1 ? '（1人プレイ）' : ''}
+                  {count}{locale === 'ja' ? `人${count === settings.playerCount - 1 ? '（1人プレイ）' : ''}` : ` player${count > 1 ? 's' : ''}${count === settings.playerCount - 1 ? ' (Single play)' : ''}`}
                 </option>
               ))}
             </select>
             <p className="text-sm text-gray-400 mt-1">
               <span data-testid="player-count-display">
               {settings.comPlayerCount === 0 
-                ? '1人プレイモード（人間プレイヤーのみ）' 
-                : `人間プレイヤー1人 + COMプレイヤー${settings.comPlayerCount}人 = 合計${settings.comPlayerCount + 1}人`
+                ? t('settings.singlePlayerMode')
+                : t('settings.humanAndCom', { 
+                    comCount: settings.comPlayerCount, 
+                    totalCount: settings.comPlayerCount + 1 
+                  })
               }
               </span>
             </p>
@@ -132,7 +143,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
 
           {/* Difficulty */}
           <div className="mb-4">
-            <label className="block text-lg mb-2">難易度</label>
+            <label className="block text-lg mb-2">{t('settings.difficulty')}</label>
             <select
               value={settings.difficulty}
               onChange={(e) => updateSetting('difficulty', e.target.value as 'easy' | 'normal' | 'hard')}
@@ -143,19 +154,34 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
                   : 'bg-gray-700'
               }`}
             >
-              <option value="easy">初級 - CPUが弱く、ヒントが多い</option>
-              <option value="normal">中級 - 標準的な難易度</option>
-              <option value="hard">上級 - CPUが強く、ヒントが少ない</option>
+              <option value="easy">{t('settings.difficultyEasy')}{locale === 'ja' ? ' - CPUが弱く、ヒントが多い' : ' - Weak CPU, more hints'}</option>
+              <option value="normal">{t('settings.difficultyNormal')}{locale === 'ja' ? ' - 標準的な難易度' : ' - Standard difficulty'}</option>
+              <option value="hard">{t('settings.difficultyHard')}{locale === 'ja' ? ' - CPUが強く、ヒントが少ない' : ' - Strong CPU, fewer hints'}</option>
             </select>
             {settings.comPlayerCount === 0 && (
-              <p className="text-sm text-gray-400 mt-1" data-testid="single-player-difficulty-notice">1人プレイモードでは難易度設定は無効です</p>
+              <p className="text-sm text-gray-400 mt-1" data-testid="single-player-difficulty-notice">{t('settings.singlePlayerDifficultyNote')}</p>
             )}
           </div>
 
         </div>
 
         <div className="bg-gray-900 rounded-lg p-6 mb-6" data-testid="rule-settings-section">
-          <h2 className="text-2xl font-semibold mb-4" data-testid="rule-settings-title">ルール設定</h2>
+          <h2 className="text-2xl font-semibold mb-4" data-testid="rule-settings-title">{t('settings.ruleSettings')}</h2>
+          
+          {/* Show Hints */}
+          <div className="mb-4">
+            <label className="flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.showHints}
+                onChange={(e) => updateSetting('showHints', e.target.checked)}
+                className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                data-testid="show-hints-checkbox"
+              />
+              <span className="text-lg">{t('settings.showHints')}</span>
+            </label>
+            <p className="text-sm text-gray-400 mt-1" data-testid="show-hints-description">{t('settings.showHintsDescription')}</p>
+          </div>
           
           {/* Controlled Hadamard */}
           <div className="mb-4">
@@ -165,10 +191,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
                 checked={settings.controlledHadamard}
                 onChange={(e) => updateSetting('controlledHadamard', e.target.checked)}
                 className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
+                data-testid="controlled-hadamard-checkbox"
               />
-              <span className="text-lg">制御アダマール使用</span>
+              <span className="text-lg">{t('settings.controlledHadamard')}</span>
             </label>
-            <p className="text-sm text-gray-400 mt-1" data-testid="controlled-hadamard-description">制御アダマールゲートカードを使用可能にします</p>
+            <p className="text-sm text-gray-400 mt-1" data-testid="controlled-hadamard-description">{t('settings.controlledHadamardDescription')}</p>
           </div>
 
           {/* Allow Unfinalized Measurement */}
@@ -180,32 +207,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
                 onChange={(e) => updateSetting('allowUnfinalizedMeasurement', e.target.checked)}
                 className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
               />
-              <span className="text-lg">確定していないレーンに測定カードを出せる</span>
+              <span className="text-lg">{t('settings.allowUnfinalizedMeasurement')}</span>
             </label>
-            <p className="text-sm text-gray-400 mt-1">量子ビットカードが配置されていないレーンでも測定カードを配置可能にします</p>
+            <p className="text-sm text-gray-400 mt-1" data-testid="allow-unfinalized-measurement-description">{t('settings.allowUnfinalizedMeasurementDescription')}</p>
           </div>
         </div>
 
         <div className="bg-gray-900 rounded-lg p-6 mb-6" data-testid="system-settings-section">
-          <h2 className="text-2xl font-semibold mb-4" data-testid="system-settings-title">システム設定</h2>
+          <h2 className="text-2xl font-semibold mb-4" data-testid="system-settings-title">{t('settings.systemSettings')}</h2>
           
-          {/* Show Hints */}
-          <div className="mb-4">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={settings.showHints}
-                onChange={(e) => updateSetting('showHints', e.target.checked)}
-                className="mr-3 w-5 h-5 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500 focus:ring-2"
-              />
-              <span className="text-lg">ヒント表示</span>
-            </label>
-            <p className="text-sm text-gray-400 mt-1" data-testid="show-hints-description">有効にすると、配置可能な場所がハイライトされます</p>
-          </div>
 
           {/* Language */}
           <div className="mb-4">
-            <label className="block text-lg mb-2" data-testid="language-label">言語</label>
+            <label className="block text-lg mb-2" data-testid="language-label">{t('settings.language')}</label>
             <select
               value={settings.language}
               onChange={(e) => updateSetting('language', e.target.value as 'ja' | 'en')}
@@ -258,22 +272,31 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
             className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
             data-testid="reset-button"
           >
-            初期設定に戻す
+            {t('settings.resetToDefaults')}
           </button>
           <button
             onClick={handleSave}
             className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
             data-testid="save-button"
           >
-            設定を保存
+            {t('settings.saveSettings')}
           </button>
           <button
             onClick={onBack}
             className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
             data-testid="back-button"
           >
-            タイトルに戻る
+            {t('settings.backToTitle')}
           </button>
+          {onStartGame && (
+            <button
+              onClick={onStartGame}
+              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
+              data-testid="start-game-button"
+            >
+              {t('common.start')}
+            </button>
+          )}
         </div>
       </div>
     </div>

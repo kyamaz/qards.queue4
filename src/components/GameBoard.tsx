@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import React from 'react';
+import { useTranslation } from '@/i18n';
 import { GameState, CardType } from '../game/types';
 import { CardComponent } from './cards';
 
@@ -21,6 +22,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   playerCount,
   gameEnded = false
 }) => {
+  const { t } = useTranslation();
   const totalCards = 60; // Total cards in deck (including INITIAL_QUBIT cards)
   const calculatedSlots = Math.floor(totalCards / (playerCount * 2));
   const maxLength = Math.max(...board.lane.map(l => l.length), calculatedSlots);
@@ -34,13 +36,13 @@ const GameBoard: React.FC<GameBoardProps> = ({
   return (
     <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-6xl mx-auto border border-gray-600" data-testid="quantum-circuit-board">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-white" data-testid="board-title">量子回路</h3>
+        <h3 className="text-2xl font-bold text-white" data-testid="board-title">{t('board.quantumCircuit')}</h3>
         <div className="flex gap-2 text-xs">
-          <span className="bg-green-600 px-2 py-1 rounded text-white">量子ビット</span>
-          <span className="bg-blue-600 px-2 py-1 rounded text-white">ゲート</span>
-          <span className="bg-purple-600 px-2 py-1 rounded text-white">ユニタリ</span>
-          <span className="bg-red-600 px-2 py-1 rounded text-white">測定</span>
-          <span className="bg-yellow-600 px-2 py-1 rounded text-white">制御</span>
+          <span className="bg-green-600 px-2 py-1 rounded text-white">{t('board.qubit')}</span>
+          <span className="bg-blue-600 px-2 py-1 rounded text-white">{t('board.gate')}</span>
+          <span className="bg-purple-600 px-2 py-1 rounded text-white">{t('board.unitary')}</span>
+          <span className="bg-red-600 px-2 py-1 rounded text-white">{t('board.measurement')}</span>
+          <span className="bg-yellow-600 px-2 py-1 rounded text-white">{t('board.control')}</span>
         </div>
       </div>
       

@@ -3,6 +3,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslation } from '@/i18n';
 import GameScreen from './GameScreen'; // Import the actual GameScreen component
 import SettingsScreen from './SettingsScreen'; // Import the SettingsScreen component
 
@@ -11,12 +12,15 @@ const TitleScreen: React.FC<{ onStartGame: () => void; onSettings: () => void; o
   onStartGame, 
   onSettings, 
   onRules 
-}) => (
+}) => {
+  const { t } = useTranslation();
+  
+  return (
   <div 
     className="flex flex-col items-center justify-center min-h-screen bg-gray-800 text-white"
     data-testid="title-screen"
   >
-    <h1 className="text-5xl font-bold mb-12" data-testid="game-title">量子ゲート並べ</h1>
+    <h1 className="text-5xl font-bold mb-12" data-testid="game-title">{t('gameFlow.gameTitle')}</h1>
     
     <div className="flex flex-col gap-4" data-testid="title-menu">
       <button
@@ -24,7 +28,7 @@ const TitleScreen: React.FC<{ onStartGame: () => void; onSettings: () => void; o
         onClick={onStartGame}
         data-testid="start-game-button"
       >
-        ゲーム開始
+        {t('actions.startGame')}
       </button>
       
       <button
@@ -32,7 +36,7 @@ const TitleScreen: React.FC<{ onStartGame: () => void; onSettings: () => void; o
         onClick={onRules}
         data-testid="rules-button"
       >
-        遊び方
+        {t('actions.howToPlay')}
       </button>
       
       <button
@@ -40,24 +44,32 @@ const TitleScreen: React.FC<{ onStartGame: () => void; onSettings: () => void; o
         onClick={onSettings}
         data-testid="settings-button"
       >
-        設定
+        {t('common.settings')}
       </button>
     </div>
     
     <div className="mt-8 text-center text-gray-400" data-testid="game-info">
-      <p className="text-sm">量子コンピューティングを学ぶカードゲーム</p>
-      <p className="text-xs mt-1">Version 1.0.0</p>
+      <p className="text-sm">{t('gameFlow.gameDescription')}</p>
+      <p className="text-xs mt-1">{t('common.version')}</p>
     </div>
   </div>
-);
+  );
+};
 
-const ResultScreen: React.FC = () => (
-  <div className="flex items-center justify-center min-h-screen bg-gray-600 text-white">
-    <h2 className="text-4xl">リザルト画面 (開発中)</h2>
-  </div>
-);
+const ResultScreen: React.FC = () => {
+  const { t } = useTranslation();
+  
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-600 text-white">
+      <h2 className="text-4xl">{t('gameFlow.resultScreen')}</h2>
+    </div>
+  );
+};
 
-const RulesScreen: React.FC<{ onBack: () => void; onStartGame: () => void }> = ({ onBack, onStartGame }) => (
+const RulesScreen: React.FC<{ onBack: () => void; onStartGame: () => void }> = ({ onBack, onStartGame }) => {
+  const { t } = useTranslation();
+  
+  return (
   <div className="flex flex-col min-h-screen bg-gray-800 text-white p-6">
     <div className="max-w-4xl mx-auto w-full">
       <h1 className="text-4xl font-bold mb-8 text-center" data-testid="rules-title">遊び方</h1>
@@ -86,12 +98,12 @@ const RulesScreen: React.FC<{ onBack: () => void; onStartGame: () => void }> = (
             <p>ターン順を逆転させる特殊カードです。</p>
           </div>
           <div className="bg-red-800 p-4 rounded-lg" data-testid="measurement-card-info">
-            <h3 className="text-xl font-semibold mb-2">🔴 測定カード</h3>
-            <p>量子状態を測定し、得点を獲得します。</p>
+            <h3 className="text-xl font-semibold mb-2">{t('rules.measurementCard')}</h3>
+            <p>{t('rules.measurementCardDesc')}</p>
           </div>
           <div className="bg-yellow-800 p-4 rounded-lg" data-testid="control-card-info">
-            <h3 className="text-xl font-semibold mb-2">🟡 制御カード</h3>
-            <p>他のレーンのカードと連動する高度なカードです。</p>
+            <h3 className="text-xl font-semibold mb-2">{t('rules.controlCard')}</h3>
+            <p>{t('rules.controlCardDesc')}</p>
           </div>
         </div>
       </div>
@@ -108,13 +120,13 @@ const RulesScreen: React.FC<{ onBack: () => void; onStartGame: () => void }> = (
       </div>
 
       <div className="bg-gray-900 rounded-lg p-6 mb-6" data-testid="placement-rules-section">
-        <h2 className="text-2xl font-semibold mb-4 text-purple-400" data-testid="placement-rules-title">配置ルール</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-purple-400" data-testid="placement-rules-title">{t('rules.placementRules')}</h2>
         <ul className="list-disc list-inside space-y-2 text-lg">
-          <li>ゲートカードは他のゲートカードの後に配置可能</li>
-          <li>量子ビットカードは測定カードの後、またはIゲートの後に配置可能</li>
-          <li>測定カードは量子ビットカードの後にのみ配置可能</li>
-          <li>ユニタリカードは測定カードの後には配置できません</li>
-          <li>制御カードは隣接するレーンのカードを対象とします</li>
+          <li>{t('rules.placementRule1')}</li>
+          <li>{t('rules.placementRule2')}</li>
+          <li>{t('rules.placementRule3')}</li>
+          <li>{t('rules.placementRule4')}</li>
+          <li>{t('rules.placementRule5')}</li>
         </ul>
       </div>
 
@@ -124,19 +136,20 @@ const RulesScreen: React.FC<{ onBack: () => void; onStartGame: () => void }> = (
           className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
           data-testid="rules-start-game-button"
         >
-          ゲーム開始
+          {t('actions.startGame')}
         </button>
         <button
           onClick={onBack}
           className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
           data-testid="rules-back-button"
         >
-          タイトルに戻る
+          {t('common.backToTitle')}
         </button>
       </div>
     </div>
   </div>
-);
+  );
+};
 
 const Game: React.FC = () => {
   const [currentScreen, setCurrentScreen] = useState<'title' | 'playing' | 'result' | 'settings' | 'rules'>('title');

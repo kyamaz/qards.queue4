@@ -90,10 +90,11 @@ export class QuantumEngine {
       const targetBit = 1 << (numQubits - 1 - targetLane);
 
       for (let i = 0; i < numStates; i++) {
-        if ((i & controlBit) !== 0) { // If control bit is 1
-          newAmplitudes[i ^ targetBit] = add(newAmplitudes[i ^ targetBit], amplitudes[i]);
-        } else { // If control bit is 0
-          newAmplitudes[i] = add(newAmplitudes[i], amplitudes[i]);
+        if ((i & controlBit) !== 0) { // If control bit is 1, flip target bit
+          const flippedState = i ^ targetBit;
+          newAmplitudes[flippedState] = amplitudes[i];
+        } else { // If control bit is 0, keep state unchanged
+          newAmplitudes[i] = amplitudes[i];
         }
       }
     } else { // Single-qubit gate

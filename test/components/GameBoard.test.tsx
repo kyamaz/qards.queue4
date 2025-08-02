@@ -5,9 +5,19 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import GameBoard from '../../src/components/GameBoard';
 import { Card, CardType, GameState } from '../../src/game/types';
+import { I18nProvider } from '../../src/i18n';
 
 describe('GameBoard Component', () => {
   const mockOnCardSlotClick = jest.fn();
+  
+  // Test wrapper that provides I18nProvider context
+  const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <I18nProvider>{children}</I18nProvider>
+  );
+
+  const renderWithI18n = (ui: React.ReactElement) => {
+    return render(ui, { wrapper: TestWrapper });
+  };
   
   const createMockBoard = (): GameState['board'] => ({
     lane: [
@@ -37,7 +47,7 @@ describe('GameBoard Component', () => {
 
   describe('Rendering', () => {
     it('should render quantum circuit title', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -51,7 +61,7 @@ describe('GameBoard Component', () => {
     });
 
     it('should render cards in correct positions', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -71,7 +81,7 @@ describe('GameBoard Component', () => {
     });
 
     it('should render empty slots', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -98,7 +108,7 @@ describe('GameBoard Component', () => {
         ]
       };
 
-      render(
+      renderWithI18n(
         <GameBoard
           board={board}
           onCardSlotClick={mockOnCardSlotClick}
@@ -120,7 +130,7 @@ describe('GameBoard Component', () => {
 
   describe('Interaction', () => {
     it('should call onCardSlotClick with correct parameters when slot is clicked', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -136,7 +146,7 @@ describe('GameBoard Component', () => {
     });
 
     it('should call onCardSlotClick when clicking on occupied slot', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -152,7 +162,7 @@ describe('GameBoard Component', () => {
     });
 
     it('should handle clicks on all lanes', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -177,7 +187,7 @@ describe('GameBoard Component', () => {
 
   describe('Card Type Styling', () => {
     it('should apply correct styles for different card types', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -209,7 +219,7 @@ describe('GameBoard Component', () => {
         ]
       };
 
-      render(
+      renderWithI18n(
         <GameBoard
           board={board}
           onCardSlotClick={mockOnCardSlotClick}
@@ -222,7 +232,7 @@ describe('GameBoard Component', () => {
     });
 
     it('should show control link indicator for control cards', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -242,7 +252,7 @@ describe('GameBoard Component', () => {
         lane: [[], [], [], []]
       };
 
-      render(
+      renderWithI18n(
         <GameBoard
           board={emptyBoard}
           onCardSlotClick={mockOnCardSlotClick}
@@ -265,7 +275,7 @@ describe('GameBoard Component', () => {
         lane: [longLane, [], [], []]
       };
 
-      render(
+      renderWithI18n(
         <GameBoard
           board={board}
           onCardSlotClick={mockOnCardSlotClick}
@@ -289,7 +299,7 @@ describe('GameBoard Component', () => {
         ]
       };
 
-      render(
+      renderWithI18n(
         <GameBoard
           board={board}
           onCardSlotClick={mockOnCardSlotClick}
@@ -306,7 +316,7 @@ describe('GameBoard Component', () => {
     });
 
     it('should handle undefined onCardSlotClick gracefully', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={undefined as any}
@@ -322,7 +332,7 @@ describe('GameBoard Component', () => {
 
   describe('Layout and Styling', () => {
     it('should apply hover effects to slots', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -338,7 +348,7 @@ describe('GameBoard Component', () => {
     });
 
     it('should have consistent slot sizing', () => {
-      render(
+      renderWithI18n(
         <GameBoard
           board={createMockBoard()}
           onCardSlotClick={mockOnCardSlotClick}
@@ -369,7 +379,7 @@ describe('GameBoard Component', () => {
         ]
       };
 
-      render(
+      renderWithI18n(
         <GameBoard
           board={boardWithMeasurement}
           onCardSlotClick={mockOnCardSlotClick}

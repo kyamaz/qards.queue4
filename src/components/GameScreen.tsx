@@ -3,6 +3,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '@/i18n';
 import { 
   initializeGame, 
   isValidPlay, 
@@ -41,6 +42,7 @@ interface GameScreenProps {
 }
 
 const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
+  const { t } = useTranslation();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -227,36 +229,36 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         const precedingQubit = findPrecedingQubit(lane, position);
         if (precedingQubit) {
           const score = calculateMeasurementScore(precedingQubit.value, card.value);
-          const scoreText = score === 5 ? '測定結果1(+5)' : '測定結果0(+3)';
-          scoreHints.push(`レーン${laneIndex + 1}: ${scoreText}`);
+          const scoreText = score === 5 ? t('gameMessages.measurementResult1') : t('gameMessages.measurementResult0');
+          scoreHints.push(t('gameMessages.laneScore', { lane: laneIndex + 1, score: scoreText }));
         }
       });
       if (scoreHints.length > 0) {
-        setMessage(`測定カードヒント: ${scoreHints.join(', ')}`);
+        setMessage(t('gameMessages.measurementHint', { hints: scoreHints.join(', ') }));
       }
     }
     
     // Show initial qubit card hints
     if (isInitialPhase && card.type === CardType.INITIAL_QUBIT && validSlots.length > 0) {
-      setMessage(`初期量子ビットカード: 空のレーンの左端に配置してください（${validSlots.length}箇所利用可能）`);
+      setMessage(t('gameMessages.initialQubitPlacement', { count: validSlots.length }));
     }
   };
 
   const handleCardSelect = (card: Card) => {
     // Disable card selection when game is ended
     if (gameState?.gamePhase === 'game_ended') {
-      showTemporaryMessage('ゲームは終了しています。カードを選択することはできません。');
+      showTemporaryMessage(t('gameMessages.gameEndedCannotSelect'));
       return;
     }
     
     if (gameState?.controlTargetPlacement?.waitingForTarget) {
-      setMessage('制御カードの配置を完了するか、キャンセルしてください。');
+      setMessage(t('gameMessages.completeControlCard'));
       return;
     }
     
     // Check Unitary card restriction
     if (card.type === CardType.UNITARY && gameState && !canPlayUnitaryCard(gameState, gameState.currentPlayerId)) {
-      setMessage('このターンではすでにUカードを使用しているため、追加のUカードは使用できません。');
+      setMessage(t('gameMessages.unitaryCardRestriction'));
       return;
     }
     
@@ -280,7 +282,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   // Skip current player in initial selection if they have no initial cards
   const handleSkipInitialPlayer = () => {
     if (!gameState || gameState.gamePhase !== 'initial_selection' || !gameState.initialSelection) {
-      showTemporaryMessage('スキップできません：初期配置フェーズではありません。');
+      showTemporaryMessage(t('gameMessages.cannotSkipNotInitial'));
       return;
     }
 
@@ -292,7 +294,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     
     if (isInitialSelectionComplete(newState)) {
       newState = completeInitialSelection(newState);
-      showTemporaryMessage('初期配置完了！ゲーム開始です');
+      showTemporaryMessage(t('gameMessages.initialPlacementComplete'));
     } else {
       newState = advanceInitialSelectionPlayer(newState);
     }
@@ -307,7 +309,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     
     // Disable card placement when game is ended
     if (gameState.gamePhase === 'game_ended') {
-      showTemporaryMessage('ゲームは終了しています。カードを配置することはできません。');
+      showTemporaryMessage(t('gameMessages.gameEndedCannotPlace'));
       return;
     }
 
@@ -318,14 +320,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           const updatedGameState = completeControlTargetPlacement(gameState, laneIndex);
           animateCardPlacement(gameState.controlTargetPlacement.controlCard.id);
           setGameState(updatedGameState);
-          showTemporaryMessage('制御ゲートを配置しました。');
+          showTemporaryMessage(t('gameMessages.controlGatePlaced'));
           advanceTurn();
         } catch {
-          showTemporaryMessage('制御ゲートの配置に失敗しました。');
+          showTemporaryMessage(t('gameMessages.controlGateFailed'));
           setGameState(cancelControlTargetPlacement(gameState));
         }
       } else {
-        showTemporaryMessage('そのレーンには配置できません。隣接レーンを選択してください。');
+        showTemporaryMessage(t('gameMessages.cannotPlaceInLane'));
       }
       setHighlightedSlots([]);
       return;
@@ -335,7 +337,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     if (selectedCard) {
       if (selectedCard.type === CardType.CONTROL) {
         if (gameState?.board.lane[laneIndex]?.[position]) {
-          showTemporaryMessage('制御カードは空のスロットに配置してください。');
+          showTemporaryMessage(t('gameMessages.placeInEmptySlot'));
           return;
         }
         try {
@@ -353,13 +355,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           }
           setHighlightedSlots(validTargetLanes);
           
-          showTemporaryMessage('制御カードを配置しました。隣接するレーンでターゲット位置を選択してください。');
+          showTemporaryMessage(t('gameMessages.controlCardPlaced'));
           return; // Prevent fall-through to normal card placement logic
         } catch (error) {
           if (error instanceof Error && error.message.includes('gaps detected')) {
-            showTemporaryMessage('制御カードの前の位置にカードがない場合は配置できません。');
+            showTemporaryMessage(t('gameMessages.needCardBeforeControl'));
           } else {
-            showTemporaryMessage('制御カードの配置に失敗しました。');
+            showTemporaryMessage(t('gameMessages.controlCardFailed'));
           }
           return;
         }
@@ -369,13 +371,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       if (isInitialPhase && selectedCard.type === CardType.INITIAL_QUBIT) {
         // Initial qubit cards can only be placed at position 0
         if (position !== 0) {
-          showTemporaryMessage('初期量子ビットカードは各レーンの左端（位置0）にのみ配置できます。');
+          showTemporaryMessage(t('gameMessages.initialQubitPosition0'));
           return;
         }
         
         // The target lane must be empty
         if (gameState.board.lane[laneIndex].length > 0) {
-          showTemporaryMessage('このレーンは既にカードが配置されています。空のレーンを選択してください。');
+          showTemporaryMessage(t('gameMessages.laneHasCards'));
           return;
         }
         
@@ -385,11 +387,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         
         // Check if the current player is the one who should be placing initial cards
         if (gameState.currentPlayerId !== currentInitialPlayer.id) {
-          showTemporaryMessage('現在の初期配置プレイヤーのみがカードを配置できます。');
+          showTemporaryMessage(t('gameMessages.onlyInitialPlayerCanPlace'));
           return;
         }
       } else if (!gameState || !isValidPlay(selectedCard, laneIndex, position, gameState.board, settings.allowUnfinalizedMeasurement, settings.controlledHadamard)) {
-        showTemporaryMessage('そのカードはそのレーンに配置できません。');
+        showTemporaryMessage(t('gameMessages.cannotPlaceCard'));
         return;
       }
 
@@ -443,7 +445,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           let scoreGained = 1; // Default score
           let quantumComputationUsed = false;
           
-          if (quantumIntegration.isQuantumComputationAvailable(prev, laneIndex)) {
+          if (quantumIntegration.isQuantumComputationAvailable()) {
             try {
               // Execute quantum computation asynchronously
               quantumIntegration.executeMeasurementComputation(
@@ -482,10 +484,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           (selectedCard as Card & { measurementScore?: number; quantumComputationUsed?: boolean }).quantumComputationUsed = quantumComputationUsed;
           
           // Display measurement score message
-          const compatibilityMessage = scoreGained === 5 ? ' (測定結果1!)' : scoreGained === 3 ? ' (測定結果0)' : '';
+          const compatibilityMessage = scoreGained === 5 ? t('gameMessages.measurementResult1Exclamation') : scoreGained === 3 ? t('gameMessages.measurementResult0Plain') : '';
           const computationMessage = quantumComputationUsed ? ' 🔬' : '';
           setTimeout(() => {
-            showTemporaryMessage(`測定しました。+${scoreGained}点を獲得${compatibilityMessage}${computationMessage}`);
+            showTemporaryMessage(t('gameMessages.measurementGainedPoints', { points: scoreGained, compatibility: compatibilityMessage, computation: computationMessage }));
           }, 0);
           
           if (newMeasurementCount >= 11) newGamePhase = 'game_ended';
@@ -523,7 +525,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 }
               };
               updatedGameState = completeInitialSelection(stateWithUpdatedCandidates);
-              setTimeout(() => showTemporaryMessage('初期配置完了！ゲーム開始です'), 0);
+              setTimeout(() => showTemporaryMessage(t('gameMessages.initialPlacementComplete')), 0);
             } else {
               // Update initial selection state and advance player
               updatedGameState.initialSelection = {
@@ -569,9 +571,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       // Handle initial qubit card placement message
       if (isInitialPhase && playedCardType === CardType.INITIAL_QUBIT) {
         if (selectedCard.value === '|1⟩') {
-          showTemporaryMessage(`初期量子ビットカード ${selectedCard.value} を配置しました。あなたからゲームがスタートします！`);
+          showTemporaryMessage(t('gameMessages.initialQubitCardPlaced', { card: selectedCard.value }) + t('gameMessages.gameStartsFromYou'));
         } else {
-          showTemporaryMessage(`初期量子ビットカード ${selectedCard.value} を配置しました。`);
+          showTemporaryMessage(t('gameMessages.initialQubitCardPlaced', { card: selectedCard.value }));
         }
         return;
       }
@@ -582,9 +584,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                            existingCardBeforePlacement?.type === CardType.TARGET;
 
       if (playedCardType === CardType.UNITARY) {
-        showTemporaryMessage('ユニタリカードの効果で、もう一度あなたのターンです。プレイ順が逆転しました。');
+        showTemporaryMessage(t('gameMessages.unitaryEffectYourTurn'));
       } else if (playedCardType === CardType.GATE && placedOnTarget) {
-        showTemporaryMessage('ゲートカードをターゲットカードに配置しました。ターン順は変わりません。');
+        showTemporaryMessage(t('gameMessages.gateCardPlacedOnTarget'));
         advanceTurn();
       } else if (playedCardType === CardType.MEASUREMENT) {
         const gameEndedDueToMeasurement = (selectedCard as Card & { gameEndedDueToMeasurement?: boolean }).gameEndedDueToMeasurement || false;
@@ -600,14 +602,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     }
 
     if (!selectedCard && !gameState?.controlTargetPlacement?.waitingForTarget) {
-      showTemporaryMessage('先に手札からカードを選択してください。');
+      showTemporaryMessage(t('gameMessages.selectCardFirst'));
     }
   };
 
   const handlePass = () => {
     // Disable pass when game is ended
     if (gameState?.gamePhase === 'game_ended') {
-      showTemporaryMessage('ゲームは終了しています。パスすることはできません。');
+      showTemporaryMessage(t('gameMessages.gameEndedCannotPass'));
       return;
     }
     
@@ -635,9 +637,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       const updatedCurrentPlayer = updatedPlayers.find(p => p.id === prevGameState.currentPlayerId);
       if (updatedCurrentPlayer && shouldEliminatePlayer(updatedCurrentPlayer)) {
         newGameState = eliminatePlayer(newGameState, prevGameState.currentPlayerId);
-        showTemporaryMessage(`${updatedCurrentPlayer.name} が4回パスして脱落しました。`);
+        showTemporaryMessage(t('gameMessages.playerEliminatedPasses', { name: updatedCurrentPlayer.name }));
       } else {
-        showTemporaryMessage('パスしました。');
+        showTemporaryMessage(t('gameMessages.passed'));
       }
 
       // Check if game should end
@@ -710,8 +712,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   const handleNewGame = () => {
     if (isGameInProgress()) {
       showConfirmationPopup(
-        'ゲームを終了しますか？',
-        '現在のゲームを終了して新しいゲームを開始します。進行中のゲームは失われます。',
+        t('gameMessages.confirmEndGame'),
+        t('gameMessages.confirmEndGameMessage'),
         () => {
           startNewGame();
           closeConfirmationPopup();
@@ -727,7 +729,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       const playerCount = settings.playerCount || 4;
       const playerNames = [];
       for (let i = 0; i < playerCount; i++) {
-        playerNames.push(`プレイヤー${String.fromCharCode(65 + i)}`); // A, B, C, D, E, F
+        playerNames.push(t('player.playerName', { letter: String.fromCharCode(65 + i) })); // A, B, C, D, E, F
       }
       
       const initialGameState = initializeGame(playerNames);
@@ -737,18 +739,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       setMessage(null);
       setShowMenu(false);
       setSelectedPlayerForHandView(null); // Reset selected player for hand view
-      showTemporaryMessage(`${playerCount}人で新しいゲームを開始しました。`);
+      showTemporaryMessage(t('gameMessages.newGameStarted', { count: playerCount }));
     } catch (err) {
       console.error('Failed to initialize game:', err);
-      setError(err instanceof Error ? err.message : 'ゲームの初期化に失敗しました。');
+      setError(err instanceof Error ? err.message : t('gameMessages.gameInitializationFailed'));
     }
   };
 
   const handleBackToMenu = () => {
     if (isGameInProgress()) {
       showConfirmationPopup(
-        'メインメニューに戻りますか？',
-        '現在のゲームを終了してメインメニューに戻ります。進行中のゲームは失われます。',
+        t('gameMessages.confirmReturnToMenu'),
+        t('gameMessages.confirmReturnToMenuMessage'),
         () => {
           if (onBackToMenu) {
             onBackToMenu();
@@ -769,25 +771,25 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       const playerCount = settings.playerCount || 4;
       const playerNames = [];
       for (let i = 0; i < playerCount; i++) {
-        playerNames.push(`プレイヤー${String.fromCharCode(65 + i)}`); // A, B, C, D, E, F
+        playerNames.push(t('player.playerName', { letter: String.fromCharCode(65 + i) })); // A, B, C, D, E, F
       }
       
       const initialGameState = initializeGame(playerNames);
       setGameState(initialGameState);
     } catch (err) {
       console.error('Failed to initialize game:', err);
-      setError(err instanceof Error ? err.message : 'ゲームの初期化に失敗しました。');
+      setError(err instanceof Error ? err.message : t('gameMessages.gameInitializationFailed'));
     } finally {
       setLoading(false);
     }
-  }, [settings.playerCount]);
+  }, [settings.playerCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-800 to-gray-900 text-white">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-2xl">ゲームをロード中...</p>
+          <p className="text-2xl">{t('gameFlow.loading')}</p>
         </div>
       </div>
     );
@@ -797,12 +799,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-800 to-red-900 text-white">
         <div className="text-center bg-black bg-opacity-50 p-8 rounded-lg">
-          <p className="text-2xl mb-4">エラー: {error}</p>
+          <p className="text-2xl mb-4">{t('gameMessages.error', { error })}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition duration-300"
           >
-            再読み込み
+            {t('actions.reload')}
           </button>
         </div>
       </div>
@@ -812,7 +814,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   if (!gameState) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-800 to-gray-900 text-white">
-        <p className="text-2xl">ゲーム状態が利用できません。</p>
+        <p className="text-2xl">{t('gameMessages.gameStateUnavailable')}</p>
       </div>
     );
   }
@@ -822,7 +824,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   if (!currentPlayer) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-800 to-red-900 text-white">
-        <p className="text-2xl">現在のプレイヤーが見つかりません。</p>
+        <p className="text-2xl">{t('gameMessages.currentPlayerNotFound')}</p>
       </div>
     );
   }
@@ -843,26 +845,26 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold">
-              量子ゲート並べ
+              {t('gameFlow.gameTitle')}
             </h1>
             <div className="flex items-center gap-2 text-sm">
               {isInitialPhase ? (
                 <>
-                  <span data-testid="initial-phase-indicator" className="bg-green-600 px-2 py-1 rounded">初期配置</span>
+                  <span data-testid="initial-phase-indicator" className="bg-green-600 px-2 py-1 rounded">{t('gameFlow.initialPlacement')}</span>
                   <span className="bg-blue-600 px-2 py-1 rounded">
                     {currentPlayerIndex + 1}/{gameState.players.length}
                   </span>
                 </>
               ) : isEndPhase ? (
                 <>
-                  <span data-testid="game-ended-indicator" className="bg-red-600 px-2 py-1 rounded">ゲーム終了</span>
+                  <span data-testid="game-ended-indicator" className="bg-red-600 px-2 py-1 rounded">{t('gameFlow.gameEnded')}</span>
                 </>
               ) : (
                 <>
-                  <span data-testid="turn-indicator" className="bg-blue-600 px-2 py-1 rounded">ターン {gameState.turn}</span>
-                  <span data-testid="measurement-counter" className="bg-purple-600 px-2 py-1 rounded">測定 {gameState.measurementCount}/11</span>
+                  <span data-testid="turn-indicator" className="bg-blue-600 px-2 py-1 rounded">{t('gameFlow.turn', { number: gameState.turn })}</span>
+                  <span data-testid="measurement-counter" className="bg-purple-600 px-2 py-1 rounded">{t('gameFlow.measurementCount', { current: gameState.measurementCount })}</span>
                   {gameState.turnDirection === 'backward' && (
-                    <span data-testid="reverse-direction-indicator" className="bg-orange-600 px-2 py-1 rounded">逆順</span>
+                    <span data-testid="reverse-direction-indicator" className="bg-orange-600 px-2 py-1 rounded">{t('gameFlow.reverseOrder')}</span>
                   )}
                 </>
               )}
@@ -876,7 +878,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 onClick={handleCancelAction}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition duration-300"
               >
-                キャンセル
+                {t('actions.cancel')}
               </button>
             )}
             <button
@@ -884,7 +886,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
               onClick={() => setShowMenu(!showMenu)}
               className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition duration-300"
             >
-              メニュー
+              {t('actions.menu')}
             </button>
           </div>
         </div>
@@ -899,7 +901,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
               onClick={handleNewGame}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition duration-300 text-left"
             >
-              新しいゲーム
+              {t('actions.newGame')}
             </button>
             {onBackToMenu && (
               <button
@@ -907,7 +909,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 onClick={handleBackToMenu}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition duration-300 text-left"
               >
-                メインメニューに戻る
+                {t('actions.backToMenu')}
               </button>
             )}
           </div>
@@ -917,15 +919,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       <div className="flex flex-col lg:flex-row min-h-screen">
         {/* Left sidebar: All players */}
         <aside data-testid="player-sidebar" className="lg:w-64 bg-black bg-opacity-20 p-4">
-          <h2 className="text-lg font-semibold mb-4">プレイヤー状況</h2>
+          <h2 className="text-lg font-semibold mb-4">{t('player.playerStatus')}</h2>
           {gameState.gamePhase === 'game_ended' && (
             <p className="text-xs text-gray-400 mb-3">
-              💡クリックで手札を確認できます (ゲーム終了済み)
+              {t('player.clickToViewHand')}
             </p>
           )}
           {gameState.gamePhase !== 'game_ended' && (
             <p className="text-xs text-red-400 mb-3">
-              🔒 ゲーム中 (クリック無効)
+              {t('player.gameInProgress')}
             </p>
           )}
           <div className="space-y-4">
@@ -955,16 +957,16 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 <p className="font-semibold text-lg flex items-center gap-2">
                   {player.name}
                   {player.eliminated && (
-                    <span className="text-xs bg-red-600 px-2 py-1 rounded">脱落</span>
+                    <span className="text-xs bg-red-600 px-2 py-1 rounded">{t('player.eliminated')}</span>
                   )}
                   {!player.eliminated && player.id === gameState.currentPlayerId && (
-                    <span className="text-xs bg-blue-500 px-2 py-1 rounded">現在のターン</span>
+                    <span className="text-xs bg-blue-500 px-2 py-1 rounded">{t('player.currentTurn')}</span>
                   )}
                 </p>
                 <div className="text-sm space-y-1">
-                  <p>手札: <span className="font-mono">{player.hand.length}枚</span></p>
-                  <p>パス: <span className="font-mono">{player.passes}/4回</span></p>
-                  <p>得点: <span className="font-mono text-green-400">{player.score}点</span></p>
+                  <p>{t('player.hand')}: <span className="font-mono">{t('player.handCards', { count: player.hand.length })}</span></p>
+                  <p>{t('player.passes')}: <span className="font-mono">{t('player.passCount', { count: player.passes })}</span></p>
+                  <p>{t('player.score')}: <span className="font-mono text-green-400">{t('player.scorePoints', { points: player.score })}</span></p>
                 </div>
               </div>
             ))}
@@ -995,23 +997,23 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 {isInitialPhase ? (
                   <div className="flex flex-col items-center gap-2">
                     <p className="text-xl font-bold">
-                      現在のプレイヤー: <span className="text-green-400">{activeInitialPlayer?.name}</span>
+                      {t('gameFlow.currentPlayer')}: <span className="text-green-400">{activeInitialPlayer?.name}</span>
                     </p>
                     <div className="flex items-center gap-4">
                       {hasInitialCards ? (
                         <span className="text-lg text-green-300">
-                          初期量子ビットカードを配置してください
+                          {t('gameMessages.placeInitialQubitCards')}
                         </span>
                       ) : (
                         <span className="text-lg text-yellow-300">
-                          初期量子ビットカードがありません - スキップ
+                          {t('gameMessages.noInitialQubitCards')}
                         </span>
                       )}
                     </div>
                     {/* Initial phase progress indicator */}
                     {gameState.initialSelection && (
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400">進行状況:</span>
+                        <span className="text-sm text-gray-400">{t('gameFlow.progress')}</span>
                         {gameState.players.map((player, index) => (
                           <div
                             key={player.id}
@@ -1031,12 +1033,12 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 ) : (
                   <>
                     <p className="text-xl font-bold">
-                      現在のプレイヤー: <span className="text-blue-400">{currentPlayer.name}</span>
+                      {t('gameFlow.currentPlayer')}: <span className="text-blue-400">{currentPlayer.name}</span>
                     </p>
                     {gameState.gamePhase === 'game_ended' && (
                       <div className="flex flex-col items-center gap-2">
                         <span data-testid="game-ended-banner" className="bg-red-600 px-4 py-2 rounded-lg text-xl font-bold animate-pulse">
-                          ゲーム終了！
+                          {t('gameFlow.gameEndedExclamation')}
                         </span>
                         {(() => {
                           const { winner, finalScores } = determineWinner(gameState);
@@ -1045,15 +1047,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                           const getEndReasonMessage = (reason: string): string => {
                             switch (reason) {
                               case 'measurement_limit':
-                                return '測定回数上限に達しました（11回）';
+                                return t('gameMessages.measurementLimitReached');
                               case 'insufficient_players':
-                                return 'アクティブなプレイヤーが1人以下になりました';
+                                return t('gameMessages.lessThanOneActivePlayer');
                               case 'all_active_players_pass':
-                                return '全アクティブプレイヤーが3回以上パスしました';
+                                return t('gameMessages.allPlayersPassedThreeTimes');
                               case 'empty_hand':
-                                return 'プレイヤーの手札が空になりました';
+                                return t('gameMessages.playerHandEmpty');
                               default:
-                                return 'ゲーム終了';
+                                return t('gameFlow.gameEnded');
                             }
                           };
                           
@@ -1063,10 +1065,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                                 {getEndReasonMessage(endReason)}
                               </div>
                               <div data-testid="winner-announcement" className="text-2xl font-bold text-yellow-400 mb-2">
-                                🏆 勝者: {winner.name}
+                                {t('player.winner', { name: winner.name })}
                               </div>
                               <div data-testid="final-score-display" className="text-lg mb-2">
-                                最終スコア: {finalScores.find(s => s.player.id === winner.id)?.finalScore}点
+                                {t('player.finalScore', { score: finalScores.find(s => s.player.id === winner.id)?.finalScore || 0 })}
                               </div>
                               <div className="text-sm text-gray-300">
                                 <div className="grid grid-cols-1 gap-1">
@@ -1112,7 +1114,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                         }}
                         className="ml-4 px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm transition-colors"
                       >
-                        キャンセル
+                        {t('actions.cancel')}
                       </button>
                     )}
                   </div>
@@ -1144,7 +1146,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                           onClick={handleSkipInitialPlayer}
                           className="px-8 py-4 text-xl font-bold rounded-lg shadow-lg transition duration-300 bg-gray-600 hover:bg-gray-700 text-white"
                         >
-                          スキップ
+                          {t('actions.skip')}
                         </button>
                       </div>
                     )}
@@ -1152,8 +1154,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                     {/* Show instruction */}
                     <div className="text-sm text-gray-400 text-center max-w-md">
                       {hasInitialCards 
-                        ? '初期量子ビットカードを手札から選択して、空のレーンの左端（位置0）に配置してください'
-                        : 'このプレイヤーは初期量子ビットカードを持っていません'
+                        ? t('gameMessages.initialPlacementInstructions')
+                        : t('gameMessages.noInitialQubitCardsForPlayer')
                       }
                     </div>
                   </div>
@@ -1218,10 +1220,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                           }`}
                         >
                           {gameState.gamePhase === 'game_ended' 
-                            ? `パス数: ${playerForPassDisplay.passes}/4`
+                            ? t('player.passCount', { count: playerForPassDisplay.passes })
                             : playerForPassDisplay.eliminated 
-                              ? '脱落済み' 
-                              : `パス (${playerForPassDisplay.passes}/4)`
+                              ? t('player.eliminatedAlready') 
+                              : `${t('actions.pass')} (${playerForPassDisplay.passes}/4)`
                           }
                         </button>
                       );
@@ -1229,7 +1231,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                     
                     {settings.showHints && (
                       <div className="text-sm text-gray-400 flex items-center">
-                        💡 ヒント: {selectedCard ? '配置可能な場所が光っています' : 'カードを選択してください'}
+                        {t('gameMessages.hint', { message: selectedCard ? t('gameMessages.hintValidPositions') : t('gameMessages.hintSelectCard') })}
                       </div>
                     )}
                   </div>
@@ -1245,8 +1247,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         isOpen={confirmationPopup.isOpen}
         title={confirmationPopup.title}
         message={confirmationPopup.message}
-        confirmText="はい"
-        cancelText="いいえ"
+        confirmText={t('actions.confirm')}
+        cancelText={t('actions.decline')}
         onConfirm={confirmationPopup.action}
         onCancel={closeConfirmationPopup}
         confirmButtonColor="red"

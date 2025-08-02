@@ -34,7 +34,7 @@ describe('QuantumEngine (Multi-Qubit, Generic)', () => {
       const cnotElement: QuantumCircuitElement = { type: 'gate', value: 'CNOT', position: 0, controlLane: 1, targetLane: 0 };
       state = quantumEngine['applyGate'](state, cnotElement);
       expect(state.amplitudes[6].real).toBeCloseTo(0);
-      expect(state.amplitudes[4].real).toBeCloseTo(1); // |100⟩ is index 4
+      expect(state.amplitudes[2].real).toBeCloseTo(1); // |010⟩ is index 2
     });
 
     it('should apply CNOT gate on non-adjacent qubits in a 3-qubit system', () => {

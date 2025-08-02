@@ -3,6 +3,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from '@/i18n';
 
 interface ConfirmationPopupProps {
   isOpen: boolean;
@@ -19,12 +20,17 @@ const ConfirmationPopup: React.FC<ConfirmationPopupProps> = ({
   isOpen,
   title,
   message,
-  confirmText = '確認',
-  cancelText = 'キャンセル',
+  confirmText,
+  cancelText,
   onConfirm,
   onCancel,
   confirmButtonColor = 'red'
 }) => {
+  const { t } = useTranslation();
+  
+  // Use translation defaults if not provided
+  const finalConfirmText = confirmText || t('common.confirm');
+  const finalCancelText = cancelText || t('actions.cancel');
   if (!isOpen) return null;
 
   const confirmButtonClasses = {
@@ -45,14 +51,14 @@ const ConfirmationPopup: React.FC<ConfirmationPopupProps> = ({
             className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition duration-300"
             data-testid="confirmation-popup-cancel"
           >
-            {cancelText}
+            {finalCancelText}
           </button>
           <button
             onClick={onConfirm}
             className={`px-4 py-2 text-white rounded-lg transition duration-300 ${confirmButtonClasses[confirmButtonColor]}`}
             data-testid="confirmation-popup-confirm"
           >
-            {confirmText}
+            {finalConfirmText}
           </button>
         </div>
       </div>

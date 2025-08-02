@@ -4,10 +4,20 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ConfirmationPopup from '../../src/components/ConfirmationPopup';
+import { I18nProvider } from '../../src/i18n';
 
 describe('ConfirmationPopup Component', () => {
   const mockOnConfirm = jest.fn();
   const mockOnCancel = jest.fn();
+
+  // Test wrapper that provides I18nProvider context
+  const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <I18nProvider>{children}</I18nProvider>
+  );
+
+  const renderWithI18n = (ui: React.ReactElement) => {
+    return render(ui, { wrapper: TestWrapper });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -15,7 +25,7 @@ describe('ConfirmationPopup Component', () => {
 
   describe('Rendering', () => {
     it('should not render when isOpen is false', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={false}
           title="Test Title"
@@ -29,7 +39,7 @@ describe('ConfirmationPopup Component', () => {
     });
 
     it('should render when isOpen is true', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={true}
           title="Test Title"
@@ -46,7 +56,7 @@ describe('ConfirmationPopup Component', () => {
     });
 
     it('should render default button texts', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={true}
           title="Test Title"
@@ -61,7 +71,7 @@ describe('ConfirmationPopup Component', () => {
     });
 
     it('should render custom button texts', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={true}
           title="Test Title"
@@ -78,7 +88,7 @@ describe('ConfirmationPopup Component', () => {
     });
 
     it('should apply red color to confirm button by default', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={true}
           title="Test Title"
@@ -93,7 +103,7 @@ describe('ConfirmationPopup Component', () => {
     });
 
     it('should apply custom color to confirm button', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={true}
           title="Test Title"
@@ -111,7 +121,7 @@ describe('ConfirmationPopup Component', () => {
 
   describe('User Interactions', () => {
     it('should call onConfirm when confirm button is clicked', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={true}
           title="Test Title"
@@ -129,7 +139,7 @@ describe('ConfirmationPopup Component', () => {
     });
 
     it('should call onCancel when cancel button is clicked', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={true}
           title="Test Title"
@@ -149,7 +159,7 @@ describe('ConfirmationPopup Component', () => {
 
   describe('Styling', () => {
     it('should have proper backdrop styling', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={true}
           title="Test Title"
@@ -164,7 +174,7 @@ describe('ConfirmationPopup Component', () => {
     });
 
     it('should have proper modal styling', () => {
-      render(
+      renderWithI18n(
         <ConfirmationPopup
           isOpen={true}
           title="Test Title"

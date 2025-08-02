@@ -4,10 +4,20 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import SettingsScreen from '../../src/components/SettingsScreen';
+import { I18nProvider } from '../../src/i18n';
 
 describe('SettingsScreen Component', () => {
   const mockOnBack = jest.fn();
   const mockOnStartGame = jest.fn();
+
+  // Test wrapper that provides I18nProvider context
+  const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <I18nProvider>{children}</I18nProvider>
+  );
+
+  const renderWithI18n = (ui: React.ReactElement) => {
+    return render(ui, { wrapper: TestWrapper });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -17,13 +27,13 @@ describe('SettingsScreen Component', () => {
 
   describe('Rendering', () => {
     it('should render settings title', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       expect(screen.getByTestId('settings-title')).toBeInTheDocument();
     });
 
     it('should render all setting sections', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Note: Audio settings are hidden for future implementation
       expect(screen.getByTestId('game-settings-title')).toBeInTheDocument();
@@ -33,19 +43,19 @@ describe('SettingsScreen Component', () => {
 
     // Audio settings are hidden for future implementation
     it.skip('should render volume sliders with default values', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       expect(screen.getByTestId('sound-volume-label')).toHaveTextContent('効果音音量: 50%');
       expect(screen.getByTestId('music-volume-label')).toHaveTextContent('BGM音量: 30%');
     });
 
     it('should render difficulty selector with default value', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Find the difficulty select by finding all selects and choosing the one with difficulty options
       const selects = screen.getAllByRole('combobox');
       const difficultySelect = selects.find(select => {
-        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('ふつう');
       });
       expect(difficultySelect).toBeInTheDocument();
       expect(difficultySelect).toHaveValue('normal');
@@ -53,21 +63,21 @@ describe('SettingsScreen Component', () => {
 
 
     it('should render hints checkbox checked by default', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const hintsCheckbox = screen.getByLabelText('ヒント表示');
+      const hintsCheckbox = screen.getByTestId('show-hints-checkbox');
       expect(hintsCheckbox).toBeChecked();
     });
 
     it('should render controlled hadamard checkbox unchecked by default', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const controlledHadamardCheckbox = screen.getByLabelText('制御アダマール使用');
+      const controlledHadamardCheckbox = screen.getByTestId('controlled-hadamard-checkbox');
       expect(controlledHadamardCheckbox).not.toBeChecked();
     });
 
     it('should render language selector with default value', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Find the language select by finding the parent div containing the label
       const languageLabel = screen.getByTestId('language-label');
@@ -77,7 +87,7 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should render player count selector with default value', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const playerCountSelect = screen.getByTestId('player-count-select');
       expect(playerCountSelect).toBeInTheDocument();
@@ -85,7 +95,7 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should render COM player count selector with default value', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
       expect(comPlayerCountSelect).toBeInTheDocument();
@@ -96,7 +106,7 @@ describe('SettingsScreen Component', () => {
   describe('User Interactions', () => {
     // Audio settings are hidden for future implementation
     it.skip('should update sound volume when slider is moved', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const soundSlider = screen.getAllByRole('slider')[0];
       fireEvent.change(soundSlider, { target: { value: '75' } });
@@ -105,7 +115,7 @@ describe('SettingsScreen Component', () => {
     });
 
     it.skip('should update music volume when slider is moved', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const musicSlider = screen.getAllByRole('slider')[1];
       fireEvent.change(musicSlider, { target: { value: '60' } });
@@ -114,7 +124,7 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should update difficulty when selector is changed', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // First enable COM players
       const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
@@ -123,7 +133,7 @@ describe('SettingsScreen Component', () => {
       // Find the difficulty select by finding all selects and choosing the one with difficulty options
       const selects = screen.getAllByRole('combobox');
       const difficultySelect = selects.find(select => {
-        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('ふつう');
       }) as HTMLSelectElement;
       
       fireEvent.change(difficultySelect, { target: { value: 'hard' } });
@@ -133,9 +143,9 @@ describe('SettingsScreen Component', () => {
 
 
     it('should toggle hints checkbox', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const hintsCheckbox = screen.getByLabelText('ヒント表示');
+      const hintsCheckbox = screen.getByTestId('show-hints-checkbox');
       expect(hintsCheckbox).toBeChecked();
       
       fireEvent.click(hintsCheckbox);
@@ -143,9 +153,9 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should toggle controlled hadamard checkbox', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const controlledHadamardCheckbox = screen.getByLabelText('制御アダマール使用');
+      const controlledHadamardCheckbox = screen.getByTestId('controlled-hadamard-checkbox');
       expect(controlledHadamardCheckbox).not.toBeChecked();
       
       fireEvent.click(controlledHadamardCheckbox);
@@ -153,7 +163,7 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should update language when selector is changed', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Find the language select by finding the parent div containing the label
       const languageLabel = screen.getByTestId('language-label');
@@ -164,7 +174,7 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should update player count when selector is changed', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const playerCountSelect = screen.getByTestId('player-count-select');
       fireEvent.change(playerCountSelect, { target: { value: '6' } });
@@ -173,7 +183,7 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should update COM player count when selector is changed', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
       fireEvent.change(comPlayerCountSelect, { target: { value: '2' } });
@@ -182,7 +192,7 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should allow 0 COM players for single player mode', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Default is already 0 COM players
       const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
@@ -191,19 +201,19 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should disable difficulty setting when COM players is 0', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Default is already 0 COM players, so difficulty should be disabled
       const selects = screen.getAllByRole('combobox');
       const difficultySelect = selects.find(select => {
-        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('ふつう');
       });
       expect(difficultySelect).toBeDisabled();
       expect(screen.getByTestId('single-player-difficulty-notice')).toBeInTheDocument();
     });
 
     it('should adjust COM player count when total player count changes', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Initially 4 total players, 0 COM players
       const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
@@ -220,7 +230,7 @@ describe('SettingsScreen Component', () => {
 
   describe('Button Actions', () => {
     it('should call onBack when back button is clicked', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const backButton = screen.getByTestId('back-button');
       fireEvent.click(backButton);
@@ -231,7 +241,7 @@ describe('SettingsScreen Component', () => {
     // Game start button has been removed from the UI
 
     it('should save settings to localStorage when save button is clicked', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // First enable COM players so we can change difficulty
       const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
@@ -240,7 +250,7 @@ describe('SettingsScreen Component', () => {
       // Now change difficulty (it should be enabled now)
       const selects = screen.getAllByRole('combobox');
       const difficultySelect = selects.find(select => {
-        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('ふつう');
       }) as HTMLSelectElement;
       fireEvent.change(difficultySelect, { target: { value: 'hard' } });
       
@@ -264,7 +274,7 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should reset all settings when reset button is clicked', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // First enable COM players
       const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
@@ -273,7 +283,7 @@ describe('SettingsScreen Component', () => {
       // Now change difficulty
       const selects = screen.getAllByRole('combobox');
       const difficultySelect = selects.find(select => {
-        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('ふつう');
       }) as HTMLSelectElement;
       fireEvent.change(difficultySelect, { target: { value: 'hard' } });
       
@@ -290,7 +300,7 @@ describe('SettingsScreen Component', () => {
 
   describe('Styling and Layout', () => {
     it('should apply correct button colors', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const resetButton = screen.getByTestId('reset-button');
       const saveButton = screen.getByTestId('save-button');
@@ -303,20 +313,20 @@ describe('SettingsScreen Component', () => {
     });
 
     it('should have hover effects on buttons', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const resetButton = screen.getByTestId('reset-button');
       expect(resetButton).toHaveClass('hover:bg-red-700');
     });
 
     it('should display hint description', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       expect(screen.getByTestId('show-hints-description')).toBeInTheDocument();
     });
 
     it('should display controlled hadamard description', () => {
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       expect(screen.getByTestId('controlled-hadamard-description')).toBeInTheDocument();
     });
@@ -324,7 +334,7 @@ describe('SettingsScreen Component', () => {
 
   describe('Edge Cases', () => {
     it('should handle undefined callbacks gracefully', () => {
-      render(<SettingsScreen onBack={undefined as any} onStartGame={undefined as any} />);
+      renderWithI18n(<SettingsScreen onBack={undefined as any} onStartGame={undefined as any} />);
       
       const backButton = screen.getByTestId('back-button');
       
@@ -338,7 +348,7 @@ describe('SettingsScreen Component', () => {
         throw new Error('Storage quota exceeded');
       });
       
-      render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
+      renderWithI18n(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       const saveButton = screen.getByTestId('save-button');
       

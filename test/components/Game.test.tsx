@@ -4,6 +4,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Game from '../../src/components/Game';
+import { I18nProvider } from '../../src/i18n';
 
 // Mock the GameScreen component since it has complex logic
 jest.mock('../../src/components/GameScreen', () => {
@@ -26,20 +27,29 @@ jest.mock('../../src/components/SettingsScreen', () => {
 });
 
 describe('Game Component', () => {
+  // Test wrapper that provides I18nProvider context
+  const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <I18nProvider>{children}</I18nProvider>
+  );
+
+  const renderWithI18n = (ui: React.ReactElement) => {
+    return render(ui, { wrapper: TestWrapper });
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe('Initial Screen', () => {
     it('should render title on initial screen', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       expect(screen.getByTestId('game-title')).toBeInTheDocument();
       expect(screen.getByTestId('game-title')).toHaveTextContent('量子ゲート並べ');
     });
 
     it('should render start button on initial screen', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const startButton = screen.getByTestId('start-game-button');
       expect(startButton).toBeInTheDocument();
@@ -47,7 +57,7 @@ describe('Game Component', () => {
     });
 
     it('should render rules button on initial screen', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const rulesButton = screen.getByTestId('rules-button');
       expect(rulesButton).toBeInTheDocument();
@@ -55,7 +65,7 @@ describe('Game Component', () => {
     });
 
     it('should render settings button on initial screen', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const settingsButton = screen.getByTestId('settings-button');
       expect(settingsButton).toBeInTheDocument();
@@ -63,25 +73,25 @@ describe('Game Component', () => {
     });
 
     it('should have proper styling for title screen', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const container = screen.getByTestId('title-screen');
       expect(container).toHaveClass('min-h-screen', 'bg-gray-800');
     });
 
     it('should display version information', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const gameInfo = screen.getByTestId('game-info');
       expect(gameInfo).toBeInTheDocument();
       expect(gameInfo).toHaveTextContent('量子コンピューティングを学ぶカードゲーム');
-      expect(gameInfo).toHaveTextContent('Version 1.0.0');
+      expect(gameInfo).toHaveTextContent('バージョン 0.1.0');
     });
   });
 
   describe('Screen Navigation', () => {
     it('should navigate to game screen when start button is clicked', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const startButton = screen.getByTestId('start-game-button');
       fireEvent.click(startButton);
@@ -91,7 +101,7 @@ describe('Game Component', () => {
     });
 
     it('should navigate to rules screen when rules button is clicked', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const rulesButton = screen.getByTestId('rules-button');
       fireEvent.click(rulesButton);
@@ -101,7 +111,7 @@ describe('Game Component', () => {
     });
 
     it('should navigate to settings screen when settings button is clicked', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const settingsButton = screen.getByTestId('settings-button');
       fireEvent.click(settingsButton);
@@ -111,7 +121,7 @@ describe('Game Component', () => {
     });
 
     it('should return to title from rules screen', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       // Go to rules
       const rulesButton = screen.getByTestId('rules-button');
@@ -125,7 +135,7 @@ describe('Game Component', () => {
     });
 
     it('should navigate from rules to game directly', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       // Go to rules
       const rulesButton = screen.getByTestId('rules-button');
@@ -139,7 +149,7 @@ describe('Game Component', () => {
     });
 
     it('should return to title from settings screen', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       // Go to settings
       const settingsButton = screen.getByTestId('settings-button');
@@ -153,7 +163,7 @@ describe('Game Component', () => {
     });
 
     it('should navigate from settings to game directly', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       // Go to settings
       const settingsButton = screen.getByTestId('settings-button');
@@ -169,7 +179,7 @@ describe('Game Component', () => {
 
   describe('Rules Screen', () => {
     it('should display all rule sections', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const rulesButton = screen.getByTestId('rules-button');
       fireEvent.click(rulesButton);
@@ -183,7 +193,7 @@ describe('Game Component', () => {
     });
 
     it('should display card types information', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const rulesButton = screen.getByTestId('rules-button');
       fireEvent.click(rulesButton);
@@ -197,7 +207,7 @@ describe('Game Component', () => {
     });
 
     it('should have proper styling for rules screen', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const rulesButton = screen.getByTestId('rules-button');
       fireEvent.click(rulesButton);
@@ -208,7 +218,7 @@ describe('Game Component', () => {
     });
 
     it('should have navigation buttons on rules screen', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const rulesButton = screen.getByTestId('rules-button');
       fireEvent.click(rulesButton);
@@ -220,7 +230,7 @@ describe('Game Component', () => {
 
   describe('Button Interactions', () => {
     it('should show hover effects on buttons', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const startButton = screen.getByTestId('start-game-button');
       expect(startButton).toHaveClass('hover:bg-blue-700');
@@ -230,7 +240,7 @@ describe('Game Component', () => {
     });
 
     it('should maintain button styling consistency', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const startButton = screen.getByTestId('start-game-button');
       const rulesButton = screen.getByTestId('rules-button');
@@ -244,7 +254,7 @@ describe('Game Component', () => {
 
   describe('Accessibility', () => {
     it('should have accessible button labels', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       expect(screen.getByTestId('start-game-button')).toHaveTextContent('ゲーム開始');
       expect(screen.getByTestId('rules-button')).toHaveTextContent('遊び方');
@@ -252,7 +262,7 @@ describe('Game Component', () => {
     });
 
     it('should maintain focus on navigation', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const startButton = screen.getByTestId('start-game-button');
       startButton.focus();
@@ -265,7 +275,7 @@ describe('Game Component', () => {
 
   describe('Edge Cases', () => {
     it('should handle rapid screen switching', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const startButton = screen.getByTestId('start-game-button');
       
@@ -277,7 +287,7 @@ describe('Game Component', () => {
     });
 
     it('should render correctly with different viewport sizes', () => {
-      render(<Game />);
+      renderWithI18n(<Game />);
       
       const container = screen.getByTestId('title-screen');
       
