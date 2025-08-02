@@ -369,11 +369,17 @@ interface QuantumCircuit {
 - User interaction handling
 - Property passing
 - State changes
+- Use data-* attributes (data-testid) for stable element targeting in tests
 
 #### 5.2.3 Integration Tests
 - Game state management
 - Edge case handling
 - Error handling
+
+#### 5.2.4 E2E Tests
+- Use Cypress for end-to-end testing
+- Target elements using data-testid attributes for test stability
+- Avoid relying on text content or CSS classes as selectors
 
 ### 5.3 Key Test Cases
 

@@ -25,7 +25,7 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      expect(screen.queryByText('Test Title')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('confirmation-popup-overlay')).not.toBeInTheDocument();
     });
 
     it('should render when isOpen is true', () => {
@@ -39,8 +39,10 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      expect(screen.getByText('Test Title')).toBeInTheDocument();
-      expect(screen.getByText('Test Message')).toBeInTheDocument();
+      expect(screen.getByTestId('confirmation-popup-overlay')).toBeInTheDocument();
+      expect(screen.getByTestId('confirmation-popup')).toBeInTheDocument();
+      expect(screen.getByTestId('confirmation-popup-title')).toHaveTextContent('Test Title');
+      expect(screen.getByTestId('confirmation-popup-message')).toHaveTextContent('Test Message');
     });
 
     it('should render default button texts', () => {
@@ -54,8 +56,8 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      expect(screen.getByText('確認')).toBeInTheDocument();
-      expect(screen.getByText('キャンセル')).toBeInTheDocument();
+      expect(screen.getByTestId('confirmation-popup-confirm')).toHaveTextContent('確認');
+      expect(screen.getByTestId('confirmation-popup-cancel')).toHaveTextContent('キャンセル');
     });
 
     it('should render custom button texts', () => {
@@ -71,8 +73,8 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      expect(screen.getByText('はい')).toBeInTheDocument();
-      expect(screen.getByText('いいえ')).toBeInTheDocument();
+      expect(screen.getByTestId('confirmation-popup-confirm')).toHaveTextContent('はい');
+      expect(screen.getByTestId('confirmation-popup-cancel')).toHaveTextContent('いいえ');
     });
 
     it('should apply red color to confirm button by default', () => {
@@ -86,7 +88,7 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      const confirmButton = screen.getByText('確認');
+      const confirmButton = screen.getByTestId('confirmation-popup-confirm');
       expect(confirmButton).toHaveClass('bg-red-600');
     });
 
@@ -102,7 +104,7 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      const confirmButton = screen.getByText('確認');
+      const confirmButton = screen.getByTestId('confirmation-popup-confirm');
       expect(confirmButton).toHaveClass('bg-blue-600');
     });
   });
@@ -119,7 +121,7 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      const confirmButton = screen.getByText('確認');
+      const confirmButton = screen.getByTestId('confirmation-popup-confirm');
       fireEvent.click(confirmButton);
       
       expect(mockOnConfirm).toHaveBeenCalledTimes(1);
@@ -137,7 +139,7 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      const cancelButton = screen.getByText('キャンセル');
+      const cancelButton = screen.getByTestId('confirmation-popup-cancel');
       fireEvent.click(cancelButton);
       
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
@@ -157,7 +159,7 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      const backdrop = screen.getByText('Test Title').closest('.fixed');
+      const backdrop = screen.getByTestId('confirmation-popup-overlay');
       expect(backdrop).toHaveClass('fixed', 'inset-0', 'bg-black', 'bg-opacity-50');
     });
 
@@ -172,7 +174,7 @@ describe('ConfirmationPopup Component', () => {
         />
       );
       
-      const modal = screen.getByText('Test Title').closest('.bg-gray-800');
+      const modal = screen.getByTestId('confirmation-popup');
       expect(modal).toHaveClass('bg-gray-800', 'rounded-lg', 'p-6');
     });
   });

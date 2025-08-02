@@ -32,9 +32,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
 
   return (
-    <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-6xl mx-auto border border-gray-600">
+    <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-6xl mx-auto border border-gray-600" data-testid="quantum-circuit-board">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-2xl font-bold text-white">量子回路</h3>
+        <h3 className="text-2xl font-bold text-white" data-testid="board-title">量子回路</h3>
         <div className="flex gap-2 text-xs">
           <span className="bg-green-600 px-2 py-1 rounded text-white">量子ビット</span>
           <span className="bg-blue-600 px-2 py-1 rounded text-white">ゲート</span>
@@ -47,7 +47,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       <div className="overflow-x-auto">
         <div className="flex flex-col gap-3 min-w-max">
           {board.lane.map((lane, laneIndex) => (
-            <div key={laneIndex} className="flex items-center relative">
+            <div key={laneIndex} className="flex items-center relative" data-testid={`board-lane-${laneIndex}`}>
               <div className="flex flex-nowrap gap-2">
               {Array.from({ length: displayLength }).map((_, cardIndex) => {
                 const card = lane[cardIndex] || null;

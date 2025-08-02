@@ -18,10 +18,9 @@ interface SettingsData {
 
 interface SettingsScreenProps {
   onBack: () => void;
-  onStartGame: () => void;
 }
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack }) => {
   const defaultSettings = React.useMemo(() => ({
     soundVolume: 50,
     musicVolume: 30,
@@ -81,13 +80,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-800 text-white p-6">
+    <div className="flex flex-col min-h-screen bg-gray-800 text-white p-6" data-testid="settings-screen">
       <div className="max-w-2xl mx-auto w-full">
-        <h1 className="text-4xl font-bold mb-8 text-center">設定</h1>
+        <h1 className="text-4xl font-bold mb-8 text-center" data-testid="settings-title">設定</h1>
         
 
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">ゲーム設定</h2>
+        <div className="bg-gray-900 rounded-lg p-6 mb-6" data-testid="game-settings-section">
+          <h2 className="text-2xl font-semibold mb-4" data-testid="game-settings-title">ゲーム設定</h2>
           
           {/* Player Count */}
           <div className="mb-4">
@@ -96,6 +95,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               value={settings.playerCount}
               onChange={(e) => updateSetting('playerCount', parseInt(e.target.value) as 3 | 4 | 5 | 6)}
               className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              data-testid="player-count-select"
             >
               <option value={3}>3人</option>
               <option value={4}>4人</option>
@@ -111,6 +111,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               value={settings.comPlayerCount}
               onChange={(e) => updateSetting('comPlayerCount', parseInt(e.target.value))}
               className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+              data-testid="com-player-count-select"
             >
               <option value={0}>0人（COMプレイヤーなし）</option>
               {Array.from({ length: settings.playerCount - 1 }, (_, i) => i + 1).map(count => (
@@ -120,10 +121,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               ))}
             </select>
             <p className="text-sm text-gray-400 mt-1">
+              <span data-testid="player-count-display">
               {settings.comPlayerCount === 0 
                 ? '1人プレイモード（人間プレイヤーのみ）' 
                 : `人間プレイヤー1人 + COMプレイヤー${settings.comPlayerCount}人 = 合計${settings.comPlayerCount + 1}人`
               }
+              </span>
             </p>
           </div>
 
@@ -145,14 +148,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               <option value="hard">上級 - CPUが強く、ヒントが少ない</option>
             </select>
             {settings.comPlayerCount === 0 && (
-              <p className="text-sm text-gray-400 mt-1">1人プレイモードでは難易度設定は無効です</p>
+              <p className="text-sm text-gray-400 mt-1" data-testid="single-player-difficulty-notice">1人プレイモードでは難易度設定は無効です</p>
             )}
           </div>
 
         </div>
 
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">ルール設定</h2>
+        <div className="bg-gray-900 rounded-lg p-6 mb-6" data-testid="rule-settings-section">
+          <h2 className="text-2xl font-semibold mb-4" data-testid="rule-settings-title">ルール設定</h2>
           
           {/* Controlled Hadamard */}
           <div className="mb-4">
@@ -165,7 +168,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               />
               <span className="text-lg">制御アダマール使用</span>
             </label>
-            <p className="text-sm text-gray-400 mt-1">制御アダマールゲートカードを使用可能にします</p>
+            <p className="text-sm text-gray-400 mt-1" data-testid="controlled-hadamard-description">制御アダマールゲートカードを使用可能にします</p>
           </div>
 
           {/* Allow Unfinalized Measurement */}
@@ -183,8 +186,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
           </div>
         </div>
 
-        <div className="bg-gray-900 rounded-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">システム設定</h2>
+        <div className="bg-gray-900 rounded-lg p-6 mb-6" data-testid="system-settings-section">
+          <h2 className="text-2xl font-semibold mb-4" data-testid="system-settings-title">システム設定</h2>
           
           {/* Show Hints */}
           <div className="mb-4">
@@ -197,12 +200,12 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               />
               <span className="text-lg">ヒント表示</span>
             </label>
-            <p className="text-sm text-gray-400 mt-1">有効にすると、配置可能な場所がハイライトされます</p>
+            <p className="text-sm text-gray-400 mt-1" data-testid="show-hints-description">有効にすると、配置可能な場所がハイライトされます</p>
           </div>
 
           {/* Language */}
           <div className="mb-4">
-            <label className="block text-lg mb-2">言語</label>
+            <label className="block text-lg mb-2" data-testid="language-label">言語</label>
             <select
               value={settings.language}
               onChange={(e) => updateSetting('language', e.target.value as 'ja' | 'en')}
@@ -221,7 +224,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               
               {/* Sound Volume */}
               <div className="mb-3">
-                <label className="block text-base mb-2">効果音音量: {settings.soundVolume}%</label>
+                <label className="block text-base mb-2" data-testid="sound-volume-label">効果音音量: {settings.soundVolume}%</label>
                 <input
                   type="range"
                   min="0"
@@ -234,7 +237,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
 
               {/* Music Volume */}
               <div className="mb-0">
-                <label className="block text-base mb-2">BGM音量: {settings.musicVolume}%</label>
+                <label className="block text-base mb-2" data-testid="music-volume-label">BGM音量: {settings.musicVolume}%</label>
                 <input
                   type="range"
                   min="0"
@@ -253,18 +256,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
           <button
             onClick={handleReset}
             className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
+            data-testid="reset-button"
           >
             初期設定に戻す
           </button>
           <button
             onClick={handleSave}
             className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
+            data-testid="save-button"
           >
             設定を保存
           </button>
           <button
             onClick={onBack}
             className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white text-lg rounded-lg shadow-lg transition duration-300"
+            data-testid="back-button"
           >
             タイトルに戻る
           </button>

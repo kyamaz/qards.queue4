@@ -97,6 +97,11 @@ TARGET cards are displayed with the symbol 'O' rather than 'T' to represent "any
 3. **Path Imports**: Use `@/` alias for imports (maps to `./src/`)
 4. **Client Components**: Add 'use client' directive for interactive components
 5. **Styling**: Use Tailwind CSS v4 classes for all styling
+6. **E2E Testing**: Use data-* attributes to make it easier to target elements for E2E testing with Cypress
+   - All interactive elements should have unique `data-testid` attributes
+   - Use semantic naming for data-testid values (e.g., `data-testid="start-game-button"`)
+   - Avoid using text content or CSS classes as selectors in tests
+   - This ensures tests remain stable even when UI text or styling changes
 
 ### Git Branching Strategy
 - **Feature branches** → **develop branch** → **main branch**

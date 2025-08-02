@@ -14,6 +14,7 @@ interface TargetCardProps {
   isAnimating?: boolean;
   isClickable?: boolean;
   className?: string;
+  'data-testid'?: string;
 }
 
 export const TargetCard: React.FC<TargetCardProps> = ({ 
@@ -22,7 +23,8 @@ export const TargetCard: React.FC<TargetCardProps> = ({
   isHighlighted = false,
   isAnimating = false,
   isClickable = true,
-  className = '' 
+  className = '',
+  'data-testid': dataTestId
 }) => {
   return (
     <BaseCard
@@ -34,6 +36,7 @@ export const TargetCard: React.FC<TargetCardProps> = ({
       isClickable={isClickable}
       className={className}
       backgroundColor="bg-gray-300"
+      data-testid={dataTestId}
     >
       <div className="border-2 border-dashed border-gray-500 w-full h-full rounded flex items-center justify-center">
         <span className="text-gray-600 font-bold">O</span>

@@ -33,6 +33,7 @@ const EmptySlot: React.FC<EmptySlotProps> = ({
     <div
       role="button"
       tabIndex={isClickable ? 0 : -1}
+      data-testid={laneIndex !== undefined ? `empty-slot-lane${laneIndex}-pos${position}` : `empty-slot-${position}`}
       className={`
         relative w-24 h-32 flex-shrink-0 flex flex-col items-center justify-center 
         rounded-lg border-2 transition-all duration-300 font-semibold text-sm

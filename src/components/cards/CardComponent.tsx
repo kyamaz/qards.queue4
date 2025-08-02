@@ -45,6 +45,15 @@ const CardComponent: React.FC<CardComponentProps> = ({
     );
   }
 
+  // Generate data-testid based on card type and position
+  const getDataTestId = () => {
+    const cardType = card.type.toLowerCase().replace('_', '-');
+    if (laneIndex !== undefined) {
+      return `card-${cardType}-lane${laneIndex}-pos${position}`;
+    }
+    return `card-${cardType}-${card.id}`;
+  };
+
   const commonProps = {
     value: card.value,
     onClick,
@@ -52,7 +61,8 @@ const CardComponent: React.FC<CardComponentProps> = ({
     isHighlighted,
     isAnimating,
     isClickable,
-    className
+    className,
+    'data-testid': getDataTestId()
   };
 
   switch (card.type) {
@@ -86,7 +96,8 @@ const CardComponent: React.FC<CardComponentProps> = ({
           isHighlighted={isHighlighted}
           isAnimating={isAnimating}
           isClickable={isClickable}
-          className={className} 
+          className={className}
+          data-testid={getDataTestId()}
         />
       );
     

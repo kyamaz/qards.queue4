@@ -19,10 +19,13 @@ describe('BaseCard', () => {
           value="X"
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
+          data-testid="test-card"
         />
       );
 
-      expect(screen.getByText('X')).toBeInTheDocument();
+      const card = screen.getByTestId('test-card');
+      expect(card).toBeInTheDocument();
+      expect(card).toHaveTextContent('X');
     });
 
     it('should apply background color', () => {
@@ -31,10 +34,11 @@ describe('BaseCard', () => {
           value="X"
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveClass('bg-blue-600');
     });
 
@@ -44,13 +48,15 @@ describe('BaseCard', () => {
           value="C"
           backgroundColor="bg-yellow-600"
           onClick={mockOnClick}
+          data-testid="test-card"
         >
           <div>→2</div>
         </BaseCard>
       );
 
-      expect(screen.getByText('C')).toBeInTheDocument();
-      expect(screen.getByText('→2')).toBeInTheDocument();
+      const card = screen.getByTestId('test-card');
+      expect(card).toHaveTextContent('C');
+      expect(card).toHaveTextContent('→2');
     });
   });
 
@@ -62,11 +68,12 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isClickable={true}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
-      fireEvent.click(cardElement!);
+      const cardElement = screen.getByTestId('test-card');
+      fireEvent.click(cardElement);
 
       expect(mockOnClick).toHaveBeenCalledTimes(1);
     });
@@ -78,11 +85,12 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isClickable={false}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
-      fireEvent.click(cardElement!);
+      const cardElement = screen.getByTestId('test-card');
+      fireEvent.click(cardElement);
 
       expect(mockOnClick).not.toHaveBeenCalled();
     });
@@ -94,18 +102,19 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isClickable={true}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       
-      fireEvent.keyDown(cardElement!, { key: 'Enter' });
+      fireEvent.keyDown(cardElement, { key: 'Enter' });
       expect(mockOnClick).toHaveBeenCalledTimes(1);
 
-      fireEvent.keyDown(cardElement!, { key: ' ' });
+      fireEvent.keyDown(cardElement, { key: ' ' });
       expect(mockOnClick).toHaveBeenCalledTimes(2);
 
-      fireEvent.keyDown(cardElement!, { key: 'Escape' });
+      fireEvent.keyDown(cardElement, { key: 'Escape' });
       expect(mockOnClick).toHaveBeenCalledTimes(2); // Should not trigger
     });
 
@@ -116,12 +125,13 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isClickable={false}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       
-      fireEvent.keyDown(cardElement!, { key: 'Enter' });
+      fireEvent.keyDown(cardElement, { key: 'Enter' });
       expect(mockOnClick).not.toHaveBeenCalled();
     });
   });
@@ -134,10 +144,11 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isSelected={true}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveClass('ring-4', 'ring-cyan-400', 'scale-105');
     });
 
@@ -148,10 +159,11 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isHighlighted={true}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveClass('ring-4', 'ring-cyan-400', 'animate-pulse');
     });
 
@@ -162,10 +174,11 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isAnimating={true}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveClass('animate-bounce', 'scale-110');
     });
 
@@ -176,10 +189,11 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           className="custom-class"
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveClass('custom-class');
     });
 
@@ -190,10 +204,11 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isClickable={true}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveClass('cursor-pointer', 'hover:scale-105');
     });
 
@@ -204,10 +219,11 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isClickable={false}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveClass('cursor-default');
       expect(cardElement).not.toHaveClass('hover:scale-105');
     });
@@ -221,10 +237,11 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isClickable={true}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveAttribute('tabIndex', '0');
     });
 
@@ -235,10 +252,11 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
           isClickable={false}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveAttribute('tabIndex', '-1');
     });
 
@@ -248,10 +266,11 @@ describe('BaseCard', () => {
           value="X"
           backgroundColor="bg-blue-600"
           onClick={mockOnClick}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveAttribute('role', 'button');
     });
   });
@@ -264,11 +283,12 @@ describe('BaseCard', () => {
           backgroundColor="bg-blue-600"
           onClick={undefined}
           isClickable={true}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
-      expect(() => fireEvent.click(cardElement!)).not.toThrow();
+      const cardElement = screen.getByTestId('test-card');
+      expect(() => fireEvent.click(cardElement)).not.toThrow();
     });
 
     it('should handle multiple visual states simultaneously', () => {
@@ -280,10 +300,11 @@ describe('BaseCard', () => {
           isSelected={true}
           isHighlighted={true}
           isAnimating={true}
+          data-testid="test-card"
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('test-card');
       expect(cardElement).toHaveClass('ring-4', 'ring-cyan-400', 'scale-105');
       expect(cardElement).toHaveClass('animate-pulse');
       expect(cardElement).toHaveClass('animate-bounce', 'scale-110');

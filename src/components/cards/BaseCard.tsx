@@ -11,6 +11,7 @@ export interface BaseCardProps {
   isClickable?: boolean;
   className?: string;
   children?: React.ReactNode;
+  'data-testid'?: string;
 }
 
 const BaseCard: React.FC<BaseCardProps & { backgroundColor: string }> = ({
@@ -22,7 +23,8 @@ const BaseCard: React.FC<BaseCardProps & { backgroundColor: string }> = ({
   isClickable = true,
   className = '',
   backgroundColor,
-  children
+  children,
+  'data-testid': dataTestId
 }) => {
   const handleClick = () => {
     if (isClickable && onClick) {
@@ -40,6 +42,7 @@ const BaseCard: React.FC<BaseCardProps & { backgroundColor: string }> = ({
     <div
       role="button"
       tabIndex={isClickable ? 0 : -1}
+      data-testid={dataTestId}
       className={`
         relative w-24 h-32 flex-shrink-0 flex flex-col items-center justify-center 
         rounded-lg border-2 transition-all duration-300 font-semibold text-sm text-white

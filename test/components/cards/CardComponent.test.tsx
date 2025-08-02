@@ -25,8 +25,9 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('|+⟩').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-qubit-1');
       expect(cardElement).toHaveClass('bg-green-600');
+      expect(cardElement).toHaveTextContent('|+⟩');
     });
 
     it('should render QubitCard with darker color for INITIAL_QUBIT type', () => {
@@ -40,8 +41,9 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('|0⟩').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-initial-qubit-1');
       expect(cardElement).toHaveClass('bg-green-800');
+      expect(cardElement).toHaveTextContent('|0⟩');
     });
 
     it('should render GateCard for GATE type', () => {
@@ -55,8 +57,9 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-gate-1');
       expect(cardElement).toHaveClass('bg-blue-600');
+      expect(cardElement).toHaveTextContent('X');
     });
 
     it('should render UnitaryCard for UNITARY type', () => {
@@ -70,8 +73,9 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('U').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-unitary-1');
       expect(cardElement).toHaveClass('bg-purple-600');
+      expect(cardElement).toHaveTextContent('U');
     });
 
     it('should render MeasurementCard for MEASUREMENT type', () => {
@@ -85,8 +89,9 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('⟨0|').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-measurement-1');
       expect(cardElement).toHaveClass('bg-red-600');
+      expect(cardElement).toHaveTextContent('⟨0|');
     });
 
     it('should render ControlCard for CONTROL type with target lane', () => {
@@ -105,9 +110,26 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('C').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-control-1');
       expect(cardElement).toHaveClass('bg-yellow-600');
-      expect(screen.getByText('→2')).toBeInTheDocument(); // 1-indexed display
+      expect(cardElement).toHaveTextContent('C');
+      expect(cardElement).toHaveTextContent('→2'); // 1-indexed display
+    });
+
+    it('should render TargetCard for TARGET type', () => {
+      const card: Card = { id: '1', type: CardType.TARGET, value: 'O' };
+      
+      render(
+        <CardComponent
+          card={card}
+          position={0}
+          onClick={mockOnClick}
+        />
+      );
+
+      const cardElement = screen.getByTestId('card-target-1');
+      expect(cardElement).toHaveClass('bg-gray-300');
+      expect(cardElement).toHaveTextContent('O');
     });
 
     it('should render EmptySlot when card is null', () => {
@@ -119,7 +141,22 @@ describe('CardComponent', () => {
         />
       );
 
-      expect(screen.getByText('5')).toBeInTheDocument(); // position (0-based)
+      const emptySlot = screen.getByTestId('empty-slot-5');
+      expect(emptySlot).toHaveTextContent('5'); // position (0-based)
+    });
+
+    it('should render EmptySlot with laneIndex when provided', () => {
+      render(
+        <CardComponent
+          card={null}
+          position={3}
+          laneIndex={2}
+          onClick={mockOnClick}
+        />
+      );
+
+      const emptySlot = screen.getByTestId('empty-slot-lane2-pos3');
+      expect(emptySlot).toHaveTextContent('3-3'); // lane (1-indexed) and position
     });
   });
 
@@ -136,8 +173,8 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
-      fireEvent.click(cardElement!);
+      const cardElement = screen.getByTestId('card-gate-1');
+      fireEvent.click(cardElement);
 
       expect(mockOnClick).toHaveBeenCalledTimes(1);
     });
@@ -154,8 +191,8 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
-      fireEvent.click(cardElement!);
+      const cardElement = screen.getByTestId('card-gate-1');
+      fireEvent.click(cardElement);
 
       expect(mockOnClick).not.toHaveBeenCalled();
     });
@@ -170,8 +207,8 @@ describe('CardComponent', () => {
         />
       );
 
-      const emptySlot = screen.getByText('0').parentElement?.parentElement;
-      fireEvent.click(emptySlot!);
+      const emptySlot = screen.getByTestId('empty-slot-0');
+      fireEvent.click(emptySlot);
 
       expect(mockOnClick).toHaveBeenCalledTimes(1);
     });
@@ -190,7 +227,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-gate-1');
       expect(cardElement).toHaveClass('ring-4', 'ring-cyan-400');
     });
 
@@ -206,7 +243,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-gate-1');
       expect(cardElement).toHaveClass('ring-4', 'ring-cyan-400', 'animate-pulse');
     });
 
@@ -222,7 +259,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-gate-1');
       expect(cardElement).toHaveClass('animate-bounce', 'scale-110');
     });
 
@@ -238,7 +275,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-gate-1');
       expect(cardElement).toHaveClass('custom-class');
     });
   });
@@ -255,8 +292,9 @@ describe('CardComponent', () => {
         />
       );
 
-      expect(screen.getByText('C')).toBeInTheDocument();
-      expect(screen.queryByText(/→/)).not.toBeInTheDocument();
+      const cardElement = screen.getByTestId('card-control-1');
+      expect(cardElement).toHaveTextContent('C');
+      expect(cardElement).not.toHaveTextContent('→');
     });
 
     it('should handle undefined onClick gracefully', () => {
@@ -270,8 +308,8 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
-      expect(() => fireEvent.click(cardElement!)).not.toThrow();
+      const cardElement = screen.getByTestId('card-gate-1');
+      expect(() => fireEvent.click(cardElement)).not.toThrow();
     });
 
     it('should handle keyboard navigation', () => {
@@ -286,12 +324,12 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByText('X').parentElement?.parentElement;
+      const cardElement = screen.getByTestId('card-gate-1');
       
-      fireEvent.keyDown(cardElement!, { key: 'Enter' });
+      fireEvent.keyDown(cardElement, { key: 'Enter' });
       expect(mockOnClick).toHaveBeenCalledTimes(1);
 
-      fireEvent.keyDown(cardElement!, { key: ' ' });
+      fireEvent.keyDown(cardElement, { key: ' ' });
       expect(mockOnClick).toHaveBeenCalledTimes(2);
     });
   });

@@ -33,8 +33,9 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText(/Test Player/)).toBeInTheDocument();
-      expect(screen.getByText(/現在のプレイヤー/)).toBeInTheDocument();
+      const playerTitle = screen.getByTestId('player-hand-title');
+      expect(playerTitle).toHaveTextContent('Test Player');
+      expect(playerTitle).toHaveTextContent('現在のプレイヤー');
     });
 
     it('should render all cards in hand', () => {
@@ -48,11 +49,23 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText('X')).toBeInTheDocument();
-      expect(screen.getByText('|+⟩')).toBeInTheDocument();
-      expect(screen.getByText('⟨0|')).toBeInTheDocument();
-      expect(screen.getByText('U')).toBeInTheDocument();
-      expect(screen.getByText('C')).toBeInTheDocument();
+      // Check that the cards container is rendered
+      const cardsContainer = screen.getByTestId('hand-cards-container');
+      expect(cardsContainer).toBeInTheDocument();
+
+      // Check each card by its data-testid
+      expect(screen.getByTestId('card-gate-1')).toBeInTheDocument();
+      expect(screen.getByTestId('card-qubit-2')).toBeInTheDocument();
+      expect(screen.getByTestId('card-measurement-3')).toBeInTheDocument();
+      expect(screen.getByTestId('card-unitary-4')).toBeInTheDocument();
+      expect(screen.getByTestId('card-control-5')).toBeInTheDocument();
+
+      // Verify the card values are displayed
+      expect(screen.getByTestId('card-gate-1')).toHaveTextContent('X');
+      expect(screen.getByTestId('card-qubit-2')).toHaveTextContent('|+⟩');
+      expect(screen.getByTestId('card-measurement-3')).toHaveTextContent('⟨0|');
+      expect(screen.getByTestId('card-unitary-4')).toHaveTextContent('U');
+      expect(screen.getByTestId('card-control-5')).toHaveTextContent('C');
     });
 
     it('should render empty hand message when no cards', () => {
@@ -66,7 +79,9 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText('手札がありません')).toBeInTheDocument();
+      const emptyMessage = screen.getByTestId('empty-hand-message');
+      expect(emptyMessage).toBeInTheDocument();
+      expect(emptyMessage).toHaveTextContent('手札がありません');
     });
 
     it('should show current player indicator', () => {
@@ -80,7 +95,8 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText(/現在のプレイヤー/)).toBeInTheDocument();
+      const playerTitle = screen.getByTestId('player-hand-title');
+      expect(playerTitle).toHaveTextContent('現在のプレイヤー');
 
       rerender(
         <PlayerHand
@@ -92,7 +108,8 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.queryByText(/現在のプレイヤー/)).not.toBeInTheDocument();
+      const updatedTitle = screen.getByTestId('player-hand-title');
+      expect(updatedTitle).not.toHaveTextContent('現在のプレイヤー');
     });
 
     it('should apply correct card type colors', () => {
@@ -106,11 +123,11 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const gateCard = screen.getByText('X').parentElement?.parentElement;
-      const quantumBitCard = screen.getByText('|+⟩').parentElement?.parentElement;
-      const measurementCard = screen.getByText('⟨0|').parentElement?.parentElement;
-      const unitaryCard = screen.getByText('U').parentElement?.parentElement;
-      const controlCard = screen.getByText('C').parentElement?.parentElement;
+      const gateCard = screen.getByTestId('card-gate-1');
+      const quantumBitCard = screen.getByTestId('card-qubit-2');
+      const measurementCard = screen.getByTestId('card-measurement-3');
+      const unitaryCard = screen.getByTestId('card-unitary-4');
+      const controlCard = screen.getByTestId('card-control-5');
 
       expect(gateCard).toHaveClass('bg-blue-600');
       expect(quantumBitCard).toHaveClass('bg-green-600');
@@ -134,8 +151,9 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const initialQubitCard = screen.getByText('|0⟩').parentElement?.parentElement;
+      const initialQubitCard = screen.getByTestId('card-initial-qubit-1');
       expect(initialQubitCard).toHaveClass('bg-green-800');
+      expect(initialQubitCard).toHaveTextContent('|0⟩');
     });
   });
 
@@ -151,8 +169,8 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const firstCard = screen.getByText('X').parentElement?.parentElement;
-      fireEvent.click(firstCard!);
+      const firstCard = screen.getByTestId('card-gate-1');
+      fireEvent.click(firstCard);
 
       expect(mockOnCardClick).toHaveBeenCalledWith(mockCards[0]);
       expect(mockOnCardClick).toHaveBeenCalledTimes(1);
@@ -169,8 +187,8 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const firstCard = screen.getByText('X').parentElement?.parentElement;
-      fireEvent.click(firstCard!);
+      const firstCard = screen.getByTestId('card-gate-1');
+      fireEvent.click(firstCard);
 
       expect(mockOnCardClick).not.toHaveBeenCalled();
     });
@@ -186,7 +204,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const selectedCard = screen.getByText('X').parentElement?.parentElement;
+      const selectedCard = screen.getByTestId('card-gate-1');
       expect(selectedCard).toHaveClass('ring-4', 'ring-cyan-400');
     });
 
@@ -201,7 +219,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const card = screen.getByText('X').parentElement?.parentElement;
+      const card = screen.getByTestId('card-gate-1');
       expect(card).toHaveClass('cursor-default');
       expect(card).not.toHaveClass('cursor-pointer');
     });
@@ -220,7 +238,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const card = screen.getByText('X').parentElement?.parentElement;
+      const card = screen.getByTestId('card-gate-1');
       expect(card).toHaveClass('hover:scale-105');
     });
 
@@ -254,7 +272,8 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      expect(screen.getByText(new RegExp(longName))).toBeInTheDocument();
+      const playerTitle = screen.getByTestId('player-hand-title');
+      expect(playerTitle).toHaveTextContent(longName);
     });
 
     it('should handle large number of cards', () => {
@@ -274,8 +293,12 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const cards = screen.getAllByText('X');
-      expect(cards).toHaveLength(20);
+      // Check that all cards are rendered with correct data-testid
+      for (let i = 0; i < 20; i++) {
+        const card = screen.getByTestId(`card-gate-card-${i}`);
+        expect(card).toBeInTheDocument();
+        expect(card).toHaveTextContent('X');
+      }
     });
 
     it('should handle undefined onCardClick gracefully', () => {
@@ -289,10 +312,10 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const card = screen.getByText('X').parentElement?.parentElement;
+      const card = screen.getByTestId('card-gate-1');
       
       // Should not throw error when clicking
-      expect(() => fireEvent.click(card!)).not.toThrow();
+      expect(() => fireEvent.click(card)).not.toThrow();
     });
   });
 });

@@ -15,13 +15,13 @@ interface PlayerHandProps {
 const PlayerHand: React.FC<PlayerHandProps> = ({ hand, playerName, isCurrentPlayer, onCardClick, selectedCard }) => {
 
   return (
-    <div className="bg-gray-800 p-4 rounded-lg shadow-lg w-full">
-      <h3 className="text-xl font-semibold mb-4 text-white">
+    <div className="bg-gray-800 p-4 rounded-lg shadow-lg w-full" data-testid="player-hand">
+      <h3 className="text-xl font-semibold mb-4 text-white" data-testid="player-hand-title">
         {playerName}の手札 {isCurrentPlayer && '(現在のプレイヤー)'}
       </h3>
-      <div className="flex flex-wrap gap-3 justify-center">
+      <div className="flex flex-wrap gap-3 justify-center" data-testid="hand-cards-container">
         {hand.length === 0 ? (
-          <p className="text-gray-400">手札がありません</p>
+          <p className="text-gray-400" data-testid="empty-hand-message">手札がありません</p>
         ) : (
           hand.map((card, index) => (
             <CardComponent

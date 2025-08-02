@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import GameBoard from '../../src/components/GameBoard';
 import { Card, CardType, GameState } from '../../src/game/types';
@@ -46,7 +46,8 @@ describe('GameBoard Component', () => {
       );
 
       // Check quantum circuit title
-      expect(screen.getByText('量子回路')).toBeInTheDocument();
+      expect(screen.getByTestId('board-title')).toBeInTheDocument();
+      expect(screen.getByTestId('board-title')).toHaveTextContent('量子回路');
     });
 
     it('should render cards in correct positions', () => {
@@ -58,11 +59,15 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Check some cards are rendered
-      expect(screen.getAllByText('I')).toHaveLength(4); // 4 I gates
-      expect(screen.getByText('X')).toBeInTheDocument();
-      expect(screen.getByText('|+⟩')).toBeInTheDocument();
-      expect(screen.getByText('U')).toBeInTheDocument();
+      // Check specific cards are rendered in correct positions
+      expect(screen.getByTestId('card-gate-lane0-pos0')).toBeInTheDocument(); // I gate
+      expect(screen.getByTestId('card-gate-lane0-pos1')).toBeInTheDocument(); // X gate
+      expect(screen.getByTestId('card-qubit-lane0-pos3')).toBeInTheDocument(); // |+⟩
+      expect(screen.getByTestId('card-gate-lane1-pos0')).toBeInTheDocument(); // I gate
+      expect(screen.getByTestId('card-unitary-lane1-pos1')).toBeInTheDocument(); // U
+      expect(screen.getByTestId('card-gate-lane2-pos0')).toBeInTheDocument(); // I gate
+      expect(screen.getByTestId('card-control-lane2-pos1')).toBeInTheDocument(); // C
+      expect(screen.getByTestId('card-gate-lane3-pos0')).toBeInTheDocument(); // I gate
     });
 
     it('should render empty slots', () => {
@@ -74,13 +79,13 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Empty slots should have specific styling
-      const emptySlots = screen.getAllByRole('button');
-      // Filter for empty slots (they should have gray background)
-      const actualEmptySlots = emptySlots.filter(slot => 
-        slot.className.includes('bg-gray-700')
-      );
-      expect(actualEmptySlots.length).toBeGreaterThan(0);
+      // Check for empty slot at lane 0, position 2
+      expect(screen.getByTestId('empty-slot-lane0-pos2')).toBeInTheDocument();
+      
+      // Check that empty slots exist in other lanes too
+      const lane1 = screen.getByTestId('board-lane-1');
+      const emptySlots = within(lane1).getAllByTestId(/empty-slot-lane1-pos\d+/);
+      expect(emptySlots.length).toBeGreaterThan(0);
     });
 
     it('should extend lanes to maximum length with empty slots', () => {
@@ -102,8 +107,14 @@ describe('GameBoard Component', () => {
       );
 
       // Should render the cards properly
-      expect(screen.getAllByText('I')).toHaveLength(4);
-      expect(screen.getByText('X')).toBeInTheDocument();
+      expect(screen.getByTestId('card-gate-lane0-pos0')).toBeInTheDocument();
+      expect(screen.getByTestId('card-gate-lane1-pos0')).toBeInTheDocument();
+      expect(screen.getByTestId('card-gate-lane1-pos1')).toBeInTheDocument();
+      expect(screen.getByTestId('card-gate-lane2-pos0')).toBeInTheDocument();
+      expect(screen.getByTestId('card-gate-lane3-pos0')).toBeInTheDocument();
+      
+      // Check that empty slots fill remaining positions
+      expect(screen.getByTestId('empty-slot-lane0-pos1')).toBeInTheDocument();
     });
   });
 
@@ -117,9 +128,9 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Click on the first empty slot in lane 1 (position 2)
-      const emptySlots = screen.getAllByText('1-2');
-      fireEvent.click(emptySlots[0]);
+      // Click on the empty slot in lane 0, position 2
+      const emptySlot = screen.getByTestId('empty-slot-lane0-pos2');
+      fireEvent.click(emptySlot);
 
       expect(mockOnCardSlotClick).toHaveBeenCalledWith(0, 2);
     });
@@ -133,9 +144,9 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Click on the X card in lane 1 (position 1)
-      const xCard = screen.getByText('X');
-      fireEvent.click(xCard.parentElement!);
+      // Click on the X card in lane 0, position 1
+      const xCard = screen.getByTestId('card-gate-lane0-pos1');
+      fireEvent.click(xCard);
 
       expect(mockOnCardSlotClick).toHaveBeenCalledWith(0, 1);
     });
@@ -149,19 +160,17 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Click on I gate in each lane
-      const iGates = screen.getAllByText('I');
-      
-      fireEvent.click(iGates[0].parentElement!); // Lane 0
+      // Click on first card (I gate) in each lane
+      fireEvent.click(screen.getByTestId('card-gate-lane0-pos0')); // Lane 0
       expect(mockOnCardSlotClick).toHaveBeenCalledWith(0, 0);
 
-      fireEvent.click(iGates[1].parentElement!); // Lane 1
+      fireEvent.click(screen.getByTestId('card-gate-lane1-pos0')); // Lane 1
       expect(mockOnCardSlotClick).toHaveBeenCalledWith(1, 0);
 
-      fireEvent.click(iGates[2].parentElement!); // Lane 2
+      fireEvent.click(screen.getByTestId('card-gate-lane2-pos0')); // Lane 2
       expect(mockOnCardSlotClick).toHaveBeenCalledWith(2, 0);
 
-      fireEvent.click(iGates[3].parentElement!); // Lane 3
+      fireEvent.click(screen.getByTestId('card-gate-lane3-pos0')); // Lane 3
       expect(mockOnCardSlotClick).toHaveBeenCalledWith(3, 0);
     });
   });
@@ -176,10 +185,10 @@ describe('GameBoard Component', () => {
         />
       );
 
-      const gateCard = screen.getByText('X').parentElement?.parentElement;
-      const quantumBitCard = screen.getByText('|+⟩').parentElement?.parentElement;
-      const unitaryCard = screen.getByText('U').parentElement?.parentElement;
-      const controlCard = screen.getByText('C').parentElement?.parentElement;
+      const gateCard = screen.getByTestId('card-gate-lane0-pos1');
+      const quantumBitCard = screen.getByTestId('card-qubit-lane0-pos3');
+      const unitaryCard = screen.getByTestId('card-unitary-lane1-pos1');
+      const controlCard = screen.getByTestId('card-control-lane2-pos1');
 
       expect(gateCard).toHaveClass('bg-blue-600');
       expect(quantumBitCard).toHaveClass('bg-green-600');
@@ -208,7 +217,7 @@ describe('GameBoard Component', () => {
         />
       );
 
-      const initialQubitCard = screen.getByText('|0⟩').parentElement?.parentElement;
+      const initialQubitCard = screen.getByTestId('card-initial-qubit-lane0-pos1');
       expect(initialQubitCard).toHaveClass('bg-green-800');
     });
 
@@ -221,7 +230,8 @@ describe('GameBoard Component', () => {
         />
       );
 
-      const controlCard = screen.getByText('C').parentElement?.parentElement;
+      const controlCard = screen.getByTestId('card-control-lane2-pos1');
+      expect(controlCard).toHaveTextContent('C');
       expect(controlCard).toHaveTextContent('→2'); // Links to lane 2 (1-indexed display)
     });
   });
@@ -239,8 +249,9 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Should still render quantum circuit title
-      expect(screen.getByText('量子回路')).toBeInTheDocument();
+      // Should still render quantum circuit title and board
+      expect(screen.getByTestId('board-title')).toBeInTheDocument();
+      expect(screen.getByTestId('quantum-circuit-board')).toBeInTheDocument();
     });
 
     it('should handle board with very long lanes', () => {
@@ -262,8 +273,10 @@ describe('GameBoard Component', () => {
         />
       );
 
-      const xCards = screen.getAllByText('X');
-      expect(xCards).toHaveLength(20);
+      // Check that all 20 cards are rendered
+      for (let i = 0; i < 20; i++) {
+        expect(screen.getByTestId(`card-gate-lane0-pos${i}`)).toBeInTheDocument();
+      }
     });
 
     it('should handle null values in lanes correctly', () => {
@@ -284,8 +297,12 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Should render the X card
-      expect(screen.getByText('X')).toBeInTheDocument();
+      // Should render the X card at position 2
+      expect(screen.getByTestId('card-gate-lane0-pos2')).toBeInTheDocument();
+      // Should render empty slots for null positions
+      expect(screen.getByTestId('empty-slot-lane0-pos0')).toBeInTheDocument();
+      expect(screen.getByTestId('empty-slot-lane0-pos1')).toBeInTheDocument();
+      expect(screen.getByTestId('empty-slot-lane0-pos3')).toBeInTheDocument();
     });
 
     it('should handle undefined onCardSlotClick gracefully', () => {
@@ -298,7 +315,8 @@ describe('GameBoard Component', () => {
       );
 
       // Should render without errors
-      expect(screen.getByText('量子回路')).toBeInTheDocument();
+      expect(screen.getByTestId('board-title')).toBeInTheDocument();
+      expect(screen.getByTestId('quantum-circuit-board')).toBeInTheDocument();
     });
   });
 
@@ -312,7 +330,8 @@ describe('GameBoard Component', () => {
         />
       );
 
-      const slot = screen.getAllByRole('button')[0];
+      // Get a card slot
+      const slot = screen.getByTestId('card-gate-lane0-pos0');
       // Check if hover effect class is present
       const classList = slot.className;
       expect(classList).toContain('hover:');
@@ -327,14 +346,14 @@ describe('GameBoard Component', () => {
         />
       );
 
-      const slots = screen.getAllByRole('button');
-      expect(slots.length).toBeGreaterThan(0);
-      // Check if slots have the expected width and height classes
-      slots.forEach(slot => {
-        const classList = slot.className;
-        expect(classList).toContain('w-24');
-        expect(classList).toContain('h-32');
-      });
+      // Check both card and empty slot sizes
+      const cardSlot = screen.getByTestId('card-gate-lane0-pos0');
+      const emptySlot = screen.getByTestId('empty-slot-lane0-pos2');
+      
+      expect(cardSlot.className).toContain('w-24');
+      expect(cardSlot.className).toContain('h-32');
+      expect(emptySlot.className).toContain('w-24');
+      expect(emptySlot.className).toContain('h-32');
     });
 
     it('should display measurement cards correctly', () => {
@@ -358,9 +377,10 @@ describe('GameBoard Component', () => {
         />
       );
 
-      // Check that measurement card is rendered
-      const measurementCard = screen.getByText('測定');
+      // Check that measurement card is rendered at correct position
+      const measurementCard = screen.getByTestId('card-measurement-lane0-pos1');
       expect(measurementCard).toBeInTheDocument();
+      expect(measurementCard).toHaveTextContent('⟨0|');
     });
   });
 });

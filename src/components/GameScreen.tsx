@@ -837,9 +837,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white relative">
+    <div data-testid="game-screen" className="min-h-screen bg-gradient-to-br from-gray-800 via-gray-900 to-black text-white relative">
       {/* Header with game controls */}
-      <header className="bg-black bg-opacity-30 backdrop-blur-sm border-b border-gray-600 p-4">
+      <header data-testid="game-header" className="bg-black bg-opacity-30 backdrop-blur-sm border-b border-gray-600 p-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold">
@@ -848,21 +848,21 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
             <div className="flex items-center gap-2 text-sm">
               {isInitialPhase ? (
                 <>
-                  <span className="bg-green-600 px-2 py-1 rounded">初期配置</span>
+                  <span data-testid="initial-phase-indicator" className="bg-green-600 px-2 py-1 rounded">初期配置</span>
                   <span className="bg-blue-600 px-2 py-1 rounded">
                     {currentPlayerIndex + 1}/{gameState.players.length}
                   </span>
                 </>
               ) : isEndPhase ? (
                 <>
-                  <span className="bg-red-600 px-2 py-1 rounded">ゲーム終了</span>
+                  <span data-testid="game-ended-indicator" className="bg-red-600 px-2 py-1 rounded">ゲーム終了</span>
                 </>
               ) : (
                 <>
-                  <span className="bg-blue-600 px-2 py-1 rounded">ターン {gameState.turn}</span>
-                  <span className="bg-purple-600 px-2 py-1 rounded">測定 {gameState.measurementCount}/11</span>
+                  <span data-testid="turn-indicator" className="bg-blue-600 px-2 py-1 rounded">ターン {gameState.turn}</span>
+                  <span data-testid="measurement-counter" className="bg-purple-600 px-2 py-1 rounded">測定 {gameState.measurementCount}/11</span>
                   {gameState.turnDirection === 'backward' && (
-                    <span className="bg-orange-600 px-2 py-1 rounded">逆順</span>
+                    <span data-testid="reverse-direction-indicator" className="bg-orange-600 px-2 py-1 rounded">逆順</span>
                   )}
                 </>
               )}
@@ -872,6 +872,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           <div className="flex items-center gap-2">
             {(selectedCard || gameState?.controlTargetPlacement?.waitingForTarget) && !isInitialPhase && (
               <button
+                data-testid="cancel-action-button"
                 onClick={handleCancelAction}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition duration-300"
               >
@@ -879,6 +880,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
               </button>
             )}
             <button
+              data-testid="menu-button"
               onClick={() => setShowMenu(!showMenu)}
               className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition duration-300"
             >
@@ -890,9 +892,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
 
       {/* Dropdown menu */}
       {showMenu && (
-        <div className="absolute top-16 right-4 bg-black bg-opacity-90 border border-gray-600 rounded-lg p-4 z-50">
+        <div data-testid="dropdown-menu" className="absolute top-16 right-4 bg-black bg-opacity-90 border border-gray-600 rounded-lg p-4 z-50">
           <div className="flex flex-col gap-2">
             <button
+              data-testid="new-game-button"
               onClick={handleNewGame}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition duration-300 text-left"
             >
@@ -900,6 +903,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
             </button>
             {onBackToMenu && (
               <button
+                data-testid="back-to-menu-button"
                 onClick={handleBackToMenu}
                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition duration-300 text-left"
               >
@@ -912,7 +916,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
 
       <div className="flex flex-col lg:flex-row min-h-screen">
         {/* Left sidebar: All players */}
-        <aside className="lg:w-64 bg-black bg-opacity-20 p-4">
+        <aside data-testid="player-sidebar" className="lg:w-64 bg-black bg-opacity-20 p-4">
           <h2 className="text-lg font-semibold mb-4">プレイヤー状況</h2>
           {gameState.gamePhase === 'game_ended' && (
             <p className="text-xs text-gray-400 mb-3">
@@ -928,6 +932,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
             {gameState.players.map((player) => (
               <div 
                 key={player.id} 
+                data-testid={`player-info-${player.id}`}
                 onClick={() => handlePlayerClick(player.id)}
                 style={{ 
                   userSelect: 'none',
@@ -967,9 +972,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         </aside>
 
         {/* Main game area */}
-        <main className="flex-1 flex flex-col">
+        <main data-testid="game-main-area" className="flex-1 flex flex-col">
           {/* Game board */}
-          <div className="flex-1 flex items-center justify-center p-4">
+          <div data-testid="game-board-area" className="flex-1 flex items-center justify-center p-4">
             <div className="w-full max-w-4xl">
               <GameBoard 
                 board={gameState.board} 
@@ -983,9 +988,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           </div>
 
           {/* Bottom section: Current player */}
-          <section className="bg-black bg-opacity-30 border-t border-gray-600 p-4">
+          <section data-testid="player-hand-area" className="bg-black bg-opacity-30 border-t border-gray-600 p-4">
             {/* Game status messages */}
-            <div className="text-center mb-4">
+            <div data-testid="game-status-messages" className="text-center mb-4">
               <div className="flex items-center justify-center gap-4 mb-2">
                 {isInitialPhase ? (
                   <div className="flex flex-col items-center gap-2">
@@ -1030,7 +1035,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                     </p>
                     {gameState.gamePhase === 'game_ended' && (
                       <div className="flex flex-col items-center gap-2">
-                        <span className="bg-red-600 px-4 py-2 rounded-lg text-xl font-bold animate-pulse">
+                        <span data-testid="game-ended-banner" className="bg-red-600 px-4 py-2 rounded-lg text-xl font-bold animate-pulse">
                           ゲーム終了！
                         </span>
                         {(() => {
@@ -1057,10 +1062,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                               <div className="text-sm text-gray-400 mb-2">
                                 {getEndReasonMessage(endReason)}
                               </div>
-                              <div className="text-2xl font-bold text-yellow-400 mb-2">
+                              <div data-testid="winner-announcement" className="text-2xl font-bold text-yellow-400 mb-2">
                                 🏆 勝者: {winner.name}
                               </div>
-                              <div className="text-lg mb-2">
+                              <div data-testid="final-score-display" className="text-lg mb-2">
                                 最終スコア: {finalScores.find(s => s.player.id === winner.id)?.finalScore}点
                               </div>
                               <div className="text-sm text-gray-300">
@@ -1086,7 +1091,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
               </div>
               
               {message && (
-                <div className={`p-3 rounded-lg text-center transition-all duration-300 ${
+                <div data-testid="game-message" className={`p-3 rounded-lg text-center transition-all duration-300 ${
                   message.includes('エラー') || message.includes('できません') 
                     ? 'bg-red-600 bg-opacity-80' 
                     : message.includes('獲得') || message.includes('配置しました')
@@ -1097,6 +1102,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                     <span>{message}</span>
                     {gameState?.controlTargetPlacement?.waitingForTarget && (
                       <button
+                        data-testid="cancel-control-target-button"
                         onClick={() => {
                           if (gameState) {
                             setGameState(cancelControlTargetPlacement(gameState));
@@ -1134,6 +1140,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                     {!hasInitialCards && (
                       <div className="flex gap-4">
                         <button
+                          data-testid="skip-initial-player-button"
                           onClick={handleSkipInitialPlayer}
                           className="px-8 py-4 text-xl font-bold rounded-lg shadow-lg transition duration-300 bg-gray-600 hover:bg-gray-700 text-white"
                         >
@@ -1201,6 +1208,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                       
                       return (
                         <button
+                          data-testid="pass-button"
                           onClick={handlePass}
                           disabled={gameState.gamePhase === 'game_ended' || currentPlayer.eliminated}
                           className={`px-6 py-3 text-lg rounded-lg shadow-lg transition duration-300 ${

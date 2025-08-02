@@ -19,31 +19,36 @@ describe('SettingsScreen Component', () => {
     it('should render settings title', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      expect(screen.getByText('設定')).toBeInTheDocument();
+      expect(screen.getByTestId('settings-title')).toBeInTheDocument();
     });
 
     it('should render all setting sections', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Note: Audio settings are hidden for future implementation
-      expect(screen.getByText('ゲーム設定')).toBeInTheDocument();
-      expect(screen.getByText('ルール設定')).toBeInTheDocument();
-      expect(screen.getByText('システム設定')).toBeInTheDocument();
+      expect(screen.getByTestId('game-settings-title')).toBeInTheDocument();
+      expect(screen.getByTestId('rule-settings-title')).toBeInTheDocument();
+      expect(screen.getByTestId('system-settings-title')).toBeInTheDocument();
     });
 
     // Audio settings are hidden for future implementation
     it.skip('should render volume sliders with default values', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      expect(screen.getByText('効果音音量: 50%')).toBeInTheDocument();
-      expect(screen.getByText('BGM音量: 30%')).toBeInTheDocument();
+      expect(screen.getByTestId('sound-volume-label')).toHaveTextContent('効果音音量: 50%');
+      expect(screen.getByTestId('music-volume-label')).toHaveTextContent('BGM音量: 30%');
     });
 
     it('should render difficulty selector with default value', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const difficultySelect = screen.getByDisplayValue('中級 - 標準的な難易度');
+      // Find the difficulty select by finding all selects and choosing the one with difficulty options
+      const selects = screen.getAllByRole('combobox');
+      const difficultySelect = selects.find(select => {
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+      });
       expect(difficultySelect).toBeInTheDocument();
+      expect(difficultySelect).toHaveValue('normal');
     });
 
 
@@ -64,22 +69,27 @@ describe('SettingsScreen Component', () => {
     it('should render language selector with default value', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const languageSelect = screen.getByDisplayValue('日本語');
+      // Find the language select by finding the parent div containing the label
+      const languageLabel = screen.getByTestId('language-label');
+      const languageSelect = languageLabel.parentElement?.parentElement?.querySelector('select');
       expect(languageSelect).toBeInTheDocument();
+      expect(languageSelect).toHaveValue('ja');
     });
 
     it('should render player count selector with default value', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const playerCountSelect = screen.getByDisplayValue('4人');
+      const playerCountSelect = screen.getByTestId('player-count-select');
       expect(playerCountSelect).toBeInTheDocument();
+      expect(playerCountSelect).toHaveValue('4');
     });
 
     it('should render COM player count selector with default value', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const comPlayerCountSelect = screen.getByDisplayValue('0人（COMプレイヤーなし）');
+      const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
       expect(comPlayerCountSelect).toBeInTheDocument();
+      expect(comPlayerCountSelect).toHaveValue('0');
     });
   });
 
@@ -91,7 +101,7 @@ describe('SettingsScreen Component', () => {
       const soundSlider = screen.getAllByRole('slider')[0];
       fireEvent.change(soundSlider, { target: { value: '75' } });
       
-      expect(screen.getByText('効果音音量: 75%')).toBeInTheDocument();
+      expect(screen.getByTestId('sound-volume-label')).toHaveTextContent('効果音音量: 75%');
     });
 
     it.skip('should update music volume when slider is moved', () => {
@@ -100,16 +110,25 @@ describe('SettingsScreen Component', () => {
       const musicSlider = screen.getAllByRole('slider')[1];
       fireEvent.change(musicSlider, { target: { value: '60' } });
       
-      expect(screen.getByText('BGM音量: 60%')).toBeInTheDocument();
+      expect(screen.getByTestId('music-volume-label')).toHaveTextContent('BGM音量: 60%');
     });
 
     it('should update difficulty when selector is changed', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const difficultySelect = screen.getByDisplayValue('中級 - 標準的な難易度');
+      // First enable COM players
+      const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
+      fireEvent.change(comPlayerCountSelect, { target: { value: '3' } });
+      
+      // Find the difficulty select by finding all selects and choosing the one with difficulty options
+      const selects = screen.getAllByRole('combobox');
+      const difficultySelect = selects.find(select => {
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+      }) as HTMLSelectElement;
+      
       fireEvent.change(difficultySelect, { target: { value: 'hard' } });
       
-      expect(screen.getByDisplayValue('上級 - CPUが強く、ヒントが少ない')).toBeInTheDocument();
+      expect(difficultySelect).toHaveValue('hard');
     });
 
 
@@ -136,59 +155,66 @@ describe('SettingsScreen Component', () => {
     it('should update language when selector is changed', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const languageSelect = screen.getByDisplayValue('日本語');
+      // Find the language select by finding the parent div containing the label
+      const languageLabel = screen.getByTestId('language-label');
+      const languageSelect = languageLabel.parentElement?.parentElement?.querySelector('select') as HTMLSelectElement;
       fireEvent.change(languageSelect, { target: { value: 'en' } });
       
-      expect(screen.getByDisplayValue('English')).toBeInTheDocument();
+      expect(languageSelect).toHaveValue('en');
     });
 
     it('should update player count when selector is changed', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const playerCountSelect = screen.getByDisplayValue('4人');
+      const playerCountSelect = screen.getByTestId('player-count-select');
       fireEvent.change(playerCountSelect, { target: { value: '6' } });
       
-      expect(screen.getByDisplayValue('6人')).toBeInTheDocument();
+      expect(playerCountSelect).toHaveValue('6');
     });
 
     it('should update COM player count when selector is changed', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const comPlayerCountSelect = screen.getByDisplayValue('0人（COMプレイヤーなし）');
+      const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
       fireEvent.change(comPlayerCountSelect, { target: { value: '2' } });
       
-      expect(screen.getByDisplayValue('2人')).toBeInTheDocument();
+      expect(comPlayerCountSelect).toHaveValue('2');
     });
 
     it('should allow 0 COM players for single player mode', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Default is already 0 COM players
-      expect(screen.getByDisplayValue('0人（COMプレイヤーなし）')).toBeInTheDocument();
-      expect(screen.getByText('1人プレイモード（人間プレイヤーのみ）')).toBeInTheDocument();
+      const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
+      expect(comPlayerCountSelect).toHaveValue('0');
+      expect(screen.getByTestId('player-count-display')).toHaveTextContent('1人プレイモード（人間プレイヤーのみ）');
     });
 
     it('should disable difficulty setting when COM players is 0', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Default is already 0 COM players, so difficulty should be disabled
-      const difficultySelect = screen.getByDisplayValue('中級 - 標準的な難易度');
+      const selects = screen.getAllByRole('combobox');
+      const difficultySelect = selects.find(select => {
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+      });
       expect(difficultySelect).toBeDisabled();
-      expect(screen.getByText('1人プレイモードでは難易度設定は無効です')).toBeInTheDocument();
+      expect(screen.getByTestId('single-player-difficulty-notice')).toBeInTheDocument();
     });
 
     it('should adjust COM player count when total player count changes', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
       // Initially 4 total players, 0 COM players
-      expect(screen.getByDisplayValue('0人（COMプレイヤーなし）')).toBeInTheDocument();
+      const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
+      expect(comPlayerCountSelect).toHaveValue('0');
       
       // Change total players to 3
-      const playerCountSelect = screen.getByDisplayValue('4人');
+      const playerCountSelect = screen.getByTestId('player-count-select');
       fireEvent.change(playerCountSelect, { target: { value: '3' } });
       
       // COM players should automatically adjust to 2 (3 - 1)
-      expect(screen.getByDisplayValue('2人（1人プレイ）')).toBeInTheDocument();
+      expect(comPlayerCountSelect).toHaveValue('2');
     });
   });
 
@@ -196,7 +222,7 @@ describe('SettingsScreen Component', () => {
     it('should call onBack when back button is clicked', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const backButton = screen.getByText('タイトルに戻る');
+      const backButton = screen.getByTestId('back-button');
       fireEvent.click(backButton);
       
       expect(mockOnBack).toHaveBeenCalledTimes(1);
@@ -207,11 +233,18 @@ describe('SettingsScreen Component', () => {
     it('should save settings to localStorage when save button is clicked', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      // Change a non-audio setting (since audio controls are hidden)
-      const difficultySelect = screen.getByDisplayValue('中級 - 標準的な難易度');
+      // First enable COM players so we can change difficulty
+      const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
+      fireEvent.change(comPlayerCountSelect, { target: { value: '3' } });
+      
+      // Now change difficulty (it should be enabled now)
+      const selects = screen.getAllByRole('combobox');
+      const difficultySelect = selects.find(select => {
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+      }) as HTMLSelectElement;
       fireEvent.change(difficultySelect, { target: { value: 'hard' } });
       
-      const saveButton = screen.getByText('設定を保存');
+      const saveButton = screen.getByTestId('save-button');
       fireEvent.click(saveButton);
       
       // Check if settings were saved to localStorage
@@ -219,9 +252,9 @@ describe('SettingsScreen Component', () => {
       expect(savedSettings).toBeTruthy();
       
       const parsedSettings = JSON.parse(savedSettings!);
-      expect(parsedSettings.difficulty).toBe('hard');
+      expect(parsedSettings.difficulty).toBe('hard'); // Should now be hard
       expect(parsedSettings.playerCount).toBe(4); // Default value
-      expect(parsedSettings.comPlayerCount).toBe(0); // Default value
+      expect(parsedSettings.comPlayerCount).toBe(3); // Changed value
       // Audio settings should still be preserved internally
       expect(parsedSettings.soundVolume).toBe(50); // Default value
       expect(parsedSettings.musicVolume).toBe(30); // Default value
@@ -233,18 +266,25 @@ describe('SettingsScreen Component', () => {
     it('should reset all settings when reset button is clicked', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      // Change a non-audio setting (since audio controls are hidden)
-      const difficultySelect = screen.getByDisplayValue('中級 - 標準的な難易度');
+      // First enable COM players
+      const comPlayerCountSelect = screen.getByTestId('com-player-count-select');
+      fireEvent.change(comPlayerCountSelect, { target: { value: '3' } });
+      
+      // Now change difficulty
+      const selects = screen.getAllByRole('combobox');
+      const difficultySelect = selects.find(select => {
+        return select.querySelector('option[value="normal"]')?.textContent?.includes('中級');
+      }) as HTMLSelectElement;
       fireEvent.change(difficultySelect, { target: { value: 'hard' } });
       
       // Reset settings
-      const resetButton = screen.getByText('初期設定に戻す');
+      const resetButton = screen.getByTestId('reset-button');
       fireEvent.click(resetButton);
       
       // Check if settings are back to defaults (audio settings are internal only)
-      expect(screen.getByDisplayValue('中級 - 標準的な難易度')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('4人')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('0人（COMプレイヤーなし）')).toBeInTheDocument();
+      expect(difficultySelect).toHaveValue('normal');
+      expect(screen.getByTestId('player-count-select')).toHaveValue('4');
+      expect(screen.getByTestId('com-player-count-select')).toHaveValue('0');
     });
   });
 
@@ -252,9 +292,9 @@ describe('SettingsScreen Component', () => {
     it('should apply correct button colors', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const resetButton = screen.getByText('初期設定に戻す');
-      const saveButton = screen.getByText('設定を保存');
-      const backButton = screen.getByText('タイトルに戻る');
+      const resetButton = screen.getByTestId('reset-button');
+      const saveButton = screen.getByTestId('save-button');
+      const backButton = screen.getByTestId('back-button');
       
       expect(resetButton).toHaveClass('bg-red-600');
       expect(saveButton).toHaveClass('bg-green-600');
@@ -265,20 +305,20 @@ describe('SettingsScreen Component', () => {
     it('should have hover effects on buttons', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const resetButton = screen.getByText('初期設定に戻す');
+      const resetButton = screen.getByTestId('reset-button');
       expect(resetButton).toHaveClass('hover:bg-red-700');
     });
 
     it('should display hint description', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      expect(screen.getByText('有効にすると、配置可能な場所がハイライトされます')).toBeInTheDocument();
+      expect(screen.getByTestId('show-hints-description')).toBeInTheDocument();
     });
 
     it('should display controlled hadamard description', () => {
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      expect(screen.getByText('制御アダマールゲートカードを使用可能にします')).toBeInTheDocument();
+      expect(screen.getByTestId('controlled-hadamard-description')).toBeInTheDocument();
     });
   });
 
@@ -286,7 +326,7 @@ describe('SettingsScreen Component', () => {
     it('should handle undefined callbacks gracefully', () => {
       render(<SettingsScreen onBack={undefined as any} onStartGame={undefined as any} />);
       
-      const backButton = screen.getByText('タイトルに戻る');
+      const backButton = screen.getByTestId('back-button');
       
       expect(() => fireEvent.click(backButton)).not.toThrow();
     });
@@ -300,7 +340,7 @@ describe('SettingsScreen Component', () => {
       
       render(<SettingsScreen onBack={mockOnBack} onStartGame={mockOnStartGame} />);
       
-      const saveButton = screen.getByText('設定を保存');
+      const saveButton = screen.getByTestId('save-button');
       
       expect(() => fireEvent.click(saveButton)).not.toThrow();
       
