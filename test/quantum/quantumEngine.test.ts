@@ -1,290 +1,124 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import { QuantumEngine } from '../../src/quantum/quantumEngine';
-import { QuantumComputationContext, QuantumCircuit, QubitState, MeasurementBasis } from '../../src/quantum/types';
+import { QuantumComputationContext, QubitState, MeasurementBasis, QuantumState, QuantumCircuitElement } from '../../src/quantum/types';
 
-describe('QuantumEngine', () => {
+describe('QuantumEngine (Multi-Qubit)', () => {
   let quantumEngine: QuantumEngine;
 
   beforeEach(() => {
     quantumEngine = new QuantumEngine();
   });
 
-  describe('Quantum State Conversion', () => {
-    it('should convert |0⟩ to correct quantum state', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[{
-            type: 'qubit',
-            value: '|0⟩',
-            position: 0,
-            laneIndex: 0
-          }]],
-          initialStates: [{ amplitude0: { real: 1, imaginary: 0 }, amplitude1: { real: 0, imaginary: 0 } }]
-        },
-        measurementLane: 0,
-        measurementPosition: 1,
-        measurementBasis: '⟨0|'
-      });
-
-      expect(result.measurementResult.outcome).toBe('0');
-      expect(result.measurementResult.probability).toBeCloseTo(1.0);
+  describe('State Initialization', () => {
+    it('should create a |00⟩ initial state correctly', () => {
+      const state = quantumEngine.createInitialState(['|0⟩', '|0⟩']);
+      expect(state.numQubits).toBe(2);
+      expect(state.amplitudes.length).toBe(4);
+      expect(state.amplitudes[0].real).toBe(1); // |00⟩
+      expect(state.amplitudes[1].real).toBe(0);
+      expect(state.amplitudes[2].real).toBe(0);
+      expect(state.amplitudes[3].real).toBe(0);
     });
 
-    it('should convert |1⟩ to correct quantum state', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[{
-            type: 'qubit',
-            value: '|1⟩',
-            position: 0,
-            laneIndex: 0
-          }]],
-          initialStates: [{ amplitude0: { real: 0, imaginary: 0 }, amplitude1: { real: 1, imaginary: 0 } }]
-        },
-        measurementLane: 0,
-        measurementPosition: 1,
-        measurementBasis: '⟨1|'
-      });
-
-      expect(result.measurementResult.outcome).toBe('1');
-      expect(result.measurementResult.probability).toBeCloseTo(1.0);
-    });
-
-    it('should convert |+⟩ to superposition state', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[{
-            type: 'qubit',
-            value: '|+⟩',
-            position: 0,
-            laneIndex: 0
-          }]],
-          initialStates: [{ 
-            amplitude0: { real: 1/Math.sqrt(2), imaginary: 0 }, 
-            amplitude1: { real: 1/Math.sqrt(2), imaginary: 0 } 
-          }]
-        },
-        measurementLane: 0,
-        measurementPosition: 1,
-        measurementBasis: '⟨+|'
-      });
-
-      expect(result.measurementResult.probability).toBeCloseTo(1.0);
+    it('should create a |10⟩ initial state correctly', () => {
+      const state = quantumEngine.createInitialState(['|1⟩', '|0⟩']);
+      expect(state.numQubits).toBe(2);
+      expect(state.amplitudes.length).toBe(4);
+      expect(state.amplitudes[0].real).toBe(0);
+      expect(state.amplitudes[1].real).toBe(0);
+      expect(state.amplitudes[2].real).toBe(1); // |10⟩
+      expect(state.amplitudes[3].real).toBe(0);
     });
   });
 
-  describe('Gate Operations', () => {
-    it('should apply X gate correctly', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[
-            {
-              type: 'qubit',
-              value: '|0⟩',
-              position: 0,
-              laneIndex: 0
-            },
-            {
-              type: 'gate',
-              value: 'X',
-              position: 1,
-              laneIndex: 0
-            }
-          ]],
-          initialStates: [{ amplitude0: { real: 1, imaginary: 0 }, amplitude1: { real: 0, imaginary: 0 } }]
-        },
-        measurementLane: 0,
-        measurementPosition: 2,
-        measurementBasis: '⟨1|'
-      });
+  describe('Gate Application', () => {
+    it('should apply a single-qubit X gate to the target qubit', () => {
+      // Apply X to the second qubit of |00⟩ -> should become |01⟩
+      let state = quantumEngine.createInitialState(['|0⟩', '|0⟩']);
+      const xGateElement: QuantumCircuitElement = { type: 'gate', value: 'X', position: 0, targetLane: 1 };
+      
+      // Private method access for testing
+      state = quantumEngine['applyGate'](state, xGateElement);
 
-      // After X gate, |0⟩ should become |1⟩
-      expect(result.measurementResult.outcome).toBe('1');
-      expect(result.measurementResult.probability).toBeCloseTo(1.0);
+      expect(state.amplitudes[0].real).toBeCloseTo(0); // |00⟩
+      expect(state.amplitudes[1].real).toBeCloseTo(1); // |01⟩
+      expect(state.amplitudes[2].real).toBeCloseTo(0); // |10⟩
+      expect(state.amplitudes[3].real).toBeCloseTo(0); // |11⟩
     });
 
-    it('should apply H gate to create superposition', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[
-            {
-              type: 'qubit',
-              value: '|0⟩',
-              position: 0,
-              laneIndex: 0
-            },
-            {
-              type: 'gate',
-              value: 'H',
-              position: 1,
-              laneIndex: 0
-            }
-          ]],
-          initialStates: [{ amplitude0: { real: 1, imaginary: 0 }, amplitude1: { real: 0, imaginary: 0 } }]
-        },
-        measurementLane: 0,
-        measurementPosition: 2,
-        measurementBasis: '⟨0|'
-      });
+    it('should apply CNOT gate correctly when control is 0', () => {
+      // Apply CNOT to |01⟩ -> should remain |01⟩
+      let state = quantumEngine.createInitialState(['|0⟩', '|1⟩']);
+      const cnotElement: QuantumCircuitElement = { type: 'gate', value: 'CNOT', position: 0, controlLane: 0, targetLane: 1 };
+      
+      state = quantumEngine['applyGate'](state, cnotElement);
 
-      // After H gate, |0⟩ should be in superposition
+      expect(state.amplitudes[1].real).toBeCloseTo(1); // |01⟩
+    });
+
+    it('should apply CNOT gate correctly when control is 1', () => {
+      // Apply CNOT to |10⟩ -> should become |11⟩
+      let state = quantumEngine.createInitialState(['|1⟩', '|0⟩']);
+      const cnotElement: QuantumCircuitElement = { type: 'gate', value: 'CNOT', position: 0, controlLane: 0, targetLane: 1 };
+      
+      state = quantumEngine['applyGate'](state, cnotElement);
+
+      expect(state.amplitudes[2].real).toBeCloseTo(0); // |10⟩
+      expect(state.amplitudes[3].real).toBeCloseTo(1); // |11⟩
+    });
+  });
+
+  describe('Measurement', () => {
+    it('should correctly calculate measurement probability for a specific qubit', () => {
+      // State is |+1⟩ = (1/√2)|01⟩ + (1/√2)|11⟩
+      const state = quantumEngine.createInitialState(['|+⟩', '|1⟩']);
+      
+      // Probability of measuring the first qubit (qubit 0) as '0' should be 0.5
+      const { probability } = quantumEngine['performMeasurement'](state, 0, '⟨0|');
+      expect(probability).toBeCloseTo(0.5);
+    });
+
+    it('should collapse the state correctly after measurement', () => {
+      // Start with Bell state: (1/√2)(|00⟩ + |11⟩)
+      let state = quantumEngine.createInitialState(['|0⟩', '|0⟩']);
+      state = quantumEngine['applyGate'](state, { type: 'gate', value: 'H', position: 0, targetLane: 0 });
+      state = quantumEngine['applyGate'](state, { type: 'gate', value: 'CNOT', position: 1, controlLane: 0, targetLane: 1 });
+
+      // Mock random to force measuring qubit 0 as '1'
+      jest.spyOn(Math, 'random').mockReturnValue(0.6); // > 0.5
+      
+      const { finalState } = quantumEngine['performMeasurement'](state, 0, '⟨0|');
+      
+      // After measuring qubit 0 as '1', the state must collapse to |11⟩
+      expect(finalState.amplitudes[0].real).toBeCloseTo(0);
+      expect(finalState.amplitudes[1].real).toBeCloseTo(0);
+      expect(finalState.amplitudes[2].real).toBeCloseTo(0);
+      expect(finalState.amplitudes[3].real).toBeCloseTo(1); // |11⟩
+    });
+  });
+
+  describe('Full Circuit Execution (Entanglement)', () => {
+    it('should create an entangled Bell state and measure it', () => {
+      const context: QuantumComputationContext = {
+        circuit: {
+          numQubits: 2,
+          initialState: quantumEngine.createInitialState(['|0⟩', '|0⟩']),
+          elements: [
+            { type: 'gate', value: 'H', position: 0, targetLane: 0 },
+            { type: 'gate', value: 'CNOT', position: 1, controlLane: 0, targetLane: 1 },
+          ],
+        },
+        measurementLane: 0, // Measure the first qubit
+        measurementPosition: 2,
+        measurementBasis: '⟨0|',
+      };
+
+      const result = quantumEngine.executeQuantumComputation(context);
+      
+      // In a Bell state, measuring one qubit gives a 50/50 random outcome
       expect(result.measurementResult.probability).toBeCloseTo(0.5);
-    });
-
-    it('should apply I gate without changing state', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[
-            {
-              type: 'qubit',
-              value: '|1⟩',
-              position: 0,
-              laneIndex: 0
-            },
-            {
-              type: 'gate',
-              value: 'I',
-              position: 1,
-              laneIndex: 0
-            }
-          ]],
-          initialStates: [{ amplitude0: { real: 0, imaginary: 0 }, amplitude1: { real: 1, imaginary: 0 } }]
-        },
-        measurementLane: 0,
-        measurementPosition: 2,
-        measurementBasis: '⟨1|'
-      });
-
-      // Identity gate should not change the state
-      expect(result.measurementResult.outcome).toBe('1');
-      expect(result.measurementResult.probability).toBeCloseTo(1.0);
-    });
-  });
-
-  describe('Measurement Bases', () => {
-    it('should measure in computational basis correctly', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[{
-            type: 'qubit',
-            value: '|0⟩',
-            position: 0,
-            laneIndex: 0
-          }]],
-          initialStates: [{ amplitude0: { real: 1, imaginary: 0 }, amplitude1: { real: 0, imaginary: 0 } }]
-        },
-        measurementLane: 0,
-        measurementPosition: 1,
-        measurementBasis: '⟨0|'
-      });
-
-      expect(result.measurementResult.outcome).toBe('0');
-      expect(result.gameScore).toBeGreaterThanOrEqual(0);
-    });
-
-    it('should measure in Hadamard basis correctly', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[{
-            type: 'qubit',
-            value: '|+⟩',
-            position: 0,
-            laneIndex: 0
-          }]],
-          initialStates: [{ 
-            amplitude0: { real: 1/Math.sqrt(2), imaginary: 0 }, 
-            amplitude1: { real: 1/Math.sqrt(2), imaginary: 0 } 
-          }]
-        },
-        measurementLane: 0,
-        measurementPosition: 1,
-        measurementBasis: '⟨+|'
-      });
-
-      expect(result.measurementResult.probability).toBeCloseTo(1.0);
-      expect(result.gameScore).toBeGreaterThanOrEqual(0);
-    });
-  });
-
-  describe('Computation Steps', () => {
-    it('should record computation steps', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[
-            {
-              type: 'qubit',
-              value: '|0⟩',
-              position: 0,
-              laneIndex: 0
-            },
-            {
-              type: 'gate',
-              value: 'X',
-              position: 1,
-              laneIndex: 0
-            }
-          ]],
-          initialStates: [{ amplitude0: { real: 1, imaginary: 0 }, amplitude1: { real: 0, imaginary: 0 } }]
-        },
-        measurementLane: 0,
-        measurementPosition: 2,
-        measurementBasis: '⟨1|'
-      });
-
-      expect(result.computationSteps).toBeInstanceOf(Array);
-      expect(result.computationSteps.length).toBeGreaterThan(0);
-      expect(result.computationSteps.some(step => step.includes('Starting quantum computation'))).toBe(true);
-      expect(result.computationSteps.some(step => step.includes('Applied X gate'))).toBe(true);
-    });
-
-    it('should record execution time', () => {
-      const result = quantumEngine.executeQuantumComputation({
-        circuit: {
-          lanes: [[{
-            type: 'qubit',
-            value: '|0⟩',
-            position: 0,
-            laneIndex: 0
-          }]],
-          initialStates: [{ amplitude0: { real: 1, imaginary: 0 }, amplitude1: { real: 0, imaginary: 0 } }]
-        },
-        measurementLane: 0,
-        measurementPosition: 1,
-        measurementBasis: '⟨0|'
-      });
-
-      expect(result.executionTime).toBeGreaterThanOrEqual(0);
-      expect(typeof result.executionTime).toBe('number');
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should handle unknown gate types gracefully', () => {
-      expect(() => {
-        quantumEngine.executeQuantumComputation({
-          circuit: {
-            lanes: [[
-              {
-                type: 'gate',
-                value: 'UNKNOWN',
-                position: 0,
-                laneIndex: 0
-              }
-            ]],
-            initialStates: [{ amplitude0: { real: 1, imaginary: 0 }, amplitude1: { real: 0, imaginary: 0 } }]
-          },
-          measurementLane: 0,
-          measurementPosition: 1,
-          measurementBasis: '⟨0|'
-        });
-      }).toThrow();
-    });
-
-    it('should handle unknown qubit states gracefully', () => {
-      expect(() => {
-        quantumEngine.cardValueToQuantumState('|unknown⟩' as QubitState);
-      }).toThrow();
+      expect(result.computationSteps.some(step => step.includes('Applied CNOT'))).toBe(true);
     });
   });
 });

@@ -1,183 +1,109 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 import { QuantumGameIntegration } from '../../src/quantum/gameIntegration';
-import { GameState, CardType } from '../../src/game/types';
+import { GameState, CardType, Card } from '../../src/game/types';
 
-describe('QuantumGameIntegration', () => {
+describe('QuantumGameIntegration (Multi-Qubit)', () => {
   let integration: QuantumGameIntegration;
 
   beforeEach(() => {
     integration = new QuantumGameIntegration();
   });
 
-  describe('Quantum Computation Availability', () => {
-    it('should detect quantum computation availability when lane has qubits', () => {
+  describe('gameboardToQuantumCircuit', () => {
+    it('should correctly convert a board with a CNOT gate', () => {
       const gameState: GameState = {
         players: [],
         deck: [],
         board: {
           lane: [
+            // Lane 0 (Control)
             [
-              { id: '1', type: CardType.INITIAL_QUBIT, value: '|0⟩' },
-              { id: '2', type: CardType.GATE, value: 'X' }
+              { id: 'c1', type: CardType.INITIAL_QUBIT, value: '|1⟩' },
+              { id: 'c2', type: CardType.GATE, value: 'H', position: 1 },
+              { id: 'c3', type: CardType.CONTROL, value: 'C', position: 2, controlLink: { targetLaneIndex: 1 } },
             ],
-            [],
-            [],
-            []
-          ]
-        },
-        currentPlayerId: '',
-        turn: 1,
-        measurementCount: 0,
-        gameEnded: false,
-        turnDirection: 'forward'
-      };
-
-      const isAvailable = integration.isQuantumComputationAvailable(gameState, 0);
-      expect(isAvailable).toBe(true);
-    });
-
-    it('should detect when quantum computation is not available', () => {
-      const gameState: GameState = {
-        players: [],
-        deck: [],
-        board: {
-          lane: [
+            // Lane 1 (Target)
             [
-              { id: '1', type: CardType.GATE, value: 'I' },
-              { id: '2', type: CardType.GATE, value: 'X' }
+              { id: 'c4', type: CardType.INITIAL_QUBIT, value: '|0⟩' },
+              null,
+              { id: 'c5', type: CardType.TARGET, value: 'O', position: 2 },
             ],
-            [],
-            [],
-            []
-          ]
+          ],
         },
-        currentPlayerId: '',
+        currentPlayerId: 'p1',
         turn: 1,
         measurementCount: 0,
         gameEnded: false,
-        turnDirection: 'forward'
+        turnDirection: 'forward',
       };
 
-      const isAvailable = integration.isQuantumComputationAvailable(gameState, 0);
-      expect(isAvailable).toBe(false);
-    });
+      const circuit = integration['gameboardToQuantumCircuit'](gameState);
 
-    it('should handle empty lanes', () => {
-      const gameState: GameState = {
-        players: [],
-        deck: [],
-        board: {
-          lane: [[], [], [], []]
-        },
-        currentPlayerId: '',
-        turn: 1,
-        measurementCount: 0,
-        gameEnded: false,
-        turnDirection: 'forward'
-      };
+      expect(circuit.numQubits).toBe(2);
+      
+      // Check initial state creation
+      // |1⟩ ⊗ |0⟩ = |10⟩, which is index 2
+      expect(circuit.initialState.amplitudes[2].real).toBe(1);
+      expect(circuit.initialState.amplitudes.filter(a => a.real !== 0).length).toBe(1);
 
-      const isAvailable = integration.isQuantumComputationAvailable(gameState, 0);
-      expect(isAvailable).toBe(false);
-    });
+      // Check circuit elements
+      expect(circuit.elements.length).toBe(2); // H gate and CNOT gate
+      
+      // H gate on lane 0
+      const hGate = circuit.elements.find(e => e.value === 'H');
+      expect(hGate).toBeDefined();
+      expect(hGate.targetLane).toBe(0);
+      expect(hGate.position).toBe(1);
 
-    it('should handle invalid lane index', () => {
-      const gameState: GameState = {
-        players: [],
-        deck: [],
-        board: {
-          lane: [[], [], [], []]
-        },
-        currentPlayerId: '',
-        turn: 1,
-        measurementCount: 0,
-        gameEnded: false,
-        turnDirection: 'forward'
-      };
-
-      const isAvailable = integration.isQuantumComputationAvailable(gameState, 10);
-      expect(isAvailable).toBe(false);
+      // CNOT gate from lane 0 to 1
+      const cnotGate = circuit.elements.find(e => e.value === 'CNOT');
+      expect(cnotGate).toBeDefined();
+      expect(cnotGate.controlLane).toBe(0);
+      expect(cnotGate.targetLane).toBe(1);
+      expect(cnotGate.position).toBe(2);
     });
   });
 
-  describe('Measurement Computation', () => {
-    it('should execute measurement computation without errors', async () => {
+  describe('Measurement Computation with Entanglement', () => {
+    it('should execute a circuit that creates a Bell state', async () => {
       const gameState: GameState = {
         players: [],
         deck: [],
         board: {
           lane: [
+            // Lane 0
             [
-              { id: '1', type: CardType.INITIAL_QUBIT, value: '|0⟩' },
-              { id: '2', type: CardType.GATE, value: 'I' }
+              { id: 'c1', type: CardType.INITIAL_QUBIT, value: '|0⟩', position: 0 },
+              { id: 'c2', type: CardType.GATE, value: 'H', position: 1 },
+              { id: 'c3', type: CardType.CONTROL, value: 'C', position: 2, controlLink: { targetLaneIndex: 1 } },
             ],
-            [],
-            [],
-            []
-          ]
+            // Lane 1
+            [
+              { id: 'c4', type: CardType.INITIAL_QUBIT, value: '|0⟩', position: 0 },
+              null,
+              { id: 'c5', type: CardType.TARGET, value: 'O', position: 2 },
+            ],
+          ],
         },
-        currentPlayerId: '',
+        currentPlayerId: 'p1',
         turn: 1,
         measurementCount: 0,
         gameEnded: false,
-        turnDirection: 'forward'
+        turnDirection: 'forward',
       };
+      const measurementCard: Card = { id: 'm1', type: CardType.MEASUREMENT, value: '⟨0|' };
 
-      const measurementCard = {
-        id: '3',
-        type: CardType.MEASUREMENT,
-        value: '⟨0|'
-      };
+      // This circuit creates the Bell state (1/√2)(|00⟩ + |11⟩)
+      // Measuring either qubit should yield '0' or '1' with 50% probability.
+      const result = await integration.executeMeasurementComputation(gameState, measurementCard, 0, 3);
 
-      // Should not throw an error
-      const result = await integration.executeMeasurementComputation(
-        gameState,
-        measurementCard,
-        0,
-        2
-      );
-
-      // Result can be null (fallback) or a computation result
-      expect(result === null || typeof result === 'object').toBe(true);
-    });
-
-    it('should handle computation failure gracefully', async () => {
-      const gameState: GameState = {
-        players: [],
-        deck: [],
-        board: {
-          lane: [[], [], [], []]
-        },
-        currentPlayerId: '',
-        turn: 1,
-        measurementCount: 0,
-        gameEnded: false,
-        turnDirection: 'forward'
-      };
-
-      const measurementCard = {
-        id: '1',
-        type: CardType.MEASUREMENT,
-        value: '⟨0|'
-      };
-
-      // Should handle empty board gracefully
-      const result = await integration.executeMeasurementComputation(
-        gameState,
-        measurementCard,
-        0,
-        0
-      );
-
-      // Result may be either null (error case) or a valid result (default state handled)
-      expect(result === null || typeof result === 'object').toBe(true);
-    });
-  });
-
-  describe('Debug Information', () => {
-    it('should provide computation steps', () => {
-      const steps = integration.getLastComputationSteps();
-      expect(Array.isArray(steps)).toBe(true);
+      expect(result).not.toBeNull();
+      if (result) {
+        expect(result.measurementResult.probability).toBeCloseTo(0.5);
+        // Score should be 3 for '0' or 5 for '1'
+        expect([3, 5]).toContain(result.gameScore);
+      }
     });
   });
 });

@@ -5,7 +5,14 @@
  */
 
 import { QuantumEngine } from './quantumEngine';
-import { QuantumComputationContext, QuantumCircuit, QuantumCircuitElement, QubitState, MeasurementBasis } from './types';
+import { 
+  QuantumComputationContext, 
+  QuantumCircuit, 
+  QuantumCircuitElement, 
+  QubitState, 
+  MeasurementBasis,
+  GateType
+} from './types';
 import { GameState, Card, CardType } from '../game/types';
 
 export class QuantumGameIntegration {
@@ -16,80 +23,83 @@ export class QuantumGameIntegration {
   }
 
   /**
-   * Convert game board to quantum circuit
+   * Convert game board to a quantum circuit representation.
    */
   private gameboardToQuantumCircuit(gameState: GameState): QuantumCircuit {
-    const lanes: QuantumCircuitElement[][] = [];
-    const initialStates = [];
+    const numQubits = gameState.board.lane.length;
+    const initialQubitStates: QubitState[] = [];
 
-    for (let laneIndex = 0; laneIndex < gameState.board.lane.length; laneIndex++) {
-      const lane = gameState.board.lane[laneIndex];
-      const circuitLane: QuantumCircuitElement[] = [];
+    // Determine initial state for each lane (qubit)
+    for (let i = 0; i < numQubits; i++) {
+      const firstCard = gameState.board.lane[i]?.find(card => card?.type === CardType.INITIAL_QUBIT);
+      initialQubitStates.push(firstCard ? (firstCard.value as QubitState) : '|0⟩');
+    }
 
-      // Find initial state for this lane (first card should be initial qubit)
-      let hasInitialState = false;
-      
-      for (let position = 0; position < lane.length; position++) {
-        const card = lane[position];
+    const initialState = this.quantumEngine.createInitialState(initialQubitStates);
+    const elements: QuantumCircuitElement[] = [];
+
+    // Iterate through all positions on the board to collect circuit elements
+    const maxPosition = Math.max(...gameState.board.lane.map(l => l.length));
+    for (let pos = 0; pos < maxPosition; pos++) {
+      for (let laneIdx = 0; laneIdx < numQubits; laneIdx++) {
+        const card = gameState.board.lane[laneIdx]?.[pos];
         if (!card) continue;
 
-        // Skip TARGET, CONTROL, and UNITARY cards as they are not actual quantum gate operations  
-        if (card.type === CardType.TARGET || card.type === CardType.CONTROL || card.type === CardType.UNITARY) {
-          continue;
+        let element: QuantumCircuitElement | null = null;
+
+        switch (card.type) {
+          case CardType.GATE:
+          case CardType.UNITARY: // Treat Unitary as a standard gate for now
+            element = {
+              type: 'gate',
+              value: card.value as GateType,
+              position: pos,
+              targetLane: laneIdx,
+            };
+            break;
+          
+          case CardType.CONTROL:
+            // CNOT gate links control and target lanes
+            if (card.controlLink !== undefined) {
+              element = {
+                type: 'gate',
+                value: 'CNOT',
+                position: pos,
+                controlLane: laneIdx,
+                targetLane: card.controlLink.targetLaneIndex,
+              };
+            }
+            break;
+
+          case CardType.MEASUREMENT:
+            element = {
+                type: 'measurement',
+                value: card.value as MeasurementBasis,
+                position: pos,
+                targetLane: laneIdx,
+            };
+            break;
+
+          // INITIAL_QUBIT, TARGET, and other cards don't translate to operations
+          case CardType.INITIAL_QUBIT:
+          case CardType.TARGET:
+            break;
         }
-
-        const element: QuantumCircuitElement = {
-          type: this.cardTypeToCircuitType(card.type),
-          value: card.value,
-          position,
-          laneIndex
-        };
-
-        circuitLane.push(element);
-
-        // Set initial state if this is an initial qubit
-        if (card.type === CardType.INITIAL_QUBIT && !hasInitialState) {
-          const quantumState = this.quantumEngine['cardValueToQuantumState'](card.value as QubitState);
-          initialStates[laneIndex] = quantumState;
-          hasInitialState = true;
+        
+        if (element) {
+          elements.push(element);
         }
       }
-
-      // Default to |0⟩ if no initial state found
-      if (!hasInitialState) {
-        initialStates[laneIndex] = { 
-          amplitude0: { real: 1, imaginary: 0 }, 
-          amplitude1: { real: 0, imaginary: 0 } 
-        };
-      }
-
-      lanes.push(circuitLane);
     }
+    
+    // Sort elements by position to ensure correct order of application
+    elements.sort((a, b) => a.position - b.position);
 
-    return { lanes, initialStates };
+    return { elements, initialState, numQubits };
   }
 
   /**
-   * Convert card type to circuit element type
-   */
-  private cardTypeToCircuitType(cardType: CardType): 'qubit' | 'gate' | 'measurement' {
-    switch (cardType) {
-      case CardType.QUBIT:
-      case CardType.INITIAL_QUBIT:
-        return 'qubit';
-      case CardType.GATE:
-      case CardType.UNITARY:
-      case CardType.CONTROL:
-        return 'gate';
-      case CardType.MEASUREMENT:
-        return 'measurement';
-      default:
-        return 'gate';
-    }
-  }
-
-  /**
-   * Execute quantum computation when measurement card is played
+   * Execute quantum computation when a measurement card is played.
    */
   public async executeMeasurementComputation(
     gameState: GameState,
@@ -98,18 +108,15 @@ export class QuantumGameIntegration {
     position: number
   ) {
     try {
-      // Convert game board to quantum circuit
       const circuit = this.gameboardToQuantumCircuit(gameState);
 
-      // Create computation context
       const context: QuantumComputationContext = {
         circuit,
         measurementLane: laneIndex,
         measurementPosition: position,
-        measurementBasis: measurementCard.value as MeasurementBasis
+        measurementBasis: measurementCard.value as MeasurementBasis,
       };
 
-      // Execute quantum computation
       const result = this.quantumEngine.executeQuantumComputation(context);
 
       console.log('🔬 Quantum Computation Results:');
@@ -128,37 +135,22 @@ export class QuantumGameIntegration {
 
     } catch (error) {
       console.error('❌ Quantum computation failed:', error);
-      
-      // Fallback to existing game logic
       console.log('🔄 Falling back to classical game logic');
       return null;
     }
   }
 
   /**
-   * Get quantum computation debug information
+   * Get quantum computation debug information.
    */
   public getLastComputationSteps(): string[] {
     return this.quantumEngine.getLastComputationSteps();
   }
 
   /**
-   * Check if quantum computation is available for current game state
+   * Check if quantum computation is available. For now, this is always true.
    */
-  public isQuantumComputationAvailable(gameState: GameState, laneIndex: number): boolean {
-    try {
-      const lane = gameState.board.lane[laneIndex];
-      if (!lane || lane.length === 0) return false;
-
-      // Check if lane has proper quantum elements
-      const hasQubit = lane.some(card => 
-        card && (card.type === CardType.QUBIT || card.type === CardType.INITIAL_QUBIT)
-      );
-      
-      return hasQubit;
-    } catch (error) {
-      console.warn('Failed to check quantum computation availability:', error);
-      return false;
-    }
+  public isQuantumComputationAvailable(): boolean {
+    return true;
   }
 }

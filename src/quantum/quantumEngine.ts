@@ -2,45 +2,71 @@
 // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 /**
  * Quantum computation engine for qards4
- * Handles quantum state evolution and measurement calculations
+ * Handles quantum state evolution and measurement calculations for a multi-qubit system.
  */
 
-import { 
-  QuantumState, 
-  QuantumGate, 
+import {
+  QuantumState,
+  QuantumGate,
   QuantumComputationContext,
   QuantumComputationResult,
   MeasurementResult,
   MeasurementBasis,
   QubitState,
-  GateType
+  GateType,
+  Complex,
+  QuantumCircuitElement,
 } from './types';
+
+// Helper functions for complex number arithmetic
+const complex = (real: number, imag = 0): Complex => ({ real, imaginary: imag });
+const add = (a: Complex, b: Complex): Complex => ({ real: a.real + b.real, imaginary: a.imaginary + b.imaginary });
+const mul = (a: Complex, b: Complex): Complex => ({
+  real: a.real * b.real - a.imaginary * b.imaginary,
+  imaginary: a.real * b.imaginary + a.imaginary * b.real,
+});
 
 export class QuantumEngine {
   private computationSteps: string[] = [];
 
+  private C0 = complex(0);
+  private C1 = complex(1);
+  private INV_SQRT2 = complex(1 / Math.sqrt(2));
+
   /**
-   * Convert card value to quantum state
+   * Creates the initial state vector from individual qubit states.
+   * @param initialQubits An array of initial states for each qubit.
    */
-  public cardValueToQuantumState(value: QubitState): QuantumState {
-    switch (value) {
-      case '|0⟩':
-        return { amplitude0: { real: 1, imaginary: 0 }, amplitude1: { real: 0, imaginary: 0 } };
-      case '|1⟩':
-        return { amplitude0: { real: 0, imaginary: 0 }, amplitude1: { real: 1, imaginary: 0 } };
-      case '|+⟩':
-        return { 
-          amplitude0: { real: 1/Math.sqrt(2), imaginary: 0 }, 
-          amplitude1: { real: 1/Math.sqrt(2), imaginary: 0 } 
-        };
-      case '|-⟩':
-        return { 
-          amplitude0: { real: 1/Math.sqrt(2), imaginary: 0 }, 
-          amplitude1: { real: -1/Math.sqrt(2), imaginary: 0 } 
-        };
-      default:
-        throw new Error(`Unknown qubit state: ${value}`);
+  public createInitialState(initialQubits: QubitState[]): QuantumState {
+    const numQubits = initialQubits.length;
+    let amplitudes = [this.C1]; // Start with a |⟩ state for tensor product
+
+    for (const qubitState of initialQubits) {
+      const qubitAmplitudes = this.qubitStateToAmplitudes(qubitState);
+      amplitudes = this.tensorProduct(amplitudes, qubitAmplitudes);
     }
+    
+    return { amplitudes, numQubits };
+  }
+
+  private qubitStateToAmplitudes(state: QubitState): Complex[] {
+    switch (state) {
+      case '|0⟩': return [this.C1, this.C0];
+      case '|1⟩': return [this.C0, this.C1];
+      case '|+⟩': return [this.INV_SQRT2, this.INV_SQRT2];
+      case '|-⟩': return [this.INV_SQRT2, complex(-1 / Math.sqrt(2))];
+      default: throw new Error(`Unknown qubit state: ${state}`);
+    }
+  }
+
+  private tensorProduct(a: Complex[], b: Complex[]): Complex[] {
+    const result: Complex[] = [];
+    for (const valA of a) {
+      for (const valB of b) {
+        result.push(mul(valA, valB));
+      }
+    }
+    return result;
   }
 
   /**
@@ -48,34 +74,22 @@ export class QuantumEngine {
    */
   private getGateMatrix(gateType: GateType): QuantumGate {
     switch (gateType) {
-      case 'I': // Identity
+      case 'I':
+        return { matrix: [[this.C1, this.C0], [this.C0, this.C1]] };
+      case 'X':
+        return { matrix: [[this.C0, this.C1], [this.C1, this.C0]] };
+      case 'Z':
+        return { matrix: [[this.C1, this.C0], [this.C0, complex(-1)]] };
+      case 'H':
+        return { matrix: [[this.INV_SQRT2, this.INV_SQRT2], [this.INV_SQRT2, complex(-1 / Math.sqrt(2))]] };
+      case 'CNOT':
         return {
-          matrix: {
-            a: { real: 1, imaginary: 0 }, b: { real: 0, imaginary: 0 },
-            c: { real: 0, imaginary: 0 }, d: { real: 1, imaginary: 0 }
-          }
-        };
-      case 'X': // Pauli-X (NOT gate)
-        return {
-          matrix: {
-            a: { real: 0, imaginary: 0 }, b: { real: 1, imaginary: 0 },
-            c: { real: 1, imaginary: 0 }, d: { real: 0, imaginary: 0 }
-          }
-        };
-      case 'Z': // Pauli-Z
-        return {
-          matrix: {
-            a: { real: 1, imaginary: 0 }, b: { real: 0, imaginary: 0 },
-            c: { real: 0, imaginary: 0 }, d: { real: -1, imaginary: 0 }
-          }
-        };
-      case 'H': // Hadamard
-        const inv_sqrt2 = 1/Math.sqrt(2);
-        return {
-          matrix: {
-            a: { real: inv_sqrt2, imaginary: 0 }, b: { real: inv_sqrt2, imaginary: 0 },
-            c: { real: inv_sqrt2, imaginary: 0 }, d: { real: -inv_sqrt2, imaginary: 0 }
-          }
+          matrix: [
+            [this.C1, this.C0, this.C0, this.C0],
+            [this.C0, this.C1, this.C0, this.C0],
+            [this.C0, this.C0, this.C0, this.C1],
+            [this.C0, this.C0, this.C1, this.C0],
+          ],
         };
       default:
         throw new Error(`Unknown gate type: ${gateType}`);
@@ -83,112 +97,139 @@ export class QuantumEngine {
   }
 
   /**
-   * Apply quantum gate to state
+   * Apply a quantum gate to the system's state vector.
    */
-  private applyGate(state: QuantumState, gate: QuantumGate): QuantumState {
-    const { a, b, c, d } = gate.matrix;
-    const { amplitude0, amplitude1 } = state;
+  private applyGate(state: QuantumState, element: QuantumCircuitElement): QuantumState {
+    const { numQubits } = state;
+    const gate = this.getGateMatrix(element.value as GateType);
+    let operator: Complex[][];
 
-    // Matrix multiplication: [a b] [α]
-    //                        [c d] [β]
-    const newAmplitude0 = {
-      real: a.real * amplitude0.real - a.imaginary * amplitude0.imaginary + 
-            b.real * amplitude1.real - b.imaginary * amplitude1.imaginary,
-      imaginary: a.real * amplitude0.imaginary + a.imaginary * amplitude0.real +
-                 b.real * amplitude1.imaginary + b.imaginary * amplitude1.real
-    };
+    if (element.controlLane !== undefined) { // Two-qubit gate
+      operator = this.createTwoQubitGateOperator(gate, element.controlLane, element.targetLane, numQubits);
+    } else { // Single-qubit gate
+      operator = this.createSingleQubitGateOperator(gate, element.targetLane, numQubits);
+    }
+    
+    const newAmplitudes = this.applyMatrix(operator, state.amplitudes);
+    return { ...state, amplitudes: newAmplitudes };
+  }
 
-    const newAmplitude1 = {
-      real: c.real * amplitude0.real - c.imaginary * amplitude0.imaginary + 
-            d.real * amplitude1.real - d.imaginary * amplitude1.imaginary,
-      imaginary: c.real * amplitude0.imaginary + c.imaginary * amplitude0.real +
-                 d.real * amplitude1.imaginary + d.imaginary * amplitude1.real
-    };
+  private applyMatrix(matrix: Complex[][], vector: Complex[]): Complex[] {
+    const newVector: Complex[] = Array(vector.length).fill(this.C0);
+    for (let i = 0; i < matrix.length; i++) {
+      for (let j = 0; j < vector.length; j++) {
+        newVector[i] = add(newVector[i], mul(matrix[i][j], vector[j]));
+      }
+    }
+    return newVector;
+  }
 
-    return { amplitude0: newAmplitude0, amplitude1: newAmplitude1 };
+  private createSingleQubitGateOperator(gate: QuantumGate, target: number, numQubits: number): Complex[][] {
+    let operator = gate.matrix;
+    const I = this.getGateMatrix('I').matrix;
+
+    for (let i = numQubits - 1; i >= 0; i--) {
+      if (i === target) continue;
+      const currentGate = (i < target) ? operator : I;
+      const nextGate = (i < target) ? I : operator;
+      operator = this.tensorProductMatrix(currentGate, nextGate);
+    }
+    return operator;
+  }
+  
+  private createTwoQubitGateOperator(gate: QuantumGate, control: number, target: number, numQubits: number): Complex[][] {
+    // This is a simplified placeholder. A full implementation requires handling permutations
+    // for arbitrary control/target pairs, which is significantly more complex.
+    // This version assumes control=0, target=1 for a 2-qubit system.
+    if (numQubits !== 2 || control !== 0 || target !== 1) {
+        this.computationSteps.push(`Warning: CNOT is only implemented for control=0, target=1 on a 2-qubit system. Ignoring gate.`);
+        return this.getGateMatrix('I').matrix; // Return identity for non-supported cases
+    }
+    return gate.matrix;
+  }
+
+  private tensorProductMatrix(A: Complex[][], B: Complex[][]): Complex[][] {
+    const result: Complex[][] = [];
+    for (let i = 0; i < A.length * B.length; i++) {
+      result[i] = [];
+    }
+
+    for (let i = 0; i < A.length; i++) {
+      for (let j = 0; j < A[i].length; j++) {
+        for (let k = 0; k < B.length; k++) {
+          for (let l = 0; l < B[k].length; l++) {
+            result[i * B.length + k][j * B[k].length + l] = mul(A[i][j], B[k][l]);
+          }
+        }
+      }
+    }
+    return result;
   }
 
   /**
-   * Perform measurement in specified basis
+   * Perform measurement on a specific qubit in a specified basis.
    */
-  private performMeasurement(state: QuantumState, basis: MeasurementBasis): MeasurementResult {
-    let prob0: number, prob1: number;
-
-    switch (basis) {
-      case '⟨0|': // Computational basis measurement
-      case '⟨1|':
-        prob0 = state.amplitude0.real ** 2 + state.amplitude0.imaginary ** 2;
-        prob1 = state.amplitude1.real ** 2 + state.amplitude1.imaginary ** 2;
-        break;
-      
-      case '⟨+|': // Hadamard basis measurement
-      case '⟨-|':
-        // Transform to +/- basis
-        const plusProb = 0.5 * ((state.amplitude0.real + state.amplitude1.real) ** 2 + 
-                                (state.amplitude0.imaginary + state.amplitude1.imaginary) ** 2);
-        const minusProb = 0.5 * ((state.amplitude0.real - state.amplitude1.real) ** 2 + 
-                                 (state.amplitude0.imaginary - state.amplitude1.imaginary) ** 2);
-        
-        if (basis === '⟨+|') {
-          prob0 = plusProb;
-          prob1 = minusProb;
-        } else {
-          prob0 = minusProb;
-          prob1 = plusProb;
-        }
-        break;
+  private performMeasurement(state: QuantumState, targetQubit: number, basis: MeasurementBasis): MeasurementResult {
+    // For now, we only support measurement in the Z-basis ('⟨0|' or '⟨1|').
+    // A full implementation would apply a basis change unitary for other bases.
+    if (basis === '⟨+|' || basis === '⟨-|') {
+        this.computationSteps.push(`Warning: Measurement in ${basis} basis is not fully implemented. Defaulting to Z-basis.`);
     }
 
-    // Simulate measurement outcome (for now, deterministic based on higher probability)
-    const outcome = prob0 >= prob1 ? '0' : '1';
+    const { amplitudes, numQubits } = state;
+    const numStates = 1 << numQubits;
+    let prob0 = 0;
+
+    // Calculate the probability of measuring the targetQubit as '0'
+    for (let i = 0; i < numStates; i++) {
+      // Check if the targetQubit is 0 in the current basis state `i`
+      if (((i >> (numQubits - 1 - targetQubit)) & 1) === 0) {
+        prob0 += amplitudes[i].real ** 2 + amplitudes[i].imaginary ** 2;
+      }
+    }
+    const prob1 = 1 - prob0;
+
+    const random = Math.random();
+    const outcome = random < prob0 ? '0' : '1';
     const probability = outcome === '0' ? prob0 : prob1;
 
-    // Collapse state after measurement
-    const finalState = outcome === '0' 
-      ? { amplitude0: { real: 1, imaginary: 0 }, amplitude1: { real: 0, imaginary: 0 } }
-      : { amplitude0: { real: 0, imaginary: 0 }, amplitude1: { real: 1, imaginary: 0 } };
+    // Collapse the state
+    const newAmplitudes = Array(numStates).fill(this.C0);
+    const norm = Math.sqrt(probability);
+    for (let i = 0; i < numStates; i++) {
+        if (((i >> (numQubits - 1 - targetQubit)) & 1) === (outcome === '0' ? 0 : 1)) {
+            newAmplitudes[i] = complex(amplitudes[i].real / norm, amplitudes[i].imaginary / norm);
+        }
+    }
 
+    const finalState: QuantumState = { amplitudes: newAmplitudes, numQubits };
     return { outcome, probability, finalState };
   }
 
-  /**
-   * Execute quantum computation for a measurement context
-   */
   public executeQuantumComputation(context: QuantumComputationContext): QuantumComputationResult {
     const startTime = performance.now();
     this.computationSteps = [];
 
     try {
-      this.computationSteps.push(`Starting quantum computation for lane ${context.measurementLane}`);
-      
-      // Get the lane being measured
-      const lane = context.circuit.lanes[context.measurementLane];
-      const initialState = context.circuit.initialStates[context.measurementLane];
-      
-      this.computationSteps.push(`Initial state: |ψ⟩ = ${this.stateToString(initialState)}`);
+      this.computationSteps.push(`Starting quantum computation for ${context.circuit.numQubits} qubits.`);
+      let currentState = context.circuit.initialState;
+      this.computationSteps.push(`Initial state: |ψ⟩ = ${this.stateToString(currentState)}`);
 
-      // Evolve state through gates up to measurement position
-      let currentState = initialState;
-      
-      for (let i = 0; i < context.measurementPosition; i++) {
-        const element = lane[i];
-        
-        if (element && element.type === 'gate') {
-          const gate = this.getGateMatrix(element.value as GateType);
-          currentState = this.applyGate(currentState, gate);
-          this.computationSteps.push(`Applied ${element.value} gate: |ψ⟩ = ${this.stateToString(currentState)}`);
+      const elementsToMeasure = context.circuit.elements.filter(e => e.position < context.measurementPosition);
+
+      for (const element of elementsToMeasure) {
+        if (element.type === 'gate') {
+          currentState = this.applyGate(currentState, element);
+          this.computationSteps.push(`Applied ${element.value} on target ${element.targetLane}: |ψ⟩ = ${this.stateToString(currentState)}`);
         }
       }
 
-      // Perform measurement
-      this.computationSteps.push(`Measuring in ${context.measurementBasis} basis`);
-      const measurementResult = this.performMeasurement(currentState, context.measurementBasis);
+      this.computationSteps.push(`Measuring qubit ${context.measurementLane} in ${context.measurementBasis} basis`);
+      const measurementResult = this.performMeasurement(currentState, context.measurementLane, context.measurementBasis);
       
       this.computationSteps.push(`Measurement outcome: ${measurementResult.outcome} (probability: ${measurementResult.probability.toFixed(3)})`);
 
-      // Calculate game score based on compatibility (existing logic)
-      const gameScore = this.calculateCompatibilityScore(currentState, context.measurementBasis);
-      
+      const gameScore = measurementResult.outcome === '1' ? 5 : 3;
       const executionTime = performance.now() - startTime;
 
       return {
@@ -199,39 +240,21 @@ export class QuantumEngine {
       };
 
     } catch (error) {
-      this.computationSteps.push(`Error during computation: ${error}`);
-      throw error;
+      const err = error as Error;
+      this.computationSteps.push(`Error during computation: ${err.message}`);
+      throw err;
     }
   }
 
-  /**
-   * Calculate compatibility score for game mechanics
-   */
-  private calculateCompatibilityScore(state: QuantumState, basis: MeasurementBasis): number {
-    const measurementResult = this.performMeasurement(state, basis);
-    
-    // New scoring system: outcome '1' = +5 points, outcome '0' = +3 points
-    return measurementResult.outcome === '1' ? 5 : 3;
-  }
-
-  /**
-   * Convert quantum state to readable string
-   */
   private stateToString(state: QuantumState): string {
-    const { amplitude0, amplitude1 } = state;
-    
-    const a0_mag = Math.sqrt(amplitude0.real ** 2 + amplitude0.imaginary ** 2);
-    const a1_mag = Math.sqrt(amplitude1.real ** 2 + amplitude1.imaginary ** 2);
-    
-    if (a0_mag < 1e-10) return '|1⟩';
-    if (a1_mag < 1e-10) return '|0⟩';
-    
-    return `${a0_mag.toFixed(3)}|0⟩ + ${a1_mag.toFixed(3)}|1⟩`;
+    return state.amplitudes.map((amp, i) => {
+      const mag = Math.sqrt(amp.real ** 2 + amp.imaginary ** 2);
+      if (mag < 1e-9) return null;
+      const basis = i.toString(2).padStart(state.numQubits, '0');
+      return `${mag.toFixed(2)}|${basis}⟩`;
+    }).filter(Boolean).join(' + ');
   }
 
-  /**
-   * Get computation steps for debugging
-   */
   public getLastComputationSteps(): string[] {
     return [...this.computationSteps];
   }

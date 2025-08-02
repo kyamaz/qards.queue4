@@ -6,26 +6,31 @@
 
 export type QubitState = '|0⟩' | '|1⟩' | '|+⟩' | '|-⟩';
 export type MeasurementBasis = '⟨0|' | '⟨1|' | '⟨+|' | '⟨-|';
-export type GateType = 'I' | 'X' | 'Z' | 'H';
+export type GateType = 'I' | 'X' | 'Z' | 'H' | 'CNOT';
 
 /**
- * Quantum state representation
+ * Represents a complex number
  */
-export interface QuantumState {
-  amplitude0: { real: number; imaginary: number };
-  amplitude1: { real: number; imaginary: number };
+export interface Complex {
+  real: number;
+  imaginary: number;
 }
 
 /**
- * Quantum gate matrix representation (2x2 complex matrix)
+ * Quantum state representation for up to N qubits.
+ * The amplitudes array stores the 2^N complex amplitudes for the computational basis states.
+ * For 2 qubits, the order is |00⟩, |01⟩, |10⟩, |11⟩.
+ */
+export interface QuantumState {
+  amplitudes: Complex[];
+  numQubits: number;
+}
+
+/**
+ * Quantum gate matrix representation (2x2 or 4x4 etc. complex matrix)
  */
 export interface QuantumGate {
-  matrix: {
-    a: { real: number; imaginary: number }; // top-left
-    b: { real: number; imaginary: number }; // top-right
-    c: { real: number; imaginary: number }; // bottom-left
-    d: { real: number; imaginary: number }; // bottom-right
-  };
+  matrix: Complex[][];
 }
 
 /**
@@ -41,18 +46,22 @@ export interface MeasurementResult {
  * Quantum circuit element for computation
  */
 export interface QuantumCircuitElement {
-  type: 'qubit' | 'gate' | 'measurement';
-  value: string;
+  type: 'gate' | 'measurement';
+  value: GateType | MeasurementBasis;
   position: number;
-  laneIndex: number;
+  // For single-qubit gates, targetLane is the laneIndex
+  // For two-qubit gates (CNOT), specifies control and target lanes
+  controlLane?: number; 
+  targetLane: number;
 }
 
 /**
  * Complete quantum circuit representation
  */
 export interface QuantumCircuit {
-  lanes: QuantumCircuitElement[][];
-  initialStates: QuantumState[];
+  elements: QuantumCircuitElement[];
+  initialState: QuantumState;
+  numQubits: number;
 }
 
 /**
