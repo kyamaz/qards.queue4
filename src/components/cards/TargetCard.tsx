@@ -26,7 +26,7 @@ export const TargetCard: React.FC<TargetCardProps> = ({
 }) => {
   return (
     <BaseCard
-      value="T"
+      value="O"
       onClick={onClick}
       isSelected={isSelected}
       isHighlighted={isHighlighted}
@@ -36,7 +36,7 @@ export const TargetCard: React.FC<TargetCardProps> = ({
       backgroundColor="bg-gray-300"
     >
       <div className="border-2 border-dashed border-gray-500 w-full h-full rounded flex items-center justify-center">
-        <span className="text-gray-600 font-bold">T</span>
+        <span className="text-gray-600 font-bold">O</span>
       </div>
     </BaseCard>
   );

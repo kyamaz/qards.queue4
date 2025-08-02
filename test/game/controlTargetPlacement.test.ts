@@ -103,7 +103,7 @@ describe('Control-Target Placement System', () => {
     // Check target card is created
     const placedTargetCard = completedState.board.lane[targetLane][controlPosition];
     expect(placedTargetCard?.type).toBe(CardType.TARGET);
-    expect(placedTargetCard?.value).toBe('T');
+    expect(placedTargetCard?.value).toBe('O');
     expect(placedTargetCard?.controlLink?.targetLaneIndex).toBe(controlLane);
     
     // Check card is removed from player's hand

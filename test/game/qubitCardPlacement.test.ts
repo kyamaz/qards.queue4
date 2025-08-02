@@ -71,7 +71,7 @@ describe('QUBIT Card Placement Rules', () => {
     it('should NOT allow QUBIT cards after TARGET cards', () => {
       const boardWithTarget = {
         lane: [
-          [{ id: 't1', type: CardType.TARGET, value: 'T' as const }],
+          [{ id: 't1', type: CardType.TARGET, value: 'O' as const }],
         ],
       };
       

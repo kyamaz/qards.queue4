@@ -25,7 +25,7 @@ export type CardValue =
   | '⟨+|'
   | '⟨-|'
   | 'C'
-  | 'T';
+  | 'O';
 
 export interface Card {
   id: string; // Unique identifier for each card instance

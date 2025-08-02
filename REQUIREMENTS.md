@@ -64,7 +64,7 @@ Total Deck: 60 cards
 - C cards: 4 cards
 
 **Target Cards (Generated dynamically)**
-- T cards: Auto-generated when Control cards are placed
+- O cards: Auto-generated when Control cards are placed (displayed as 'O' for "any Operation")
 - Not included in deck, created during gameplay
 
 **Measurement Cards (11 cards)**
@@ -112,6 +112,7 @@ Total Deck: 60 cards
 
 **Target Cards**
 - Automatically placed when Control cards are positioned
+- Displayed as 'O' representing "any Operation" (more intuitive than 'T')
 - Accept Gate card placement (similar to Unitary cards)
 - Gate placement on Target cards does NOT reverse turn direction
 - Cannot be manually selected or placed by players

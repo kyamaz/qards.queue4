@@ -177,7 +177,7 @@ describe('Measurement Card Placement Rules', () => {
         lane: [
           [
             { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
-            { id: 't1', type: CardType.TARGET, value: 'T' as const }
+            { id: 't1', type: CardType.TARGET, value: 'O' as const }
           ],
         ],
       };
@@ -201,7 +201,7 @@ describe('Measurement Card Placement Rules', () => {
         lane: [
           [
             { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
-            { id: 't1', type: CardType.TARGET, value: 'T' as const }
+            { id: 't1', type: CardType.TARGET, value: 'O' as const }
           ],
         ],
       };
@@ -276,7 +276,7 @@ describe('Measurement Card Placement Rules', () => {
             { id: 'iq1', type: CardType.INITIAL_QUBIT, value: '|0⟩' as const },
             { id: 'u1', type: CardType.UNITARY, value: 'U' as const },
             { id: 'g1', type: CardType.GATE, value: 'X' as const },
-            { id: 't1', type: CardType.TARGET, value: 'T' as const }
+            { id: 't1', type: CardType.TARGET, value: 'O' as const }
           ],
         ],
       };

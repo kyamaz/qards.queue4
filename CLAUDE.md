@@ -47,11 +47,20 @@ npm test         # Run Jest tests
 ## Game-Specific Context
 
 ### Game Elements
-- **Cards**: Quantum cards (Qubit, Gate, Unitary, Control, Target, Measurement cards)
+- **Cards**: Various quantum computing cards including:
+  - **QUBIT Cards**: Initial quantum states (|0⟩, |1⟩, |+⟩, |-⟩)
+  - **GATE Cards**: Quantum gates (I, X, Z, H)
+  - **CONTROL Cards**: Used to create controlled operations (C)
+  - **TARGET Cards**: Auto-generated targets for controlled gates, displayed as 'O' (any Operation)
+  - **UNITARY Cards**: General unitary operations (U)
+  - **MEASUREMENT Cards**: Measurement operations (⟨0|, ⟨1|, ⟨+|, ⟨-|)
 - **Players**: 3-6 players with elimination system for players who pass 4 times
 - **Board**: 4-lane quantum circuit board
 - **Win Condition**: Based on measurement points minus hand penalties when game ends
 - **Elimination System**: Players who pass 4 times are eliminated individually; game continues with remaining players
+
+### TARGET Card Display
+TARGET cards are displayed with the symbol 'O' rather than 'T' to represent "any Operation". This design choice reflects that TARGET cards represent positions where any quantum operation can be applied as the target of a controlled gate, making 'O' a more intuitive and semantically correct representation than 'T'.
 
 ### Core Game Flow
 1. Game initialization in `gameLogic.ts:initializeGame()`

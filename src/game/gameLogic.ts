@@ -500,7 +500,7 @@ export const completeControlTargetPlacement = (
   const targetCard: Card = {
     id: uuidv4(),
     type: CardType.TARGET,
-    value: 'T' as CardValue,
+    value: 'O' as CardValue,
     controlLink: {
       targetLaneIndex: controlLane, // TARGET points back to CONTROL
     },

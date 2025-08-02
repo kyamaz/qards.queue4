@@ -9,7 +9,7 @@ describe('TARGET Card Placement Rules', () => {
     lane: [
       [
         { id: 'i1', type: CardType.GATE, value: 'I' as const },
-        { id: 't1', type: CardType.TARGET, value: 'T' as const }
+        { id: 't1', type: CardType.TARGET, value: 'O' as const }
       ],
     ],
   };
@@ -81,7 +81,7 @@ describe('TARGET Card Placement Rules', () => {
   });
 
   it('should not allow TARGET cards to be manually placed (not in deck)', () => {
-    const targetCard = { id: 't2', type: CardType.TARGET, value: 'T' as const };
+    const targetCard = { id: 't2', type: CardType.TARGET, value: 'O' as const };
     
     const emptyBoard = {
       lane: [
@@ -98,12 +98,12 @@ describe('TARGET Card Placement Rules', () => {
       lane: [
         [
           { id: 'i1', type: CardType.GATE, value: 'I' as const },
-          { id: 't1', type: CardType.TARGET, value: 'T' as const }
+          { id: 't1', type: CardType.TARGET, value: 'O' as const }
         ],
         [
           { id: 'i2', type: CardType.GATE, value: 'I' as const },
           null,
-          { id: 't2', type: CardType.TARGET, value: 'T' as const }
+          { id: 't2', type: CardType.TARGET, value: 'O' as const }
         ],
       ],
     };
