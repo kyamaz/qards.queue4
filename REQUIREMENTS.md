@@ -8,7 +8,15 @@ qards4 - Quantum Computing Card Game
 ### 1.2 Purpose
 Develop a card game application that allows players to learn fundamental quantum computing concepts (qubits, gate operations, measurements) in an engaging and interactive way.
 
-### 1.3 Technology Stack
+### 1.3 Game Concept
+Similar to the classic card game "Shichinarabe" (also known as Fan Tan), players place cards (gates) according to specific rules, starting from a fixed reference point (the 'I' gates). The game is designed to feel like building a quantum circuit, where players compete for points earned from card plays and measurements.
+
+### 1.4 Target Audience
+- Individuals interested in quantum computers and quantum mechanics.
+- People who enjoy programming and logic puzzles.
+- Players looking to try a new and strategic type of card game.
+
+### 1.5 Technology Stack
 - **Frontend**: Next.js 15.3.5 (App Router)
 - **UI**: React 19 + TypeScript + Tailwind CSS v4
 - **Testing**: Jest + React Testing Library
@@ -28,7 +36,7 @@ Develop a card game application that allows players to learn fundamental quantum
 - **Card Distribution Phase**: Distribute all cards (including INITIAL_QUBIT cards) randomly to all players
 - **Hand Check Phase**: Each player checks if they have INITIAL_QUBIT cards in their hand
 - **Sequential Placement**: Starting from Player A, players with INITIAL_QUBIT cards place them sequentially
-- **Card Placement**: Players with INITIAL_QUBIT cards must place ALL of them in leftmost board slots
+- **Card Placement**: Players with INITIAL_QUBIT cards must place ALL of them in the leftmost available board slots
 - **Multiple Cards**: If a player has multiple INITIAL_QUBIT cards, all must be placed
 - **Lane Assignment**: Each INITIAL_QUBIT card is placed in a separate lane (lane 0, 1, 2, 3)
 - **First Player Rule**: The player who places an |1⟩ INITIAL_QUBIT card becomes the first player
@@ -43,6 +51,10 @@ Develop a card game application that allows players to learn fundamental quantum
 
 #### 2.1.4 Card System
 Total Deck: 60 cards
+
+**Initial State Cards (4 cards, distributed with other cards at game start)**
+- |0⟩ cards: 3 cards
+- |1⟩ cards: 1 card
 
 **Qubit Cards (7 cards)**
 - |+⟩ cards: 2 cards
@@ -73,22 +85,18 @@ Total Deck: 60 cards
 - ⟨+| cards: 2 cards
 - ⟨-| cards: 2 cards
 
-**Initial State Cards (4 cards, distributed with other cards at game start)**
-- |0⟩ cards: 3 cards
-- |1⟩ cards: 1 card
-
 ### 2.2 Quantum Circuit Board
 
 #### 2.2.1 Board Configuration
 - **Lane Count**: 4 lanes (fixed)
-- **Initial Setup**: Each lane pre-populated with I gate
+- **Initial Setup**: Each lane pre-populated with an I gate in the center
 - **Scrolling**: Unified scrolling across all lanes
 - **Display**: "Quantum Circuit" title, lane names hidden
 
 #### 2.2.2 Card Placement Rules
 **Qubit Cards**
 - Regular QUBIT cards: Placeable only after Measurement cards
-- INITIAL_QUBIT cards: Placeable after Measurement cards or after initial I gate
+- INITIAL_QUBIT cards: Placeable after Measurement cards or after the initial I gate
 
 **Gate Cards**
 - Placeable at any position except after measurement cards
@@ -97,18 +105,18 @@ Total Deck: 60 cards
 **Unitary Cards**
 - Placeable anywhere except after measurement cards
 - Cannot be stacked on other Unitary cards
-- Restriction: Same player cannot play more than one Unitary card per turn
+- Restriction: A player cannot play more than one Unitary card per turn (additional turns granted by the card are considered part of the same turn).
 
 **Measurement Cards**
 - Placeable after any card except other Measurement cards
 
 **Control Cards**
 - Two-stage placement process: Control position → Target position
-- Control and Target must be in adjacent lanes at same position
+- Control and Target must be in adjacent lanes at the same position
 - Must be placed in empty slots
-- Both Control and Target positions must have cards in all preceding positions (no gaps allowed)
+- Both Control and Target positions must have cards in all preceding positions (no gaps allowed in the lane)
 - H gates cannot be control targets
-- Auto-generates corresponding Target card when placed
+- Auto-generates a corresponding Target card when placed
 
 **Target Cards**
 - Automatically placed when Control cards are positioned
@@ -118,139 +126,121 @@ Total Deck: 60 cards
 - Cannot be manually selected or placed by players
 - Cannot be placed if the preceding card in the target lane is a Measurement card
 
-### 2.3 Measurement Card Scoring System
+### 2.3 Scoring System
 
-#### 2.3.1 Quantum Computation Engine
-- **Quantum State Evolution**: Real quantum mechanics simulation using complex amplitudes
-- **Gate Operations**: Accurate matrix representations (I, X, Z, H gates)
-- **Measurement Simulation**: Probabilistic outcomes based on quantum state
-- **Fallback System**: Classical compatibility matrix when quantum computation unavailable
-
-#### 2.3.2 Compatibility Matrix (Classical Fallback)
+#### 2.3.1 Measurement Scoring
+- **Quantum Computation Engine**: The game uses a real quantum mechanics simulation with complex amplitudes to evolve the quantum state. Measurement outcomes are probabilistic, based on the final state.
+- **Fallback System**: If quantum computation is unavailable, a classical compatibility matrix is used.
+- **Score Calculation**:
+  - **Quantum Mode**: Score is based on actual quantum measurement probabilities.
+  - **Classical Mode**: Uses the compatibility matrix for scoring.
+  - **Perfect Match**: 3 points (e.g., |0⟩ measured with ⟨0|)
+  - **Partial Match**: 1 point (e.g., |0⟩ measured with ⟨+|)
+  - **No Match**: 0 points (e.g., |0⟩ measured with ⟨1|)
+  - **Default**: 1 point is awarded if no preceding qubit exists in the lane.
+- **Compatibility Matrix (Classical Fallback)**
 | Qubit | ⟨0\| | ⟨1\| | ⟨+\| | ⟨-\| |
-|-------------|------|------|------|------|
-| \|0⟩        | 3    | 0    | 1    | 1    |
-| \|1⟩        | 0    | 3    | 1    | 1    |
-| \|+⟩        | 1    | 1    | 3    | 0    |
-| \|-⟩        | 1    | 1    | 0    | 3    |
+|---|---|---|---|---|
+| \|0⟩ | 3 | 0 | 1 | 1 |
+| \|1⟩ | 0 | 3 | 1 | 1 |
+| \|+⟩ | 1 | 1 | 3 | 0 |
+| \|-⟩ | 1 | 1 | 0 | 3 |
 
-#### 2.3.3 Quantum Computation Process
-1. **Circuit Construction**: Convert game board to quantum circuit representation
-2. **State Evolution**: Apply quantum gates sequentially to evolve qubit state
-3. **Measurement Simulation**: Calculate probabilities in specified measurement basis
-4. **Score Calculation**: Use quantum probabilities for realistic scoring
-5. **Debug Information**: Detailed computation steps logged to console
+#### 2.3.2 Final Scoring System
+When the game ends, the winner is determined by:
+- **Positive Points**: Sum of all measurement scores earned during gameplay.
+- **Hand Penalty**: Remaining cards in hand apply penalties:
+  - **Quantum Gate Cards (I, X, Z, H)**: -2 points for every 5 cards (rounded up).
+    - Examples: 1-5 cards = -2 pts, 6-10 cards = -4 pts.
+  - **All Other Cards (Qubit, Measurement, Unitary, Control, Target)**: -2 points per card.
+    - Examples: 1 card = -2 pts, 3 cards = -6 pts.
+- **Winner**: Player with the highest total score (Positive Points - Hand Penalty).
 
-#### 2.3.4 Score Calculation
-- **Quantum Mode**: Score based on actual quantum measurement probabilities
-- **Classical Mode**: Compatibility matrix-based scoring (fallback)
-- **Perfect Match**: 3 points (e.g., |0⟩ + ⟨0|)
-- **Partial Match**: 1 point (e.g., |0⟩ + ⟨+|)
-- **No Match**: 0 points (e.g., |0⟩ + ⟨1|)
-- **Default**: 1 point when no preceding qubit exists
-
-#### 2.3.5 Measurement Effects
-- Automatic measurement counter increment
-- Player score addition based on quantum computation or compatibility score
-- Measurement result message display with quantum computation indicator (🔬)
-- Detailed quantum computation steps logged to browser console
-- Game ends after 11 measurements
+**Example Final Score Calculation**:
+- Player has 15 measurement points.
+- Remaining hand: 3 Gate cards + 2 Qubit cards.
+- Penalty: (ceil(3/5) * 2) + (2 * 2) = 2 + 4 = 6 points.
+- Final score: 15 - 6 = 9 points.
 
 ### 2.4 Card Effect System
 
 #### 2.4.1 Unitary Card Effects
-- **Turn Direction Reversal**: forward ⇔ backward
-- **Additional Turn**: Player gets another turn
-- **Message Display**: Effect explanation shown
-- **Per-Turn Limit**: Each player can only play one Unitary card per turn (additional turns count as the same turn)
+- **Turn Direction Reversal**: Flips the turn order (forward ⇔ backward).
+- **Additional Turn**: The player who played the card gets another turn immediately.
+- **Message Display**: An explanation of the effect is shown.
+- **Per-Turn Limit**: Each player can only play one Unitary card per turn.
 
 #### 2.4.2 Control Card Effects
-- **Control Link**: Visual connection to adjacent lanes
-- **Placement Process**: Two-stage placement (control → target)
-- **Visual Indicator**: Target lane number display (1-indexed)
+- **Control Link**: Creates a visual connection to an adjacent lane.
+- **Placement Process**: A two-stage placement (control → target).
+- **Visual Indicator**: The target lane number is displayed (1-indexed).
 
 ### 2.5 User Interface
 
 #### 2.5.1 Main Screens
-- **Title Screen**: Game start, settings navigation
-- **Game Screen**: Quantum circuit board, player hands, game information
-- **Settings Screen**: Game configuration and options
+- **Title Screen**: Game start, navigation to settings.
+- **Game Screen**: Displays the quantum circuit board, player hands, and game information.
+- **Settings Screen**: Game configuration and options.
+- **Result Screen**: Shows final scores and rankings, highlights the winner.
 
 #### 2.5.2 Settings Features
-- **Volume Controls**: Sound/Music (0-100%)
-- **Difficulty**: Easy/Normal/Hard
-- **Animation Speed**: Slow/Normal/Fast
-- **Hint Display**: ON/OFF
-- **Language**: Japanese/English
-- **Player Count**: 3-6 player selection
-- **LocalStorage**: Persistent settings storage
+- **Volume Controls**: Sound/Music (0-100%).
+- **Difficulty**: Easy/Normal/Hard.
+- **Animation Speed**: Slow/Normal/Fast.
+- **Hint Display**: ON/OFF.
+- **Language**: Japanese/English.
+- **Player Count**: 3-6 player selection.
+- **LocalStorage**: Settings are persisted in LocalStorage.
 
 #### 2.5.3 Hint System
-- **Valid Placement Zones**: Highlighted placement positions for selected cards
-- **Measurement Score Prediction**: Score hints when selecting measurement cards
-- **Settings Dependent**: Display controlled by hint ON/OFF setting
+- **Valid Placement Zones**: Highlights valid placement positions for the selected card.
+- **Measurement Score Prediction**: Shows score hints when a measurement card is selected.
+- **Settings Dependent**: Display is controlled by the hint ON/OFF setting.
 
-#### 2.5.4 Visual Design
+#### 2.5.4 Visual Design & Interaction
 **Card Type Color Coding**
-- Qubit: Green (bg-green-600)
-- Initial Qubit: Dark Green (bg-green-800)
-- Gate: Blue (bg-blue-600)
-- Unitary: Purple (bg-purple-600)
-- Control: Yellow (bg-yellow-600)
-- Measurement: Red (bg-red-600)
+- Qubit: Green (`bg-green-600`)
+- Initial Qubit: Dark Green (`bg-green-800`)
+- Gate: Blue (`bg-blue-600`)
+- Unitary: Purple (`bg-purple-600`)
+- Control: Yellow (`bg-yellow-600`)
+- Measurement: Red (`bg-red-600`)
 
 **Interaction States**
-- Hover Effect: scale-105
-- Selected State: cyan-400 ring
-- Current Player: Clickable
-- Other Players: Display only
+- Hover Effect: `scale-105`
+- Selected State: `cyan-400` ring
+- Current Player's Hand: Cards are clickable.
+- Other Players' Hands: Display only.
 
 ### 2.6 Game End Conditions
-1. **Hand Empty Trigger**: When any player empties their hand, game ends and final scoring occurs
-2. **Measurement Count**: 11 measurements completed
-3. **Insufficient Active Players**: Only 1 or fewer active (non-eliminated) players remain
-4. **All Active Players Pass**: All active players have passed 3+ times
+1. **Hand Empty**: The game ends immediately when any player empties their hand.
+2. **Measurement Count**: The game ends after 11 measurements have been completed.
+3. **Insufficient Active Players**: The game ends if only 1 or fewer active (non-eliminated) players remain.
+4. **All Players Pass**: The game ends if all active players have passed 3 or more times.
 
 ### 2.7 Player Elimination System
-- **Elimination Trigger**: Player is eliminated when they pass 4 times
-- **Individual Elimination**: Only the passing player is eliminated; game continues with remaining active players
-- **Visual Indication**: Eliminated players shown with red styling and "脱落" badge
-- **Turn Skipping**: Eliminated players are automatically skipped during turn progression
-- **Game Continuation**: Game only ends when insufficient active players remain (≤1) or other end conditions are met
-
-#### 2.6.1 Final Scoring System
-When game ends (any condition above), winner is determined by:
-- **Positive Points**: Measurement card scores earned during gameplay
-- **Hand Penalty**: Remaining cards in hand apply penalties based on card type:
-  - **Quantum Gate Cards (I, X, Z, H)**: 5 cards per -2 points (rounded up)
-    - Examples: 1-5 cards = -2 points, 6-10 cards = -4 points, 11-15 cards = -6 points
-  - **All Other Cards (Qubit, Measurement, Unitary, Control, Target)**: 1 card per -2 points
-    - Examples: 1 card = -2 points, 3 cards = -6 points, 5 cards = -10 points
-- **Winner**: Player with highest total score (positive points - hand penalty)
-
-**Example Final Score Calculation**:
-- Player has 15 measurement points
-- Remaining hand: 3 Gate cards + 2 Qubit cards  
-- Penalty: ceil(3/5) × 2 + 2 × 2 = 2 + 4 = 6 points
-- Final score: 15 - 6 = 9 points
+- **Elimination Trigger**: A player is eliminated when they pass for the 4th time.
+- **Individual Elimination**: Only the passing player is eliminated; the game continues with the remaining active players.
+- **Visual Indication**: Eliminated players are shown with red styling and a "Eliminated" (脱落) badge.
+- **Turn Skipping**: Eliminated players are automatically skipped during turn progression.
 
 ## 3. Non-Functional Requirements
 
-### 3.1 Performance Requirements
-- **Response Time**: Sub-1 second response after user actions
-- **Animation**: Speed adjustment based on user settings
-- **Memory Usage**: Efficient state management
+### 3.1 Performance
+- **Response Time**: User actions should have a sub-1 second response time.
+- **Animation**: Animation speed should be adjustable based on user settings.
+- **Memory Usage**: State management should be efficient.
 
-### 3.2 Usability Requirements
-- **Intuitive Operation**: Click-based interface (no drag-and-drop required)
-- **Visual Feedback**: Clear indication of valid card placement positions
-- **Error Handling**: Appropriate message display for invalid operations
-- **Accessibility**: Keyboard navigation support
+### 3.2 Usability
+- **Intuitive Operation**: A click-based interface (no drag-and-drop required).
+- **Visual Feedback**: Clear indication of valid card placement positions.
+- **Error Handling**: Appropriate messages for invalid operations.
+- **Accessibility**: Support for keyboard navigation.
 
-### 3.3 Maintainability Requirements
-- **TypeScript**: Enhanced maintainability through type safety
-- **Component Separation**: Reusable React component design
-- **Test Coverage**: Comprehensive unit and integration testing
+### 3.3 Maintainability
+- **TypeScript**: Use of TypeScript for enhanced maintainability through type safety.
+- **Component Separation**: A reusable React component design.
+- **Test Coverage**: Comprehensive unit and integration testing.
 
 ## 4. Technical Specifications
 
@@ -280,25 +270,15 @@ src/
 ### 4.2 Core Functions
 
 #### 4.2.1 Game Logic Functions
-- `createDeck()`: Generate 60-card deck
-- `initializeGame(playerNames)`: Initialize game state
-- `isValidPlay(card, lane, position, board)`: Validate card placement
-- `isValidControlCardPlay(...)`: Validate control card placement
+- `createDeck()`: Generate the 60-card deck.
+- `initializeGame(playerNames)`: Initialize the game state.
+- `isValidPlay(card, lane, position, board)`: Validate card placement.
+- `isValidControlCardPlay(...)`: Validate control card placement.
 
-#### 4.2.2 Measurement Card Functions
-- `calculateMeasurementScore(quantumBit, measurement)`: Calculate compatibility score
-- `findPrecedingQuantumBit(lane, position)`: Find preceding qubit card
-
-#### 4.2.3 Turn Management Functions
-- `advanceTurn()`: Advance to next player
-- Turn counter increments only on full round completion
-
-#### 4.2.4 Quantum Computation Functions
-- `QuantumEngine.executeQuantumComputation()`: Execute quantum circuit simulation
-- `QuantumGameIntegration.executeMeasurementComputation()`: Integrate quantum computation with game
-- `cardValueToQuantumState()`: Convert card values to quantum states
-- `applyGate()`: Apply quantum gate matrices to states
-- `performMeasurement()`: Simulate quantum measurement with probabilities
+#### 4.2.2 Quantum & Measurement Functions
+- `QuantumEngine.executeQuantumComputation()`: Execute the quantum circuit simulation.
+- `QuantumGameIntegration.executeMeasurementComputation()`: Integrate quantum computation with the game.
+- `findPrecedingQuantumBit(lane, position)`: Find the preceding qubit card for measurement.
 
 ### 4.3 State Management
 
@@ -341,99 +321,48 @@ interface QuantumComputationResult {
   computationSteps: string[];
   executionTime: number;
 }
-
-interface QuantumCircuit {
-  lanes: QuantumCircuitElement[][];
-  initialStates: QuantumState[];
-}
 ```
 
 ## 5. Testing Requirements
 
 ### 5.1 Test Coverage
-- **Total Tests**: 212+ tests
-- **Test Suites**: 10+ suites
-- **Success Rate**: 100%
-- **Quantum Module**: Dedicated test suite for quantum computation engine
+- **Unit & Integration Tests**: Comprehensive coverage of game logic, state management, and component rendering.
+- **E2E Tests**: Key user flows and game scenarios are tested using Cypress.
+- **Quantum Module**: A dedicated test suite for the quantum computation engine.
 
-### 5.2 Test Categories
-
-#### 5.2.1 Unit Tests
-- Individual game logic function testing
-- Card placement validation
-- Measurement card score calculation
-- Turn management logic
-
-#### 5.2.2 Component Tests
-- React component rendering
-- User interaction handling
-- Property passing
-- State changes
-- Use data-* attributes (data-testid) for stable element targeting in tests
-
-#### 5.2.3 Integration Tests
-- Game state management
-- Edge case handling
-- Error handling
-
-#### 5.2.4 E2E Tests
-- Use Cypress for end-to-end testing
-- Target elements using data-testid attributes for test stability
-- Avoid relying on text content or CSS classes as selectors
-
-### 5.3 Key Test Cases
-
-#### 5.3.1 Measurement Card Functionality (12 tests)
-- Complete compatibility matrix combinations
-- Preceding qubit search (empty lanes, null values)
-- Score calculation (perfect/partial/no match)
-
-#### 5.3.2 Game State Management (20 tests)
-- Turn progression (forward/backward)
-- Card placement and effect processing
-- Game end conditions
-
-#### 5.3.3 Edge Cases (36 tests)
-- Player count boundaries (2,3,6,7 players)
-- Invalid card placements
-- Control card placement restrictions
-
-#### 5.3.4 Quantum Computation Tests (Planned)
-- Quantum state initialization and evolution
-- Gate matrix operations (I, X, Z, H)
-- Measurement simulation in different bases
-- Game integration and fallback mechanisms
-- Complex amplitude calculations
-- Circuit construction from game board
+### 5.2 Test Strategy
+- **Unit Tests**: Focus on individual functions in `gameLogic.ts` and `quantumEngine.ts`.
+- **Component Tests**: Verify React component rendering and interaction using React Testing Library.
+- **Integration Tests**: Test the interaction between different parts of the game logic.
+- **E2E Tests**: Use Cypress to simulate full game scenarios. Use `data-testid` attributes for stable element selection.
 
 ## 6. Constraints
 
 ### 6.1 Technical Constraints
-- **Browser Support**: Modern browsers (ES2020+ support)
-- **Responsive Design**: Desktop-focused (mobile optimization future)
-- **Offline Play**: Local single-device play only
+- **Browser Support**: Modern browsers with ES2020+ support.
+- **Responsive Design**: Primarily desktop-focused, with mobile optimization as a future goal.
+- **Offline Play**: Local, single-device play only.
 
 ### 6.2 Game Constraints
-- **Synchronous Play**: No real-time communication
-- **AI Opponents**: Not implemented
-- **Game Records**: No save/load functionality
+- **Synchronous Play**: No real-time communication for multiplayer.
+- **AI Opponents**: Not currently implemented.
+- **Game Records**: No save/load functionality.
 
 ## 7. Future Extensibility
 
 ### 7.1 Feature Extensions
-- **Multiplayer**: Online multiplayer functionality
-- **AI Opponents**: CPU opponent modes
-- **Card Expansion**: Additional quantum gate types
-- **Mobile Support**: Touch interface optimization
+- **Multiplayer**: Online multiplayer functionality.
+- **AI Opponents**: CPU opponent modes.
+- **Card Expansion**: Additional quantum gate types.
+- **Mobile Support**: Optimization for touch interfaces.
 
 ### 7.2 Learning Features
-- **Tutorial System**: Progressive learning modes
-- **Quantum Concept Explanation**: Physical meaning of card effects
-- **Practice Mode**: Solo play environment
+- **Tutorial System**: A progressive learning mode for new players.
+- **Quantum Concept Explanation**: In-game explanations of the physical meaning behind card effects.
+- **Practice Mode**: A solo play environment.
 
 ---
 
-**Document Version**: 1.0  
-**Created**: July 3, 2025  
-**Last Updated**: July 13, 2025  
-**Author**: Claude Code Assistant
+**Document Version**: 1.1
+**Last Updated**: August 2, 2025
+**Author**: Kiyohito Yamaz@ki
