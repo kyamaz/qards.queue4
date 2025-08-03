@@ -45,13 +45,13 @@ const CardComponent: React.FC<CardComponentProps> = ({
     );
   }
 
-  // Generate data-testid based on card type and position
+  // Generate data-testid based on card type, position, and ID
   const getDataTestId = () => {
     const cardType = card.type.toLowerCase().replace('_', '-');
     if (laneIndex !== undefined) {
-      return `card-${cardType}-lane${laneIndex}-pos${position}`;
+      return `board-card-${cardType}-lane${laneIndex}-pos${position}-id${card.id}`;
     }
-    return `card-${cardType}-${card.id}`;
+    return `hand-card-${cardType}-id${card.id}`;
   };
 
   const commonProps = {

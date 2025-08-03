@@ -1003,18 +1003,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 }`}
               >
                 <p className="font-semibold text-lg flex items-center gap-2">
-                  {player.name}
+                  <span data-testid={`player-${player.id}-name`}>{player.name}</span>
                   {player.eliminated && (
-                    <span className="text-xs bg-red-600 px-2 py-1 rounded">{t('player.eliminated')}</span>
+                    <span className="text-xs bg-red-600 px-2 py-1 rounded" data-testid={`player-${player.id}-eliminated-status`}>{t('player.eliminated')}</span>
                   )}
                   {!player.eliminated && player.id === gameState.currentPlayerId && (
-                    <span className="text-xs bg-blue-500 px-2 py-1 rounded">{t('player.currentTurn')}</span>
+                    <span className="text-xs bg-blue-500 px-2 py-1 rounded" data-testid={`player-${player.id}-current-turn`}>{t('player.currentTurn')}</span>
                   )}
                 </p>
                 <div className="text-sm space-y-1">
-                  <p>{t('player.hand')}: <span className="font-mono">{t('player.handCards', { count: player.hand.length })}</span></p>
-                  <p>{t('player.passes')}: <span className="font-mono">{t('player.passCount', { count: player.passes })}</span></p>
-                  <p>{t('player.score')}: <span className="font-mono text-green-400">{t('player.scorePoints', { points: player.score })}</span></p>
+                  <p>{t('player.hand')}: <span className="font-mono" data-testid={`player-${player.id}-hand-count`}>{t('player.handCards', { count: player.hand.length })}</span></p>
+                  <p>{t('player.passes')}: <span className="font-mono" data-testid={`player-${player.id}-pass-count`}>{t('player.passCount', { count: player.passes })}</span></p>
+                  <p>{t('player.score')}: <span className="font-mono text-green-400" data-testid={`player-${player.id}-score`}>{t('player.scorePoints', { points: player.score })}</span></p>
                 </div>
               </div>
             ))}
@@ -1045,7 +1045,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 {isInitialPhase ? (
                   <div className="flex flex-col items-center gap-2">
                     <p className="text-xl font-bold">
-                      {t('gameFlow.currentPlayer')}: <span className="text-green-400">{activeInitialPlayer?.name}</span>
+                      {t('gameFlow.currentPlayer')}: <span className="text-green-400" data-testid="current-initial-player">{activeInitialPlayer?.name}</span>
                     </p>
                     <div className="flex items-center gap-4">
                       {hasInitialCards ? (
@@ -1081,7 +1081,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 ) : (
                   <>
                     <p className="text-xl font-bold">
-                      {t('gameFlow.currentPlayer')}: <span className="text-blue-400">{currentPlayer.name}</span>
+                      {t('gameFlow.currentPlayer')}: <span className="text-blue-400" data-testid="current-player-name">{currentPlayer.name}</span>
                     </p>
                     {gameState.gamePhase === 'game_ended' && (
                       <div className="flex flex-col items-center gap-2">
@@ -1125,7 +1125,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                                     return (
                                       <div key={player.id} className={`flex justify-between ${player.id === winner.id ? 'text-yellow-400 font-bold' : ''}`}>
                                         <span>{player.name}:</span>
-                                        <span>{player.score}点 - {penalty}点 = {finalScore}点</span>
+                                        <span data-testid={`final-score-breakdown-${player.id}`}>{player.score}点 - {penalty}点 = {finalScore}点</span>
                                       </div>
                                     );
                                   })}

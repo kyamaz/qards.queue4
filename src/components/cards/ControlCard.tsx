@@ -14,7 +14,10 @@ const ControlCard: React.FC<ControlCardProps> = ({ targetLaneIndex, ...props }) 
       backgroundColor="bg-yellow-600"
     >
       {targetLaneIndex !== undefined && (
-        <div className="text-xs text-cyan-200 mt-1">
+        <div 
+          className="text-xs text-cyan-200 mt-1"
+          data-testid={`control-target-indicator-${targetLaneIndex + 1}`}
+        >
           →{targetLaneIndex + 1}
         </div>
       )}

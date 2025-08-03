@@ -18,7 +18,10 @@ const MeasurementCard: React.FC<MeasurementCardProps> = ({ card, ...props }) => 
       backgroundColor="bg-red-600"
     >
       {card?.measurementResult && (
-        <div className="text-xs text-cyan-200 mt-1">
+        <div 
+          className="text-xs text-cyan-200 mt-1"
+          data-testid={`measurement-result-${card.id}`}
+        >
           {t('cards.measurementValue')}{card.measurementResult}
         </div>
       )}
