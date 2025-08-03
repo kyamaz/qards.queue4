@@ -204,7 +204,7 @@ describe('GameScreen Component', () => {
       renderWithI18n(<GameScreen onBackToMenu={mockOnBackToMenu} />);
       
       await waitFor(() => {
-        expect(mockLocalStorage.getItem).toHaveBeenCalledWith('qards4-settings');
+        expect(mockLocalStorage.getItem).toHaveBeenCalledWith('qards-queue4-settings');
       });
     });
 

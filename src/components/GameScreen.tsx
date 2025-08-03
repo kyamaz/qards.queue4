@@ -70,7 +70,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   // Load settings from localStorage
   const getSettings = () => {
     try {
-      const settingsStr = localStorage.getItem('qards4-settings');
+      const settingsStr = localStorage.getItem('qards-queue4-settings');
       return settingsStr ? JSON.parse(settingsStr) : {
         showHints: true,
         difficulty: 'normal',

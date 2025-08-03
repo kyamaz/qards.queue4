@@ -41,7 +41,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
   // Load settings from localStorage on component mount
   useEffect(() => {
     try {
-      const savedSettings = localStorage.getItem('qards4-settings');
+      const savedSettings = localStorage.getItem('qards-queue4-settings');
       if (savedSettings) {
         const parsedSettings = JSON.parse(savedSettings);
         setSettings({ ...defaultSettings, ...parsedSettings });
@@ -71,7 +71,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
 
   const handleSave = () => {
     try {
-      localStorage.setItem('qards4-settings', JSON.stringify(settings));
+      localStorage.setItem('qards-queue4-settings', JSON.stringify(settings));
       console.log('Settings saved successfully:', settings);
       
       // Dispatch custom event to notify other components of settings change

@@ -258,7 +258,7 @@ describe('SettingsScreen Component', () => {
       fireEvent.click(saveButton);
       
       // Check if settings were saved to localStorage
-      const savedSettings = localStorage.getItem('qards4-settings');
+      const savedSettings = localStorage.getItem('qards-queue4-settings');
       expect(savedSettings).toBeTruthy();
       
       const parsedSettings = JSON.parse(savedSettings!);

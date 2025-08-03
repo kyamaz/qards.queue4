@@ -84,7 +84,7 @@ describe('I18n Utils Coverage Tests', () => {
 
     it('should use settings data when available - lines 58-64', () => {
       mockLocalStorage.getItem.mockImplementation((key) => {
-        if (key === 'qards4-settings') {
+        if (key === 'qards-queue4-settings') {
           return JSON.stringify({ language: 'en' });
         }
         return null;
@@ -96,7 +96,7 @@ describe('I18n Utils Coverage Tests', () => {
 
     it('should fallback to legacy language key - lines 67-70', () => {
       mockLocalStorage.getItem.mockImplementation((key) => {
-        if (key === 'qards4-settings') {
+        if (key === 'qards-queue4-settings') {
           return null;
         }
         if (key === 'language') {
@@ -111,7 +111,7 @@ describe('I18n Utils Coverage Tests', () => {
 
     it('should handle invalid settings data', () => {
       mockLocalStorage.getItem.mockImplementation((key) => {
-        if (key === 'qards4-settings') {
+        if (key === 'qards-queue4-settings') {
           return 'invalid json';
         }
         return null;
@@ -127,7 +127,7 @@ describe('I18n Utils Coverage Tests', () => {
 
     it('should handle invalid language in settings', () => {
       mockLocalStorage.getItem.mockImplementation((key) => {
-        if (key === 'qards4-settings') {
+        if (key === 'qards-queue4-settings') {
           return JSON.stringify({ language: 'invalid' });
         }
         if (key === 'language') {
@@ -187,7 +187,7 @@ describe('I18n Utils Coverage Tests', () => {
       // Check that both setItem calls were made
       expect(mockLocalStorage.setItem).toHaveBeenCalledTimes(2);
       expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
-        'qards4-settings', 
+        'qards-queue4-settings', 
         JSON.stringify({ language: 'en', otherSetting: 'value' })
       );
       expect(mockLocalStorage.setItem).toHaveBeenCalledWith('language', 'en');

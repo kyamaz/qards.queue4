@@ -55,7 +55,7 @@ export function getStoredLocale(): Locale {
 
   try {
     // First try to read from the settings object
-    const settingsData = localStorage.getItem('qards4-settings');
+    const settingsData = localStorage.getItem('qards-queue4-settings');
     if (settingsData) {
       const parsedSettings = JSON.parse(settingsData);
       if (parsedSettings.language === 'ja' || parsedSettings.language === 'en') {
@@ -82,11 +82,11 @@ export function setStoredLocale(locale: Locale): void {
 
   try {
     // Update the settings object if it exists
-    const settingsData = localStorage.getItem('qards4-settings');
+    const settingsData = localStorage.getItem('qards-queue4-settings');
     if (settingsData) {
       const parsedSettings = JSON.parse(settingsData);
       parsedSettings.language = locale;
-      localStorage.setItem('qards4-settings', JSON.stringify(parsedSettings));
+      localStorage.setItem('qards-queue4-settings', JSON.stringify(parsedSettings));
     }
     
     // Also maintain legacy language key for compatibility

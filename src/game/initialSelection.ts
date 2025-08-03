@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 /**
- * Initial player selection logic for qards4
+ * Initial player selection logic for qards-queue4
  * Handles the pre-game phase where players place INITIAL_QUBIT cards
  */
 

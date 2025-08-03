@@ -431,7 +431,7 @@ describe('i18n Utility Functions', () => {
       (global as any).window = {
         localStorage: {
           getItem: jest.fn().mockImplementation((key) => {
-            if (key === 'qards4-settings') return 'invalid json';
+            if (key === 'qards-queue4-settings') return 'invalid json';
             return null;
           })
         }
@@ -447,7 +447,7 @@ describe('i18n Utility Functions', () => {
       (global as any).window = {
         localStorage: {
           getItem: jest.fn().mockImplementation((key) => {
-            if (key === 'qards4-settings') {
+            if (key === 'qards-queue4-settings') {
               return JSON.stringify({ language: 'invalid' });
             }
             return null;

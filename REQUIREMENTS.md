@@ -1,9 +1,9 @@
-# qards4 - Quantum Card Game Requirements Specification
+# qards.queue4 - Quantum Card Game Requirements Specification
 
 ## 1. Project Overview
 
 ### 1.1 Project Name
-qards4 - Quantum Computing Card Game
+qards.queu4 - Quantum Computing Card Game
 
 ### 1.2 Purpose
 Develop a card game application that allows players to learn fundamental quantum computing concepts (qubits, gate operations, measurements) in an engaging and interactive way.
