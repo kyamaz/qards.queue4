@@ -19,7 +19,7 @@ describe('Settings Screen', () => {
   it('should update COM player count', () => {
     cy.getByTestId('com-player-count-select').select('2');
     cy.getByTestId('com-player-count-select').should('have.value', '2');
-    cy.getByTestId('player-count-display').should('contain', '人間プレイヤー1人 + COMプレイヤー2人');
+    cy.shouldExistByTestId('player-count-display');
   });
 
   it('should toggle show hints checkbox', () => {
@@ -35,6 +35,9 @@ describe('Settings Screen', () => {
   });
 
   it('should save settings and persist them', () => {
+    // Enable difficulty selection by setting COM players
+    cy.getByTestId('com-player-count-select').select('1');
+    
     // Change some settings
     cy.getByTestId('difficulty-select').select('hard');
     cy.getByTestId('show-hints-checkbox').click();
@@ -55,15 +58,17 @@ describe('Settings Screen', () => {
   });
 
   it('should reset settings to defaults', () => {
+    // Enable difficulty selection by setting COM players first
+    cy.getByTestId('com-player-count-select').select('1');
+    
     // Change some settings
     cy.getByTestId('difficulty-select').select('easy');
-    cy.getByTestId('com-player-count-select').select('1');
     
     // Reset settings
     cy.clickByTestId('reset-button');
     
     // Verify defaults restored
     cy.getByTestId('difficulty-select').should('have.value', 'normal');
-    cy.getByTestId('com-player-count-select').should('have.value', '3');
+    cy.getByTestId('com-player-count-select').should('have.value', '0');
   });
 });

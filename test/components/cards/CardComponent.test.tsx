@@ -5,6 +5,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import CardComponent from '../../../src/components/cards/CardComponent';
 import { Card, CardType } from '../../../src/game/types';
+import { I18nProvider } from '../../../src/i18n';
 
 describe('CardComponent', () => {
   const mockOnClick = jest.fn();
@@ -25,7 +26,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-qubit-1');
+      const cardElement = screen.getByTestId('hand-card-qubit-id1');
       expect(cardElement).toHaveClass('bg-green-600');
       expect(cardElement).toHaveTextContent('|+⟩');
     });
@@ -41,7 +42,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-initial-qubit-1');
+      const cardElement = screen.getByTestId('hand-card-initial-qubit-id1');
       expect(cardElement).toHaveClass('bg-green-800');
       expect(cardElement).toHaveTextContent('|0⟩');
     });
@@ -57,7 +58,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-gate-1');
+      const cardElement = screen.getByTestId('hand-card-gate-id1');
       expect(cardElement).toHaveClass('bg-blue-600');
       expect(cardElement).toHaveTextContent('X');
     });
@@ -73,7 +74,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-unitary-1');
+      const cardElement = screen.getByTestId('hand-card-unitary-id1');
       expect(cardElement).toHaveClass('bg-purple-600');
       expect(cardElement).toHaveTextContent('U');
     });
@@ -82,14 +83,16 @@ describe('CardComponent', () => {
       const card: Card = { id: '1', type: CardType.MEASUREMENT, value: '⟨0|' };
       
       render(
-        <CardComponent
-          card={card}
-          position={0}
-          onClick={mockOnClick}
-        />
+        <I18nProvider>
+          <CardComponent
+            card={card}
+            position={0}
+            onClick={mockOnClick}
+          />
+        </I18nProvider>
       );
 
-      const cardElement = screen.getByTestId('card-measurement-1');
+      const cardElement = screen.getByTestId('hand-card-measurement-id1');
       expect(cardElement).toHaveClass('bg-red-600');
       expect(cardElement).toHaveTextContent('⟨0|');
     });
@@ -110,7 +113,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-control-1');
+      const cardElement = screen.getByTestId('hand-card-control-id1');
       expect(cardElement).toHaveClass('bg-yellow-600');
       expect(cardElement).toHaveTextContent('C');
       expect(cardElement).toHaveTextContent('→2'); // 1-indexed display
@@ -127,7 +130,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-target-1');
+      const cardElement = screen.getByTestId('hand-card-target-id1');
       expect(cardElement).toHaveClass('bg-gray-300');
       expect(cardElement).toHaveTextContent('O');
     });
@@ -173,7 +176,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-gate-1');
+      const cardElement = screen.getByTestId('hand-card-gate-id1');
       fireEvent.click(cardElement);
 
       expect(mockOnClick).toHaveBeenCalledTimes(1);
@@ -191,7 +194,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-gate-1');
+      const cardElement = screen.getByTestId('hand-card-gate-id1');
       fireEvent.click(cardElement);
 
       expect(mockOnClick).not.toHaveBeenCalled();
@@ -227,7 +230,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-gate-1');
+      const cardElement = screen.getByTestId('hand-card-gate-id1');
       expect(cardElement).toHaveClass('ring-4', 'ring-cyan-400');
     });
 
@@ -243,7 +246,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-gate-1');
+      const cardElement = screen.getByTestId('hand-card-gate-id1');
       expect(cardElement).toHaveClass('ring-4', 'ring-cyan-400', 'animate-pulse');
     });
 
@@ -259,7 +262,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-gate-1');
+      const cardElement = screen.getByTestId('hand-card-gate-id1');
       expect(cardElement).toHaveClass('animate-bounce', 'scale-110');
     });
 
@@ -275,7 +278,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-gate-1');
+      const cardElement = screen.getByTestId('hand-card-gate-id1');
       expect(cardElement).toHaveClass('custom-class');
     });
   });
@@ -292,7 +295,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-control-1');
+      const cardElement = screen.getByTestId('hand-card-control-id1');
       expect(cardElement).toHaveTextContent('C');
       expect(cardElement).not.toHaveTextContent('→');
     });
@@ -308,7 +311,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-gate-1');
+      const cardElement = screen.getByTestId('hand-card-gate-id1');
       expect(() => fireEvent.click(cardElement)).not.toThrow();
     });
 
@@ -324,7 +327,7 @@ describe('CardComponent', () => {
         />
       );
 
-      const cardElement = screen.getByTestId('card-gate-1');
+      const cardElement = screen.getByTestId('hand-card-gate-id1');
       
       fireEvent.keyDown(cardElement, { key: 'Enter' });
       expect(mockOnClick).toHaveBeenCalledTimes(1);

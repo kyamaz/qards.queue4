@@ -19,7 +19,7 @@ describe('TargetCard Component', () => {
       
       const targetCard = screen.getByTestId('target-card');
       expect(targetCard).toBeInTheDocument();
-      expect(screen.getAllByText('O')).toHaveLength(2); // BaseCard value and inner span
+      expect(screen.getByText('O')).toBeInTheDocument(); // BaseCard displays single O
     });
 
     it('should render with custom data-testid', () => {
@@ -142,27 +142,22 @@ describe('TargetCard Component', () => {
   });
 
   describe('Visual Elements', () => {
-    it('should render the dashed border', () => {
-      const { container } = render(<TargetCard card={mockCard} />);
+    it('should render with gray background', () => {
+      render(<TargetCard card={mockCard} data-testid="target-card" />);
       
-      const dashedBorder = container.querySelector('.border-dashed');
-      expect(dashedBorder).toBeInTheDocument();
-      expect(dashedBorder).toHaveClass('border-2', 'border-gray-500');
+      const targetCard = screen.getByTestId('target-card');
+      expect(targetCard).toHaveClass('bg-gray-300');
     });
 
-    it('should render the O symbol', () => {
-      render(<TargetCard card={mockCard} />);
+    it('should render the O symbol with correct styling', () => {
+      render(<TargetCard card={mockCard} data-testid="target-card" />);
       
-      // Use getAllByText to handle multiple 'O' symbols and check for the correct one
-      const symbols = screen.getAllByText('O');
-      expect(symbols.length).toBeGreaterThanOrEqual(1);
+      const targetCard = screen.getByTestId('target-card');
+      expect(targetCard).toHaveTextContent('O');
       
-      // Check that at least one has the correct styling
-      const dashedBorderSymbol = symbols.find(symbol => 
-        symbol.classList.contains('text-gray-600') && 
-        symbol.classList.contains('font-bold')
-      );
-      expect(dashedBorderSymbol).toBeInTheDocument();
+      // Check for font styling in the text element
+      const symbolElement = screen.getByText('O');
+      expect(symbolElement).toHaveClass('text-lg', 'font-bold');
     });
   });
 

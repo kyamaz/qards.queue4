@@ -9,6 +9,7 @@ import {
   isValidPlay, 
   calculateMeasurementScore,
   calculateMeasurementScoreFromOutcome,
+  getMeasurementOutcome,
   findPrecedingQubit,
   startControlTargetPlacement,
   completeControlTargetPlacement,
@@ -49,6 +50,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   const [error, setError] = useState<string | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageType, setMessageType] = useState<'error' | 'success' | 'info' | 'pass'>('info');
   const [showMenu, setShowMenu] = useState(false);
   const [animatingCard, setAnimatingCard] = useState<string | null>(null);
   const [highlightedSlots, setHighlightedSlots] = useState<{laneIndex: number; position: number}[]>([]);
@@ -236,30 +238,34 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       });
       if (scoreHints.length > 0) {
         setMessage(t('gameMessages.measurementHint', { hints: scoreHints.join(', ') }));
+        setMessageType('info');
       }
     }
     
     // Show initial qubit card hints
     if (isInitialPhase && card.type === CardType.INITIAL_QUBIT && validSlots.length > 0) {
       setMessage(t('gameMessages.initialQubitPlacement', { count: validSlots.length }));
+      setMessageType('info');
     }
   };
 
   const handleCardSelect = (card: Card) => {
     // Disable card selection when game is ended
     if (gameState?.gamePhase === 'game_ended') {
-      showTemporaryMessage(t('gameMessages.gameEndedCannotSelect'));
+      showTemporaryMessage(t('gameMessages.gameEndedCannotSelect'), 'error');
       return;
     }
     
     if (gameState?.controlTargetPlacement?.waitingForTarget) {
       setMessage(t('gameMessages.completeControlCard'));
+      setMessageType('error');
       return;
     }
     
     // Check Unitary card restriction
     if (card.type === CardType.UNITARY && gameState && !canPlayUnitaryCard(gameState, gameState.currentPlayerId)) {
       setMessage(t('gameMessages.unitaryCardRestriction'));
+      setMessageType('error');
       return;
     }
     
@@ -267,11 +273,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     setSelectedCard(newSelectedCard);
     updateHighlightedSlots(newSelectedCard);
     setMessage(null);
+    setMessageType('info');
   };
 
-  const showTemporaryMessage = (msg: string) => {
+  const showTemporaryMessage = (msg: string, type: 'error' | 'success' | 'info' | 'pass' = 'info') => {
     setMessage(msg);
-    setTimeout(() => setMessage(null), 3000);
+    setMessageType(type);
+    setTimeout(() => {
+      setMessage(null);
+      setMessageType('info');
+    setMessageType('info');
+      setMessageType('info');
+    }, 3000);
   };
 
   const animateCardPlacement = (cardId: string) => {
@@ -283,7 +296,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
   // Skip current player in initial selection if they have no initial cards
   const handleSkipInitialPlayer = () => {
     if (!gameState || gameState.gamePhase !== 'initial_selection' || !gameState.initialSelection) {
-      showTemporaryMessage(t('gameMessages.cannotSkipNotInitial'));
+      showTemporaryMessage(t('gameMessages.cannotSkipNotInitial'), 'error');
       return;
     }
 
@@ -295,7 +308,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     
     if (isInitialSelectionComplete(newState)) {
       newState = completeInitialSelection(newState);
-      showTemporaryMessage(t('gameMessages.initialPlacementComplete'));
+      showTemporaryMessage(t('gameMessages.initialPlacementComplete'), 'success');
     } else {
       newState = advanceInitialSelectionPlayer(newState);
     }
@@ -310,7 +323,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     
     // Disable card placement when game is ended
     if (gameState.gamePhase === 'game_ended') {
-      showTemporaryMessage(t('gameMessages.gameEndedCannotPlace'));
+      showTemporaryMessage(t('gameMessages.gameEndedCannotPlace'), 'error');
       return;
     }
 
@@ -321,14 +334,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           const updatedGameState = completeControlTargetPlacement(gameState, laneIndex);
           animateCardPlacement(gameState.controlTargetPlacement.controlCard.id);
           setGameState(updatedGameState);
-          showTemporaryMessage(t('gameMessages.controlGatePlaced'));
+          showTemporaryMessage(t('gameMessages.controlGatePlaced'), 'success');
           advanceTurn();
         } catch {
-          showTemporaryMessage(t('gameMessages.controlGateFailed'));
+          showTemporaryMessage(t('gameMessages.controlGateFailed'), 'error');
           setGameState(cancelControlTargetPlacement(gameState));
         }
       } else {
-        showTemporaryMessage(t('gameMessages.cannotPlaceInLane'));
+        showTemporaryMessage(t('gameMessages.cannotPlaceInLane'), 'error');
       }
       setHighlightedSlots([]);
       return;
@@ -338,7 +351,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     if (selectedCard) {
       if (selectedCard.type === CardType.CONTROL) {
         if (gameState?.board.lane[laneIndex]?.[position]) {
-          showTemporaryMessage(t('gameMessages.placeInEmptySlot'));
+          showTemporaryMessage(t('gameMessages.placeInEmptySlot'), 'error');
           return;
         }
         try {
@@ -356,13 +369,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           }
           setHighlightedSlots(validTargetLanes);
           
-          showTemporaryMessage(t('gameMessages.controlCardPlaced'));
+          showTemporaryMessage(t('gameMessages.controlCardPlaced'), 'success');
           return; // Prevent fall-through to normal card placement logic
         } catch (error) {
           if (error instanceof Error && error.message.includes('gaps detected')) {
-            showTemporaryMessage(t('gameMessages.needCardBeforeControl'));
+            showTemporaryMessage(t('gameMessages.needCardBeforeControl'), 'error');
           } else {
-            showTemporaryMessage(t('gameMessages.controlCardFailed'));
+            showTemporaryMessage(t('gameMessages.controlCardFailed'), 'error');
           }
           return;
         }
@@ -372,13 +385,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       if (isInitialPhase && selectedCard.type === CardType.INITIAL_QUBIT) {
         // Initial qubit cards can only be placed at position 0
         if (position !== 0) {
-          showTemporaryMessage(t('gameMessages.initialQubitPosition0'));
+          showTemporaryMessage(t('gameMessages.initialQubitPosition0'), 'error');
           return;
         }
         
         // The target lane must be empty
         if (gameState.board.lane[laneIndex].length > 0) {
-          showTemporaryMessage(t('gameMessages.laneHasCards'));
+          showTemporaryMessage(t('gameMessages.laneHasCards'), 'error');
           return;
         }
         
@@ -388,11 +401,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         
         // Check if the current player is the one who should be placing initial cards
         if (gameState.currentPlayerId !== currentInitialPlayer.id) {
-          showTemporaryMessage(t('gameMessages.onlyInitialPlayerCanPlace'));
+          showTemporaryMessage(t('gameMessages.onlyInitialPlayerCanPlace'), 'error');
           return;
         }
       } else if (!gameState || !isValidPlay(selectedCard, laneIndex, position, gameState.board, settings.allowUnfinalizedMeasurement, settings.controlledHadamard)) {
-        showTemporaryMessage(t('gameMessages.cannotPlaceCard'));
+        showTemporaryMessage(t('gameMessages.cannotPlaceCard'), 'error');
         return;
       }
 
@@ -455,8 +468,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           const precedingQubit = findPrecedingQubit(lane, position);
           
           if (precedingQubit) {
-            scoreGained = calculateMeasurementScore(precedingQubit.value, selectedCard.value);
-            measurementOutcome = scoreGained === 5 ? '1' : '0';
+            measurementOutcome = getMeasurementOutcome(precedingQubit.value, selectedCard.value);
+            scoreGained = calculateMeasurementScoreFromOutcome(measurementOutcome);
           }
           
           // Try quantum computation and update if successful
@@ -502,7 +515,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                       points: quantumScore, 
                       compatibility: quantumMessage, 
                       computation: ' 🔬' 
-                    }));
+                    }), 'success');
                     
                     return {
                       ...currentState,
@@ -535,7 +548,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           const compatibilityMessage = scoreGained === 5 ? t('gameMessages.measurementResult1Exclamation') : scoreGained === 3 ? t('gameMessages.measurementResult0Plain') : '';
           const computationMessage = quantumComputationUsed ? ' 🔬' : '';
           setTimeout(() => {
-            showTemporaryMessage(t('gameMessages.measurementGainedPoints', { points: scoreGained, compatibility: compatibilityMessage, computation: computationMessage }));
+            showTemporaryMessage(t('gameMessages.measurementGainedPoints', { points: scoreGained, compatibility: compatibilityMessage, computation: computationMessage }), 'success');
           }, 0);
           
           if (newMeasurementCount >= 11) newGamePhase = 'game_ended';
@@ -573,7 +586,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 }
               };
               updatedGameState = completeInitialSelection(stateWithUpdatedCandidates);
-              setTimeout(() => showTemporaryMessage(t('gameMessages.initialPlacementComplete')), 0);
+              setTimeout(() => showTemporaryMessage(t('gameMessages.initialPlacementComplete'), 'success'), 0);
             } else {
               // Update initial selection state and advance player
               updatedGameState.initialSelection = {
@@ -619,9 +632,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       // Handle initial qubit card placement message
       if (isInitialPhase && playedCardType === CardType.INITIAL_QUBIT) {
         if (selectedCard.value === '|1⟩') {
-          showTemporaryMessage(t('gameMessages.initialQubitCardPlaced', { card: selectedCard.value }) + t('gameMessages.gameStartsFromYou'));
+          showTemporaryMessage(t('gameMessages.initialQubitCardPlaced', { card: selectedCard.value }) + t('gameMessages.gameStartsFromYou'), 'success');
         } else {
-          showTemporaryMessage(t('gameMessages.initialQubitCardPlaced', { card: selectedCard.value }));
+          showTemporaryMessage(t('gameMessages.initialQubitCardPlaced', { card: selectedCard.value }), 'success');
         }
         return;
       }
@@ -632,9 +645,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                            existingCardBeforePlacement?.type === CardType.TARGET;
 
       if (playedCardType === CardType.UNITARY) {
-        showTemporaryMessage(t('gameMessages.unitaryEffectYourTurn'));
+        showTemporaryMessage(t('gameMessages.unitaryEffectYourTurn'), 'info');
       } else if (playedCardType === CardType.GATE && placedOnTarget) {
-        showTemporaryMessage(t('gameMessages.gateCardPlacedOnTarget'));
+        showTemporaryMessage(t('gameMessages.gateCardPlacedOnTarget'), 'success');
         advanceTurn();
       } else if (playedCardType === CardType.MEASUREMENT) {
         const gameEndedDueToMeasurement = (selectedCard as Card & { gameEndedDueToMeasurement?: boolean }).gameEndedDueToMeasurement || false;
@@ -650,14 +663,14 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     }
 
     if (!selectedCard && !gameState?.controlTargetPlacement?.waitingForTarget) {
-      showTemporaryMessage(t('gameMessages.selectCardFirst'));
+      showTemporaryMessage(t('gameMessages.selectCardFirst'), 'error');
     }
   };
 
   const handlePass = () => {
     // Disable pass when game is ended
     if (gameState?.gamePhase === 'game_ended') {
-      showTemporaryMessage(t('gameMessages.gameEndedCannotPass'));
+      showTemporaryMessage(t('gameMessages.gameEndedCannotPass'), 'error');
       return;
     }
     
@@ -685,9 +698,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       const updatedCurrentPlayer = updatedPlayers.find(p => p.id === prevGameState.currentPlayerId);
       if (updatedCurrentPlayer && shouldEliminatePlayer(updatedCurrentPlayer)) {
         newGameState = eliminatePlayer(newGameState, prevGameState.currentPlayerId);
-        showTemporaryMessage(t('gameMessages.playerEliminatedPasses', { name: updatedCurrentPlayer.name }));
+        showTemporaryMessage(t('gameMessages.playerEliminatedPasses', { name: updatedCurrentPlayer.name }), 'info');
       } else {
-        showTemporaryMessage(t('gameMessages.passed'));
+        showTemporaryMessage(t('gameMessages.passed'), 'pass');
       }
 
       // Check if game should end
@@ -712,6 +725,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
     }
     setHighlightedSlots([]);
     setMessage(null);
+    setMessageType('info');
   };
 
   const handlePlayerClick = (playerId: string) => {
@@ -749,6 +763,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       setSelectedCard(null);
       setHighlightedSlots([]);
       setMessage(null);
+      setMessageType('info');
+    setMessageType('info');
       
       // Set default selected player for hand viewing
       if (!selectedPlayerForHandView) {
@@ -785,9 +801,11 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
       setSelectedCard(null);
       setHighlightedSlots([]);
       setMessage(null);
+      setMessageType('info');
+    setMessageType('info');
       setShowMenu(false);
       setSelectedPlayerForHandView(null); // Reset selected player for hand view
-      showTemporaryMessage(t('gameMessages.newGameStarted', { count: playerCount }));
+      showTemporaryMessage(t('gameMessages.newGameStarted', { count: playerCount }), 'success');
     } catch (err) {
       console.error('Failed to initialize game:', err);
       setError(err instanceof Error ? err.message : t('gameMessages.gameInitializationFailed'));
@@ -1065,6 +1083,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                         {gameState.players.map((player, index) => (
                           <div
                             key={player.id}
+                            data-testid={`initial-progress-${index}`}
                             className={`w-3 h-3 rounded-full ${
                               gameState.initialSelection?.playersCompleted[index]
                                 ? 'bg-green-500'
@@ -1140,16 +1159,21 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 )}
               </div>
               
-              {message && (
-                <div data-testid="game-message" className={`p-3 rounded-lg text-center transition-all duration-300 ${
-                  message.includes('エラー') || message.includes('できません') 
+              {(message || isInitialPhase) && (
+                <div 
+                  data-testid="game-message" 
+                  data-message-type={message ? messageType : 'info'}
+                  className={`p-3 rounded-lg text-center transition-all duration-300 ${
+                  messageType === 'error'
                     ? 'bg-red-600 bg-opacity-80' 
-                    : message.includes('獲得') || message.includes('配置しました')
+                    : messageType === 'success'
                     ? 'bg-green-600 bg-opacity-80'
+                    : messageType === 'pass'
+                    ? 'bg-yellow-600 bg-opacity-80'
                     : 'bg-blue-600 bg-opacity-80'
                 }`}>
                   <div className="flex items-center justify-between">
-                    <span>{message}</span>
+                    <span>{message || (isInitialPhase ? (hasInitialCards ? t('gameMessages.placeInitialQubitCards') : t('gameMessages.noInitialQubitCards')) : '')}</span>
                     {gameState?.controlTargetPlacement?.waitingForTarget && (
                       <button
                         data-testid="cancel-control-target-button"
@@ -1158,6 +1182,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                             setGameState(cancelControlTargetPlacement(gameState));
                             setHighlightedSlots([]);
                             setMessage(null);
+                            setMessageType('info');
+      setMessageType('info');
+    setMessageType('info');
                           }
                         }}
                         className="ml-4 px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm transition-colors"
@@ -1190,7 +1217,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                     {!hasInitialCards && (
                       <div className="flex gap-4">
                         <button
-                          data-testid="skip-initial-player-button"
+                          data-testid="skip-initial-button"
                           onClick={handleSkipInitialPlayer}
                           className="px-8 py-4 text-xl font-bold rounded-lg shadow-lg transition duration-300 bg-gray-600 hover:bg-gray-700 text-white"
                         >

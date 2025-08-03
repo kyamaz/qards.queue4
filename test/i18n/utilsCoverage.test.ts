@@ -38,10 +38,23 @@ describe('I18n Utils Coverage Tests', () => {
       expect(result).toBe('nonexistent.deeply.nested.key');
     });
 
-    it('should handle fallback when key not found in Japanese - lines 27-28', () => {
+    it('should handle fallback when key not found in Japanese - lines 25, 27-28', () => {
       // Test when a key is not found even in Japanese fallback
+      // This should trigger line 25 during fallback traversal, and lines 27-28 when fallback key is not found
       const result = getTranslation('en', 'completely.nonexistent.key.that.does.not.exist');
       expect(result).toBe('completely.nonexistent.key.that.does.not.exist');
+    });
+
+    it('should trigger fallback mechanism with partial key match - lines 25, 30-31', () => {
+      // Test case where English translation is missing but Japanese exists
+      // This should trigger the fallback mechanism on lines 22-31
+      // First, let's test with a key that exists in Japanese but might not in English
+      const result = getTranslation('en', 'actions.startGame');
+      expect(typeof result).toBe('string');
+      
+      // Test with nested key that might trigger fallback line 25 and 30-31
+      const nestedResult = getTranslation('en', 'player.currentPlayer');
+      expect(typeof nestedResult).toBe('string');
     });
 
     it('should replace parameters in translation - lines 40-45', () => {

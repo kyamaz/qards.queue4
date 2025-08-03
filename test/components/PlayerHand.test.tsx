@@ -64,18 +64,18 @@ describe('PlayerHand Component', () => {
       expect(cardsContainer).toBeInTheDocument();
 
       // Check each card by its data-testid
-      expect(screen.getByTestId('card-gate-1')).toBeInTheDocument();
-      expect(screen.getByTestId('card-qubit-2')).toBeInTheDocument();
-      expect(screen.getByTestId('card-measurement-3')).toBeInTheDocument();
-      expect(screen.getByTestId('card-unitary-4')).toBeInTheDocument();
-      expect(screen.getByTestId('card-control-5')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-gate-id1')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-qubit-id2')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-measurement-id3')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-unitary-id4')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-control-id5')).toBeInTheDocument();
 
       // Verify the card values are displayed
-      expect(screen.getByTestId('card-gate-1')).toHaveTextContent('X');
-      expect(screen.getByTestId('card-qubit-2')).toHaveTextContent('|+⟩');
-      expect(screen.getByTestId('card-measurement-3')).toHaveTextContent('⟨0|');
-      expect(screen.getByTestId('card-unitary-4')).toHaveTextContent('U');
-      expect(screen.getByTestId('card-control-5')).toHaveTextContent('C');
+      expect(screen.getByTestId('hand-card-gate-id1')).toHaveTextContent('X');
+      expect(screen.getByTestId('hand-card-qubit-id2')).toHaveTextContent('|+⟩');
+      expect(screen.getByTestId('hand-card-measurement-id3')).toHaveTextContent('⟨0|');
+      expect(screen.getByTestId('hand-card-unitary-id4')).toHaveTextContent('U');
+      expect(screen.getByTestId('hand-card-control-id5')).toHaveTextContent('C');
     });
 
     it('should render empty hand message when no cards', () => {
@@ -135,11 +135,11 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const gateCard = screen.getByTestId('card-gate-1');
-      const quantumBitCard = screen.getByTestId('card-qubit-2');
-      const measurementCard = screen.getByTestId('card-measurement-3');
-      const unitaryCard = screen.getByTestId('card-unitary-4');
-      const controlCard = screen.getByTestId('card-control-5');
+      const gateCard = screen.getByTestId('hand-card-gate-id1');
+      const quantumBitCard = screen.getByTestId('hand-card-qubit-id2');
+      const measurementCard = screen.getByTestId('hand-card-measurement-id3');
+      const unitaryCard = screen.getByTestId('hand-card-unitary-id4');
+      const controlCard = screen.getByTestId('hand-card-control-id5');
 
       expect(gateCard).toHaveClass('bg-blue-600');
       expect(quantumBitCard).toHaveClass('bg-green-600');
@@ -163,7 +163,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const initialQubitCard = screen.getByTestId('card-initial-qubit-1');
+      const initialQubitCard = screen.getByTestId('hand-card-initial-qubit-id1');
       expect(initialQubitCard).toHaveClass('bg-green-800');
       expect(initialQubitCard).toHaveTextContent('|0⟩');
     });
@@ -181,7 +181,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const firstCard = screen.getByTestId('card-gate-1');
+      const firstCard = screen.getByTestId('hand-card-gate-id1');
       fireEvent.click(firstCard);
 
       expect(mockOnCardClick).toHaveBeenCalledWith(mockCards[0]);
@@ -199,7 +199,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const firstCard = screen.getByTestId('card-gate-1');
+      const firstCard = screen.getByTestId('hand-card-gate-id1');
       fireEvent.click(firstCard);
 
       expect(mockOnCardClick).not.toHaveBeenCalled();
@@ -216,7 +216,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const selectedCard = screen.getByTestId('card-gate-1');
+      const selectedCard = screen.getByTestId('hand-card-gate-id1');
       expect(selectedCard).toHaveClass('ring-4', 'ring-cyan-400');
     });
 
@@ -231,7 +231,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const card = screen.getByTestId('card-gate-1');
+      const card = screen.getByTestId('hand-card-gate-id1');
       expect(card).toHaveClass('cursor-default');
       expect(card).not.toHaveClass('cursor-pointer');
     });
@@ -250,7 +250,7 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const card = screen.getByTestId('card-gate-1');
+      const card = screen.getByTestId('hand-card-gate-id1');
       expect(card).toHaveClass('hover:scale-105');
     });
 
@@ -307,7 +307,7 @@ describe('PlayerHand Component', () => {
 
       // Check that all cards are rendered with correct data-testid
       for (let i = 0; i < 20; i++) {
-        const card = screen.getByTestId(`card-gate-card-${i}`);
+        const card = screen.getByTestId(`hand-card-gate-idcard-${i}`);
         expect(card).toBeInTheDocument();
         expect(card).toHaveTextContent('X');
       }
@@ -324,10 +324,146 @@ describe('PlayerHand Component', () => {
         />
       );
 
-      const card = screen.getByTestId('card-gate-1');
+      const card = screen.getByTestId('hand-card-gate-id1');
       
       // Should not throw error when clicking
       expect(() => fireEvent.click(card)).not.toThrow();
+    });
+
+    it('should handle null onCardClick gracefully', () => {
+      renderWithI18n(
+        <PlayerHand
+          hand={mockCards}
+          playerName="Test Player"
+          isCurrentPlayer={true}
+          onCardClick={null as any}
+          selectedCard={null}
+        />
+      );
+
+      const card = screen.getByTestId('hand-card-gate-id1');
+      
+      // Should not throw error when clicking
+      expect(() => fireEvent.click(card)).not.toThrow();
+    });
+
+    it('should handle all card types correctly in large hand', () => {
+      const allCardTypes: Card[] = [
+        { id: '1', type: CardType.GATE, value: 'X' },
+        { id: '2', type: CardType.QUBIT, value: '|+⟩' },
+        { id: '3', type: CardType.INITIAL_QUBIT, value: '|0⟩' },
+        { id: '4', type: CardType.MEASUREMENT, value: '⟨0|' },
+        { id: '5', type: CardType.UNITARY, value: 'U' },
+        { id: '6', type: CardType.CONTROL, value: 'C' },
+        { id: '7', type: CardType.TARGET, value: 'O' },
+      ];
+
+      renderWithI18n(
+        <PlayerHand
+          hand={allCardTypes}
+          playerName="Test Player"
+          isCurrentPlayer={true}
+          onCardClick={mockOnCardClick}
+          selectedCard={null}
+        />
+      );
+
+      // Verify all card types are rendered
+      expect(screen.getByTestId('hand-card-gate-id1')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-qubit-id2')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-initial-qubit-id3')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-measurement-id4')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-unitary-id5')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-control-id6')).toBeInTheDocument();
+      expect(screen.getByTestId('hand-card-target-id7')).toBeInTheDocument();
+    });
+
+    it('should maintain consistent spacing with different card counts', () => {
+      const singleCard = [{ id: '1', type: CardType.GATE, value: 'X' }];
+      
+      const { rerender } = renderWithI18n(
+        <PlayerHand
+          hand={singleCard}
+          playerName="Test Player"
+          isCurrentPlayer={true}
+          onCardClick={mockOnCardClick}
+          selectedCard={null}
+        />
+      );
+
+      const cardsContainer = screen.getByTestId('hand-cards-container');
+      expect(cardsContainer).toHaveClass('flex', 'flex-wrap', 'gap-3', 'justify-center');
+
+      // Test with many cards
+      const manyCards = Array.from({ length: 15 }, (_, i) => ({
+        id: `card-${i}`,
+        type: CardType.GATE,
+        value: 'X' as const,
+      }));
+
+      rerender(
+        <TestWrapper>
+          <PlayerHand
+            hand={manyCards}
+            playerName="Test Player"
+            isCurrentPlayer={true}
+            onCardClick={mockOnCardClick}
+            selectedCard={null}
+          />
+        </TestWrapper>
+      );
+
+      // Container should still maintain consistent styling
+      const updatedContainer = screen.getByTestId('hand-cards-container');
+      expect(updatedContainer).toHaveClass('flex', 'flex-wrap', 'gap-3', 'justify-center');
+    });
+
+    it('should handle special characters in player names', () => {
+      const specialNames = [
+        'Player & Special',
+        'プレイヤー１',
+        'Player <script>',
+        'Player "quotes"',
+        "Player's name"
+      ];
+
+      specialNames.forEach(name => {
+        const { unmount } = renderWithI18n(
+          <PlayerHand
+            hand={mockCards}
+            playerName={name}
+            isCurrentPlayer={true}
+            onCardClick={mockOnCardClick}
+            selectedCard={null}
+          />
+        );
+
+        const playerTitle = screen.getByTestId('player-hand-title');
+        expect(playerTitle).toHaveTextContent(name);
+        unmount();
+      });
+    });
+
+    it('should handle card selection with complex card IDs', () => {
+      const complexCards: Card[] = [
+        { id: 'card-with-dashes-123', type: CardType.GATE, value: 'X' },
+        { id: 'card_with_underscores_456', type: CardType.QUBIT, value: '|+⟩' },
+        { id: 'cardWithCamelCase789', type: CardType.MEASUREMENT, value: '⟨0|' },
+      ];
+
+      renderWithI18n(
+        <PlayerHand
+          hand={complexCards}
+          playerName="Test Player"
+          isCurrentPlayer={true}
+          onCardClick={mockOnCardClick}
+          selectedCard={complexCards[1]}
+        />
+      );
+
+      // Check that complex IDs work correctly
+      const selectedCard = screen.getByTestId('hand-card-qubit-idcard_with_underscores_456');
+      expect(selectedCard).toHaveClass('ring-4', 'ring-cyan-400');
     });
 
     it('should handle null selectedCard properly', () => {
@@ -343,7 +479,7 @@ describe('PlayerHand Component', () => {
 
       // No cards should be selected
       mockCards.forEach((card) => {
-        const cardElement = screen.getByTestId(`card-${card.type.toLowerCase()}-${card.id}`);
+        const cardElement = screen.getByTestId(`hand-card-${card.type.toLowerCase()}-id${card.id}`);
         expect(cardElement).not.toHaveClass('ring-4', 'ring-cyan-400');
       });
     });
@@ -361,7 +497,7 @@ describe('PlayerHand Component', () => {
 
       // No cards should be selected
       mockCards.forEach((card) => {
-        const cardElement = screen.getByTestId(`card-${card.type.toLowerCase()}-${card.id}`);
+        const cardElement = screen.getByTestId(`hand-card-${card.type.toLowerCase()}-id${card.id}`);
         expect(cardElement).not.toHaveClass('ring-4', 'ring-cyan-400');
       });
     });
@@ -378,7 +514,7 @@ describe('PlayerHand Component', () => {
       );
 
       mockCards.forEach((card) => {
-        const cardElement = screen.getByTestId(`card-${card.type.toLowerCase()}-${card.id}`);
+        const cardElement = screen.getByTestId(`hand-card-${card.type.toLowerCase()}-id${card.id}`);
         expect(cardElement).toHaveClass('opacity-75');
       });
     });
@@ -395,7 +531,7 @@ describe('PlayerHand Component', () => {
       );
 
       mockCards.forEach((card) => {
-        const cardElement = screen.getByTestId(`card-${card.type.toLowerCase()}-${card.id}`);
+        const cardElement = screen.getByTestId(`hand-card-${card.type.toLowerCase()}-id${card.id}`);
         expect(cardElement).not.toHaveClass('opacity-75');
       });
     });

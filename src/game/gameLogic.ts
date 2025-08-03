@@ -317,6 +317,11 @@ export const calculateMeasurementScoreFromOutcome = (measurementOutcome: '0' | '
   return measurementOutcome === '1' ? 5 : 3;
 };
 
+// Get measurement outcome based on quantum state and measurement basis
+export const getMeasurementOutcome = (quantumBitValue: string, measurementValue: string): '0' | '1' => {
+  return determineMeasurementOutcome(quantumBitValue, measurementValue) as '0' | '1';
+};
+
 // Calculate measurement score based on qubit and measurement card compatibility (classical fallback)
 export const calculateMeasurementScore = (quantumBitValue: string, measurementValue: string): number => {
   // Determine measurement outcome based on quantum state and measurement basis
@@ -329,32 +334,40 @@ export const calculateMeasurementScore = (quantumBitValue: string, measurementVa
  * Determine the most likely measurement outcome for a given quantum state and measurement basis
  */
 const determineMeasurementOutcome = (quantumBitValue: string, measurementValue: string): string => {
-  // Based on quantum mechanics, determine the most likely outcome
+  // Based on quantum mechanics: measurement result is '1' when state matches measurement basis, '0' when they don't match
   switch (quantumBitValue) {
     case '|0⟩':
-      // |0⟩ always measures as 0 in computational basis
-      if (measurementValue === '⟨0|' || measurementValue === '⟨1|') return '0';
+      // |0⟩ measured with ⟨0| gives result '1' (perfect match)
+      // |0⟩ measured with ⟨1| gives result '0' (no match)
+      if (measurementValue === '⟨0|') return '1';
+      if (measurementValue === '⟨1|') return '0';
       // |0⟩ has 50% probability for both outcomes in +/- basis, return '0' as default
       return '0';
     
     case '|1⟩':
-      // |1⟩ always measures as 1 in computational basis
-      if (measurementValue === '⟨0|' || measurementValue === '⟨1|') return '1';
+      // |1⟩ measured with ⟨1| gives result '1' (perfect match)
+      // |1⟩ measured with ⟨0| gives result '0' (no match)
+      if (measurementValue === '⟨1|') return '1';
+      if (measurementValue === '⟨0|') return '0';
       // |1⟩ has 50% probability for both outcomes in +/- basis, return '1' as default
       return '1';
     
     case '|+⟩':
       // |+⟩ has equal probability for both outcomes in computational basis, return '0' as default
       if (measurementValue === '⟨0|' || measurementValue === '⟨1|') return '0';
-      // |+⟩ always measures as + (outcome 0) in +/- basis when measuring ⟨+|
-      // |+⟩ always measures as + (outcome 0) in +/- basis when measuring ⟨-|
+      // |+⟩ measured with ⟨+| gives result '1' (perfect match)
+      // |+⟩ measured with ⟨-| gives result '0' (no match)
+      if (measurementValue === '⟨+|') return '1';
+      if (measurementValue === '⟨-|') return '0';
       return '0';
     
     case '|-⟩':
       // |-⟩ has equal probability for both outcomes in computational basis, return '0' as default  
       if (measurementValue === '⟨0|' || measurementValue === '⟨1|') return '0';
-      // |-⟩ always measures as - (outcome 1) in +/- basis when measuring ⟨+|
-      // |-⟩ always measures as - (outcome 1) in +/- basis when measuring ⟨-|
+      // |-⟩ measured with ⟨-| gives result '1' (perfect match)
+      // |-⟩ measured with ⟨+| gives result '0' (no match)
+      if (measurementValue === '⟨-|') return '1';
+      if (measurementValue === '⟨+|') return '0';
       return '1';
     
     default:

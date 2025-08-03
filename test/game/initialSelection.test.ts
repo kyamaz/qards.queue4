@@ -293,4 +293,54 @@ describe('Initial Selection Logic', () => {
       }).toThrow('Initial selection phase not complete');
     });
   });
+
+  describe('Edge Cases for Coverage Improvement', () => {
+    it('should handle determineFirstPlayer when initialSelection is undefined (line 189)', () => {
+      // Create game state without initialSelection to test fallback
+      const gameState: GameState = {
+        players: [
+          { id: 'player1', name: 'Player 1', hand: [], score: 0, passes: 0, eliminated: false },
+          { id: 'player2', name: 'Player 2', hand: [], score: 0, passes: 0, eliminated: false }
+        ],
+        currentPlayerId: 'player1',
+        gamePhase: 'normal_play',
+        measurementCount: 0,
+        turnDirection: 'forward',
+        deck: [],
+        board: {
+          lane: [[], [], [], []]
+        },
+        // intentionally omitting initialSelection to trigger line 189
+      } as any;
+
+      const firstPlayer = determineFirstPlayer(gameState);
+      
+      // Should fallback to first player when initialSelection is undefined
+      expect(firstPlayer).toBe('player1');
+    });
+
+    it('should handle determineFirstPlayer when initialSelection is null', () => {
+      // Create game state with null initialSelection
+      const gameState: GameState = {
+        players: [
+          { id: 'player1', name: 'Player 1', hand: [], score: 0, passes: 0, eliminated: false },
+          { id: 'player2', name: 'Player 2', hand: [], score: 0, passes: 0, eliminated: false }
+        ],
+        currentPlayerId: 'player1',
+        gamePhase: 'normal_play',
+        measurementCount: 0,
+        turnDirection: 'forward',
+        deck: [],
+        board: {
+          lane: [[], [], [], []]
+        },
+        initialSelection: null
+      } as any;
+
+      const firstPlayer = determineFirstPlayer(gameState);
+      
+      // Should fallback to first player when initialSelection is null
+      expect(firstPlayer).toBe('player1');
+    });
+  });
 });

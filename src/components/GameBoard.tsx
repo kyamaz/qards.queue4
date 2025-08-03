@@ -38,11 +38,11 @@ const GameBoard: React.FC<GameBoardProps> = ({
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-2xl font-bold text-white" data-testid="board-title">{t('board.quantumCircuit')}</h3>
         <div className="flex gap-2 text-xs">
-          <span className="bg-green-600 px-2 py-1 rounded text-white">{t('board.qubit')}</span>
-          <span className="bg-blue-600 px-2 py-1 rounded text-white">{t('board.gate')}</span>
-          <span className="bg-purple-600 px-2 py-1 rounded text-white">{t('board.unitary')}</span>
-          <span className="bg-red-600 px-2 py-1 rounded text-white">{t('board.measurement')}</span>
-          <span className="bg-yellow-600 px-2 py-1 rounded text-white">{t('board.control')}</span>
+          <span className="bg-green-600 px-2 py-1 rounded text-white" data-testid="legend-qubit">{t('board.qubit')}</span>
+          <span className="bg-blue-600 px-2 py-1 rounded text-white" data-testid="legend-gate">{t('board.gate')}</span>
+          <span className="bg-purple-600 px-2 py-1 rounded text-white" data-testid="legend-unitary">{t('board.unitary')}</span>
+          <span className="bg-red-600 px-2 py-1 rounded text-white" data-testid="legend-measurement">{t('board.measurement')}</span>
+          <span className="bg-yellow-600 px-2 py-1 rounded text-white" data-testid="legend-control">{t('board.control')}</span>
         </div>
       </div>
       

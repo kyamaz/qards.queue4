@@ -469,7 +469,7 @@ describe('GameScreen Component', () => {
       renderWithI18n(<GameScreen onBackToMenu={mockOnBackToMenu} />);
       
       await waitFor(() => {
-        expect(screen.getByTestId('skip-initial-player-button')).toBeInTheDocument();
+        expect(screen.getByTestId('skip-initial-button')).toBeInTheDocument();
       });
     });
 
@@ -477,7 +477,7 @@ describe('GameScreen Component', () => {
       renderWithI18n(<GameScreen onBackToMenu={mockOnBackToMenu} />);
       
       await waitFor(() => {
-        const skipButton = screen.getByTestId('skip-initial-player-button');
+        const skipButton = screen.getByTestId('skip-initial-button');
         fireEvent.click(skipButton);
         expect(mockInitialSelection.skipPlayerInitialSelection).toHaveBeenCalled();
       });
@@ -489,7 +489,7 @@ describe('GameScreen Component', () => {
       renderWithI18n(<GameScreen onBackToMenu={mockOnBackToMenu} />);
       
       await waitFor(() => {
-        expect(screen.queryByTestId('skip-initial-player-button')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('skip-initial-button')).not.toBeInTheDocument();
       });
     });
   });

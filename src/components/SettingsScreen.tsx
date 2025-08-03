@@ -148,6 +148,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
               value={settings.difficulty}
               onChange={(e) => updateSetting('difficulty', e.target.value as 'easy' | 'normal' | 'hard')}
               disabled={settings.comPlayerCount === 0}
+              data-testid="difficulty-select"
               className={`w-full p-3 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none ${
                 settings.comPlayerCount === 0 
                   ? 'bg-gray-600 cursor-not-allowed opacity-50' 
@@ -223,6 +224,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ onBack, onStartGame }) 
             <select
               value={settings.language}
               onChange={(e) => updateSetting('language', e.target.value as 'ja' | 'en')}
+              data-testid="language-select"
               className="w-full p-3 bg-gray-700 rounded-lg text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
             >
               <option value="ja">日本語</option>

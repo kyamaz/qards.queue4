@@ -31,7 +31,9 @@ export class QuantumEngine {
 
   private C0 = complex(0);
   private C1 = complex(1);
+  private NEG = complex(-1);
   private INV_SQRT2 = complex(1 / Math.sqrt(2));
+  private NEG_INV_SQRT2 = complex(-1 / Math.sqrt(2));
 
   public createInitialState(initialQubits: QubitState[]): QuantumState {
     const numQubits = initialQubits.length;
@@ -50,7 +52,7 @@ export class QuantumEngine {
       case '|0⟩': return [this.C1, this.C0];
       case '|1⟩': return [this.C0, this.C1];
       case '|+⟩': return [this.INV_SQRT2, this.INV_SQRT2];
-      case '|-⟩': return [this.INV_SQRT2, complex(-1 / Math.sqrt(2))];
+      case '|-⟩': return [this.INV_SQRT2, this.NEG_INV_SQRT2];
       default: throw new Error(`Unknown qubit state: ${state}`);
     }
   }
@@ -69,8 +71,8 @@ export class QuantumEngine {
     switch (gateType) {
       case 'I': return { matrix: [[this.C1, this.C0], [this.C0, this.C1]] };
       case 'X': return { matrix: [[this.C0, this.C1], [this.C1, this.C0]] };
-      case 'Z': return { matrix: [[this.C1, this.C0], [this.C0, complex(-1)]] };
-      case 'H': return { matrix: [[this.INV_SQRT2, this.INV_SQRT2], [this.INV_SQRT2, complex(-1 / Math.sqrt(2))]] };
+      case 'Z': return { matrix: [[this.C1, this.C0], [this.C0, this.NEG]] };
+      case 'H': return { matrix: [[this.INV_SQRT2, this.INV_SQRT2], [this.INV_SQRT2, this.NEG_INV_SQRT2]] };
       case 'CNOT': return { matrix: [] }; // Not used directly in the new approach
       default: throw new Error(`Unknown gate type: ${gateType}`);
     }
@@ -124,24 +126,48 @@ export class QuantumEngine {
   }
 
   private performMeasurement(state: QuantumState, targetQubit: number, basis: MeasurementBasis): MeasurementResult {
-    if (basis === '⟨+|' || basis === '⟨-|') {
-      this.computationSteps.push(`Warning: Measurement in ${basis} basis is not fully implemented. Defaulting to Z-basis.`);
-    }
-
     const { amplitudes, numQubits } = state;
     const numStates = 1 << numQubits;
     let prob0 = 0;
     const targetBit = 1 << (numQubits - 1 - targetQubit);
 
+    // Calculate probability of measuring the qubit in |0⟩ state
     for (let i = 0; i < numStates; i++) {
       if ((i & targetBit) === 0) {
         prob0 += amplitudes[i].real ** 2 + amplitudes[i].imaginary ** 2;
       }
     }
 
-    const random = Math.random();
-    const outcome = random < prob0 ? '0' : '1';
-    const probability = outcome === '0' ? prob0 : 1 - prob0;
+    const prob1 = 1 - prob0;
+    
+    // For computational basis measurements, result is based on matching the basis with the state
+    let outcome: '0' | '1';
+    let probability: number;
+    
+    // Quantum measurement: the measurement basis determines what we're measuring for
+    // ⟨0| means we're checking if the state matches |0⟩
+    // ⟨1| means we're checking if the state matches |1⟩
+    // The outcome '1' means "yes, it matches", '0' means "no, it doesn't match"
+    
+    if (basis === '⟨0|') {
+      // Measuring with ⟨0|: outcome '1' means state was |0⟩, '0' means state was |1⟩
+      outcome = prob0 > 0.5 ? '1' : '0';
+      probability = prob0 > 0.5 ? prob0 : 1 - prob0;
+    } else if (basis === '⟨1|') {
+      // Measuring with ⟨1|: outcome '1' means state was |1⟩, '0' means state was |0⟩  
+      outcome = prob1 > 0.5 ? '1' : '0';
+      probability = prob1 > 0.5 ? prob1 : 1 - prob1;
+    } else if (basis === '⟨+|' || basis === '⟨-|') {
+      this.computationSteps.push(`Warning: Measurement in ${basis} basis is not fully implemented. Using probabilistic Z-basis.`);
+      const random = Math.random();
+      outcome = random < prob0 ? '0' : '1';
+      probability = outcome === '0' ? prob0 : prob1;
+    } else {
+      // Default case: use probabilistic measurement
+      const random = Math.random();
+      outcome = random < prob0 ? '0' : '1';
+      probability = outcome === '0' ? prob0 : prob1;
+    }
 
     const newAmplitudes = Array(numStates).fill(this.C0);
     const norm = Math.sqrt(probability);
