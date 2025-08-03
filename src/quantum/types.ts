@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 /**
- * Quantum computation types and interfaces for qards-queue4
+ * Quantum computation types and interfaces for qards.queue4
  */
 
 export type QubitState = '|0⟩' | '|1⟩' | '|+⟩' | '|-⟩';

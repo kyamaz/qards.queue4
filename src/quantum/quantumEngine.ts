@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2025 OpenQL Project
 /**
- * Quantum computation engine for qards-queue4
+ * Quantum computation engine for qards.queue4
  * Handles quantum state evolution and measurement calculations for a multi-qubit system.
  */
 

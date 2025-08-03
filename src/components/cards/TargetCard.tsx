@@ -37,10 +37,6 @@ export const TargetCard: React.FC<TargetCardProps> = ({
       className={className}
       backgroundColor="bg-gray-300"
       data-testid={dataTestId}
-    >
-      <div className="border-2 border-dashed border-gray-500 w-full h-full rounded flex items-center justify-center">
-        <span className="text-gray-600 font-bold">O</span>
-      </div>
-    </BaseCard>
+    />
   );
 };

@@ -415,7 +415,9 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         while (newLane.length < position) {
           newLane.push(null);
         }
-        newLane[position] = selectedCard;
+        // Clone the card to avoid mutating the original
+        const cardToPlace = { ...selectedCard };
+        newLane[position] = cardToPlace;
         newBoard.lane[laneIndex] = newLane;
 
         let newTurnDirection = prev.turnDirection;
@@ -432,6 +434,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
         // UNITARY card effect: reverse turn direction and increment counter
         // GATE card on TARGET: does NOT reverse turn direction
         let updatedGameState = prev;
+        
         if (playedCardType === CardType.UNITARY) {
           newTurnDirection = prev.turnDirection === 'forward' ? 'backward' : 'forward';
           // Increment Unitary card counter for current player
@@ -445,8 +448,18 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           // Try quantum computation first, fallback to classical if not available
           let scoreGained = 1; // Default score
           let measurementOutcome: '0' | '1' = '0'; // Default outcome
-          let quantumComputationUsed = false;
+          const quantumComputationUsed = false;
           
+          // Classical fallback calculation (always executed first)
+          const lane = newBoard.lane[laneIndex];
+          const precedingQubit = findPrecedingQubit(lane, position);
+          
+          if (precedingQubit) {
+            scoreGained = calculateMeasurementScore(precedingQubit.value, selectedCard.value);
+            measurementOutcome = scoreGained === 5 ? '1' : '0';
+          }
+          
+          // Try quantum computation and update if successful
           if (quantumIntegration.isQuantumComputationAvailable()) {
             try {
               // Execute quantum computation asynchronously
@@ -458,11 +471,45 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
               ).then(result => {
                 if (result) {
                   console.log('✅ Quantum computation completed successfully');
-                  quantumComputationUsed = true;
-                  // Use the quantum measurement outcome
                   const quantumOutcome = result.measurementResult.outcome;
                   const quantumScore = calculateMeasurementScoreFromOutcome(quantumOutcome);
                   console.log(`Quantum outcome: ${quantumOutcome}, score: ${quantumScore}`);
+                  
+                  // Update the game state with quantum results
+                  setGameState(currentState => {
+                    if (!currentState) return null;
+                    
+                    // Find the measurement card on the board and update its result
+                    const updatedBoard = { ...currentState.board };
+                    const updatedLane = [...updatedBoard.lane[laneIndex]];
+                    const cardAtPosition = updatedLane[position];
+                    
+                    if (cardAtPosition && cardAtPosition.id === selectedCard.id) {
+                      cardAtPosition.measurementResult = quantumOutcome;
+                    }
+                    
+                    // Update player score with quantum result
+                    const scoreDiff = quantumScore - scoreGained;
+                    const updatedPlayers = currentState.players.map(p =>
+                      p.id === currentPlayerId ? { ...p, score: p.score + scoreDiff } : p
+                    );
+                    
+                    // Show updated message with quantum result
+                    const quantumMessage = quantumOutcome === '1' 
+                      ? t('gameMessages.measurementResult1Exclamation') 
+                      : t('gameMessages.measurementResult0Plain');
+                    showTemporaryMessage(t('gameMessages.measurementGainedPoints', { 
+                      points: quantumScore, 
+                      compatibility: quantumMessage, 
+                      computation: ' 🔬' 
+                    }));
+                    
+                    return {
+                      ...currentState,
+                      board: updatedBoard,
+                      players: updatedPlayers
+                    };
+                  });
                 }
               }).catch(error => {
                 console.warn('⚠️ Quantum computation failed, using classical fallback:', error);
@@ -472,21 +519,13 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
             }
           }
           
-          // Classical fallback calculation (always executed for game consistency)
-          const lane = newBoard.lane[laneIndex];
-          const precedingQubit = findPrecedingQubit(lane, position);
-          
-          if (precedingQubit) {
-            scoreGained = calculateMeasurementScore(precedingQubit.value, selectedCard.value);
-            measurementOutcome = scoreGained === 5 ? '1' : '0';
-          }
-          
           playersWithUpdatedScore = newPlayers.map(p =>
             p.id === currentPlayerId ? { ...p, score: p.score + scoreGained } : p
           );
           
-          // Store the measurement result on the card
-          selectedCard.measurementResult = measurementOutcome;
+          // Store the measurement result on the card that's on the board
+          // cardToPlace is already placed on the board, so update it directly
+          cardToPlace.measurementResult = measurementOutcome;
           
           // Store the score and computation info for the message
           (selectedCard as Card & { measurementScore?: number; quantumComputationUsed?: boolean }).measurementScore = scoreGained;

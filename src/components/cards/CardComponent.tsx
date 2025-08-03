@@ -77,7 +77,7 @@ const CardComponent: React.FC<CardComponentProps> = ({
       return <UnitaryCard {...commonProps} />;
     
     case CardType.MEASUREMENT:
-      return <MeasurementCard {...commonProps} />;
+      return <MeasurementCard {...commonProps} card={card} />;
     
     case CardType.CONTROL:
       return (
