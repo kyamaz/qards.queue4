@@ -183,12 +183,10 @@ export class QuantumEngine {
       
       this.computationSteps.push(`Measurement outcome: ${measurementResult.outcome} (probability: ${measurementResult.probability.toFixed(3)})`);
 
-      const gameScore = measurementResult.outcome === '1' ? 5 : 3;
       const executionTime = performance.now() - startTime;
 
       return {
         measurementResult,
-        gameScore,
         computationSteps: [...this.computationSteps],
         executionTime
       };

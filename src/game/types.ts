@@ -35,6 +35,8 @@ export interface Card {
   controlLink?: {
     targetLaneIndex: number;
   };
+  // For Measurement cards, store the result (0 or 1)
+  measurementResult?: '0' | '1';
 }
 
 export interface Player {

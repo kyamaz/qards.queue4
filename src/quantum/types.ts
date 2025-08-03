@@ -79,7 +79,6 @@ export interface QuantumComputationContext {
  */
 export interface QuantumComputationResult {
   measurementResult: MeasurementResult;
-  gameScore: number;
   computationSteps: string[];
   executionTime: number;
 }

@@ -7,7 +7,8 @@ import { useTranslation } from '@/i18n';
 import { 
   initializeGame, 
   isValidPlay, 
-  calculateMeasurementScore, 
+  calculateMeasurementScore,
+  calculateMeasurementScoreFromOutcome,
   findPrecedingQubit,
   startControlTargetPlacement,
   completeControlTargetPlacement,
@@ -443,6 +444,7 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           
           // Try quantum computation first, fallback to classical if not available
           let scoreGained = 1; // Default score
+          let measurementOutcome: '0' | '1' = '0'; // Default outcome
           let quantumComputationUsed = false;
           
           if (quantumIntegration.isQuantumComputationAvailable()) {
@@ -457,7 +459,10 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
                 if (result) {
                   console.log('✅ Quantum computation completed successfully');
                   quantumComputationUsed = true;
-                  // The result is logged in the integration layer
+                  // Use the quantum measurement outcome
+                  const quantumOutcome = result.measurementResult.outcome;
+                  const quantumScore = calculateMeasurementScoreFromOutcome(quantumOutcome);
+                  console.log(`Quantum outcome: ${quantumOutcome}, score: ${quantumScore}`);
                 }
               }).catch(error => {
                 console.warn('⚠️ Quantum computation failed, using classical fallback:', error);
@@ -473,11 +478,15 @@ const GameScreen: React.FC<GameScreenProps> = ({ onBackToMenu }) => {
           
           if (precedingQubit) {
             scoreGained = calculateMeasurementScore(precedingQubit.value, selectedCard.value);
+            measurementOutcome = scoreGained === 5 ? '1' : '0';
           }
           
           playersWithUpdatedScore = newPlayers.map(p =>
             p.id === currentPlayerId ? { ...p, score: p.score + scoreGained } : p
           );
+          
+          // Store the measurement result on the card
+          selectedCard.measurementResult = measurementOutcome;
           
           // Store the score and computation info for the message
           (selectedCard as Card & { measurementScore?: number; quantumComputationUsed?: boolean }).measurementScore = scoreGained;

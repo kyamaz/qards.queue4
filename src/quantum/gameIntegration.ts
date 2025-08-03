@@ -124,7 +124,6 @@ export class QuantumGameIntegration {
       console.log(`Measurement: ${measurementCard.value}`);
       console.log(`Outcome: ${result.measurementResult.outcome}`);
       console.log(`Probability: ${result.measurementResult.probability.toFixed(3)}`);
-      console.log(`Game Score: ${result.gameScore}`);
       console.log(`Execution Time: ${result.executionTime.toFixed(2)}ms`);
       console.log('Computation Steps:');
       result.computationSteps.forEach((step, i) => {

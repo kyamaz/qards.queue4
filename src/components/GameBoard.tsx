@@ -55,8 +55,31 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 const card = lane[cardIndex] || null;
                 const isControlCard = card?.type === CardType.CONTROL && card.controlLink;
                 const targetLaneIndex = card?.controlLink?.targetLaneIndex;
+                const isTargetCard = card?.type === CardType.TARGET;
                 const isHighlighted = isSlotHighlighted(laneIndex, cardIndex);
                 const isAnimating = !!(card && animatingCard === card.id);
+
+                // Find if this TARGET card is connected to a CONTROL card
+                let controlCardInfo = null;
+                if (isTargetCard) {
+                  // Search all lanes for a CONTROL card that targets this position
+                  for (let controlLaneIndex = 0; controlLaneIndex < board.lane.length; controlLaneIndex++) {
+                    const controlLane = board.lane[controlLaneIndex];
+                    for (let controlCardIndex = 0; controlCardIndex < controlLane.length; controlCardIndex++) {
+                      const controlCard = controlLane[controlCardIndex];
+                      if (controlCard?.type === CardType.CONTROL && 
+                          controlCard.controlLink?.targetLaneIndex === laneIndex &&
+                          controlCardIndex === cardIndex) {
+                        controlCardInfo = {
+                          laneIndex: controlLaneIndex,
+                          cardIndex: controlCardIndex
+                        };
+                        break;
+                      }
+                    }
+                    if (controlCardInfo) break;
+                  }
+                }
 
                 let lineElement = null;
                 if (isControlCard && typeof targetLaneIndex === 'number') {
@@ -76,8 +99,38 @@ const GameBoard: React.FC<GameBoardProps> = ({
                     borderRadius: '2px',
                     boxShadow: '0 0 8px rgba(6, 182, 212, 0.5)',
                   };
-                  lineElement = <div style={lineStyle}></div>;
+                  lineElement = (
+                    <div 
+                      style={lineStyle}
+                      data-testid={`control-line-lane${laneIndex}-pos${cardIndex}-to-lane${targetLaneIndex}`}
+                    ></div>
+                  );
+                } else if (isTargetCard && controlCardInfo) {
+                  // Draw line from TARGET back to CONTROL (reverse direction)
+                  const laneHeightWithGap = 12 * 4 + 12; // h-12 + gap-3
+                  const verticalDistance = (controlCardInfo.laneIndex - laneIndex) * laneHeightWithGap;
+                  
+                  const lineStyle: React.CSSProperties = {
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    width: '3px',
+                    height: `${Math.abs(verticalDistance)}px`,
+                    backgroundColor: '#06b6d4', // cyan-500
+                    transform: verticalDistance > 0 ? 'translateY(0)' : 'translateY(-100%)',
+                    transformOrigin: 'top',
+                    zIndex: 5,
+                    borderRadius: '2px',
+                    boxShadow: '0 0 8px rgba(6, 182, 212, 0.5)',
+                  };
+                  lineElement = (
+                    <div 
+                      style={lineStyle}
+                      data-testid={`target-line-lane${laneIndex}-pos${cardIndex}-to-lane${controlCardInfo.laneIndex}`}
+                    ></div>
+                  );
                 }
+                
 
                 return (
                   <div key={card ? card.id : `empty-${laneIndex}-${cardIndex}`} className="relative">

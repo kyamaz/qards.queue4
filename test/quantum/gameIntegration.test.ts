@@ -101,8 +101,8 @@ describe('QuantumGameIntegration (Multi-Qubit)', () => {
       expect(result).not.toBeNull();
       if (result) {
         expect(result.measurementResult.probability).toBeCloseTo(0.5);
-        // Score should be 3 for '0' or 5 for '1'
-        expect([3, 5]).toContain(result.gameScore);
+        // Outcome should be '0' or '1'
+        expect(['0', '1']).toContain(result.measurementResult.outcome);
       }
     });
   });
@@ -424,7 +424,7 @@ describe('QuantumGameIntegration (Multi-Qubit)', () => {
       expect(result).toBeDefined();
       if (result) {
         expect(result.measurementResult).toBeDefined();
-        expect(result.gameScore).toBeGreaterThanOrEqual(0);
+        expect(['0', '1']).toContain(result.measurementResult.outcome);
       }
     });
 

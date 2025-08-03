@@ -310,15 +310,19 @@ export const isValidControlCardPlay = (
 
 
 // Initialize the game state
-// Calculate measurement score based on qubit and measurement card compatibility
-export const calculateMeasurementScore = (quantumBitValue: string, measurementValue: string): number => {
+// Calculate measurement score based on measurement outcome
+export const calculateMeasurementScoreFromOutcome = (measurementOutcome: '0' | '1'): number => {
   // New scoring system based on measurement outcomes:
   // Measurement result '1' = +5 points, measurement result '0' = +3 points
-  
+  return measurementOutcome === '1' ? 5 : 3;
+};
+
+// Calculate measurement score based on qubit and measurement card compatibility (classical fallback)
+export const calculateMeasurementScore = (quantumBitValue: string, measurementValue: string): number => {
   // Determine measurement outcome based on quantum state and measurement basis
   const measurementOutcome = determineMeasurementOutcome(quantumBitValue, measurementValue);
   
-  return measurementOutcome === '1' ? 5 : 3;
+  return calculateMeasurementScoreFromOutcome(measurementOutcome as '0' | '1');
 };
 
 /**

@@ -41,7 +41,8 @@
     "measurement": "測定カード",
     "unitary": "ユニタリカード",
     "control": "制御カード",
-    "target": "対象カード"
+    "target": "対象カード",
+    "measurementValue": "測定値:"
   },
   "settings": {
     "title": "設定",

@@ -41,7 +41,8 @@
     "measurement": "Measurement Card",
     "unitary": "Unitary Card",
     "control": "Control Card",
-    "target": "Target Card"
+    "target": "Target Card",
+    "measurementValue": "val:"
   },
   "settings": {
     "title": "Settings",
