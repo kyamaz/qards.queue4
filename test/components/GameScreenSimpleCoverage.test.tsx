@@ -27,7 +27,7 @@ const mockQuantumIntegration = {
   executeMeasurementComputation: jest.fn().mockResolvedValue({
     outcome: 1,
     probability: 0.5,
-    gameScore: 5,
+    gameScore: 3,
     computationSteps: []
   })
 };
@@ -40,8 +40,8 @@ jest.mock('../../src/quantum', () => ({
 jest.mock('../../src/game/gameLogic', () => ({
   initializeGame: jest.fn(),
   isValidPlay: jest.fn().mockReturnValue(true),
-  calculateMeasurementScore: jest.fn().mockReturnValue(5),
-  calculateMeasurementScoreFromOutcome: jest.fn().mockReturnValue(5),
+  calculateMeasurementScore: jest.fn().mockReturnValue(3),
+  calculateMeasurementScoreFromOutcome: jest.fn().mockReturnValue(3),
   getMeasurementOutcome: jest.fn().mockReturnValue('1'),
   findPrecedingQubit: jest.fn().mockReturnValue({ id: 'qubit1', type: 'QUBIT', value: '|0⟩' }),
   startControlTargetPlacement: jest.fn(),

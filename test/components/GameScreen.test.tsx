@@ -40,7 +40,7 @@ jest.mock('../../src/quantum', () => ({
 jest.mock('../../src/game/gameLogic', () => ({
   initializeGame: jest.fn(),
   isValidPlay: jest.fn().mockReturnValue(true),
-  calculateMeasurementScore: jest.fn().mockReturnValue(5),
+  calculateMeasurementScore: jest.fn().mockReturnValue(3),
   findPrecedingQubit: jest.fn().mockReturnValue({ id: 'qubit1', type: 'QUBIT', value: '|0⟩' }),
   startControlTargetPlacement: jest.fn(),
   completeControlTargetPlacement: jest.fn(),

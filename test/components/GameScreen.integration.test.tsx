@@ -23,7 +23,7 @@ jest.mock('../../src/quantum', () => ({
 jest.mock('../../src/game/gameLogic', () => ({
   initializeGame: jest.fn(),
   isValidPlay: jest.fn().mockReturnValue(true),
-  calculateMeasurementScore: jest.fn().mockReturnValue(5),
+  calculateMeasurementScore: jest.fn().mockReturnValue(3),
   findPrecedingQubit: jest.fn().mockReturnValue({ value: '|0⟩' }),
   startControlTargetPlacement: jest.fn(),
   completeControlTargetPlacement: jest.fn(),
@@ -161,7 +161,7 @@ describe('GameScreen Integration Tests', () => {
   describe('Card Selection and Hints', () => {
     it('should handle measurement card selection with hints', async () => {
       (findPrecedingQubit as jest.Mock).mockReturnValue({ value: '|0⟩' });
-      (calculateMeasurementScore as jest.Mock).mockReturnValue(5);
+      (calculateMeasurementScore as jest.Mock).mockReturnValue(3);
 
       const gameStateWithMeasurement = createMockGameState({
         players: [{

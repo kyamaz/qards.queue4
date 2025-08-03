@@ -397,34 +397,34 @@ import {
 
 describe('calculateMeasurementScore', () => {
   it('should return correct scores for compatible qubit-measurement pairs', () => {
-    expect(calculateMeasurementScore('|0⟩', '⟨0|')).toBe(5); // |0⟩ with ⟨0| → outcome '1' → 5 points (perfect match)
-    expect(calculateMeasurementScore('|1⟩', '⟨1|')).toBe(5); // |1⟩ with ⟨1| → outcome '1' → 5 points (perfect match)
-    expect(calculateMeasurementScore('|+⟩', '⟨+|')).toBe(5); // |+⟩ with ⟨+| → outcome '1' → 5 points (perfect match)
-    expect(calculateMeasurementScore('|-⟩', '⟨-|')).toBe(5); // |-⟩ with ⟨-| → outcome '1' → 5 points (perfect match)
+    expect(calculateMeasurementScore('|0⟩', '⟨0|')).toBe(3); // |0⟩ with ⟨0| → outcome '1' → 3 points (perfect match)
+    expect(calculateMeasurementScore('|1⟩', '⟨1|')).toBe(3); // |1⟩ with ⟨1| → outcome '1' → 3 points (perfect match)
+    expect(calculateMeasurementScore('|+⟩', '⟨+|')).toBe(3); // |+⟩ with ⟨+| → outcome '1' → 3 points (perfect match)
+    expect(calculateMeasurementScore('|-⟩', '⟨-|')).toBe(3); // |-⟩ with ⟨-| → outcome '1' → 3 points (perfect match)
   });
 
   it('should return correct scores for different qubit-measurement pairs', () => {
-    expect(calculateMeasurementScore('|0⟩', '⟨1|')).toBe(3); // |0⟩ with ⟨1| → outcome '0' → 3 points (no match)
-    expect(calculateMeasurementScore('|1⟩', '⟨0|')).toBe(3); // |1⟩ with ⟨0| → outcome '0' → 3 points (no match)
-    expect(calculateMeasurementScore('|+⟩', '⟨-|')).toBe(3); // |+⟩ with ⟨-| → outcome '0' → 3 points (no match)
-    expect(calculateMeasurementScore('|-⟩', '⟨+|')).toBe(3); // |-⟩ with ⟨+| → outcome '0' → 3 points (no match)
+    expect(calculateMeasurementScore('|0⟩', '⟨1|')).toBe(1); // |0⟩ with ⟨1| → outcome '0' → 1 point (no match)
+    expect(calculateMeasurementScore('|1⟩', '⟨0|')).toBe(1); // |1⟩ with ⟨0| → outcome '0' → 1 point (no match)
+    expect(calculateMeasurementScore('|+⟩', '⟨-|')).toBe(1); // |+⟩ with ⟨-| → outcome '0' → 1 point (no match)
+    expect(calculateMeasurementScore('|-⟩', '⟨+|')).toBe(1); // |-⟩ with ⟨+| → outcome '0' → 1 point (no match)
   });
 
   it('should return correct scores for orthogonal qubit-measurement pairs', () => {
-    expect(calculateMeasurementScore('|0⟩', '⟨+|')).toBe(3); // |0⟩ cross-basis → outcome '0' → 3 points
-    expect(calculateMeasurementScore('|0⟩', '⟨-|')).toBe(3); // |0⟩ cross-basis → outcome '0' → 3 points
-    expect(calculateMeasurementScore('|1⟩', '⟨+|')).toBe(5); // |1⟩ cross-basis → default outcome '1' → 5 points
-    expect(calculateMeasurementScore('|1⟩', '⟨-|')).toBe(5); // |1⟩ cross-basis → default outcome '1' → 5 points
-    expect(calculateMeasurementScore('|+⟩', '⟨0|')).toBe(3); // |+⟩ cross-basis → outcome '0' → 3 points
-    expect(calculateMeasurementScore('|+⟩', '⟨1|')).toBe(3); // |+⟩ cross-basis → outcome '0' → 3 points
-    expect(calculateMeasurementScore('|-⟩', '⟨0|')).toBe(3); // |-⟩ cross-basis → outcome '0' → 3 points
-    expect(calculateMeasurementScore('|-⟩', '⟨1|')).toBe(3); // |-⟩ cross-basis → outcome '0' → 3 points
+    expect(calculateMeasurementScore('|0⟩', '⟨+|')).toBe(1); // |0⟩ cross-basis → outcome '0' → 1 point
+    expect(calculateMeasurementScore('|0⟩', '⟨-|')).toBe(1); // |0⟩ cross-basis → outcome '0' → 1 point
+    expect(calculateMeasurementScore('|1⟩', '⟨+|')).toBe(3); // |1⟩ cross-basis → default outcome '1' → 3 points
+    expect(calculateMeasurementScore('|1⟩', '⟨-|')).toBe(3); // |1⟩ cross-basis → default outcome '1' → 3 points
+    expect(calculateMeasurementScore('|+⟩', '⟨0|')).toBe(1); // |+⟩ cross-basis → outcome '0' → 1 point
+    expect(calculateMeasurementScore('|+⟩', '⟨1|')).toBe(1); // |+⟩ cross-basis → outcome '0' → 1 point
+    expect(calculateMeasurementScore('|-⟩', '⟨0|')).toBe(1); // |-⟩ cross-basis → outcome '0' → 1 point
+    expect(calculateMeasurementScore('|-⟩', '⟨1|')).toBe(1); // |-⟩ cross-basis → outcome '0' → 1 point
   });
 
-  it('should return 3 for unknown qubit or measurement values', () => {
-    expect(calculateMeasurementScore('unknown', '⟨0|')).toBe(3); // default case returns '0' → 3 points
-    expect(calculateMeasurementScore('|0⟩', 'unknown')).toBe(3); // |0⟩ always returns '0' → 3 points
-    expect(calculateMeasurementScore('unknown', 'unknown')).toBe(3); // default case returns '0' → 3 points
+  it('should return 1 for unknown qubit or measurement values', () => {
+    expect(calculateMeasurementScore('unknown', '⟨0|')).toBe(1); // default case returns '0' → 1 point
+    expect(calculateMeasurementScore('|0⟩', 'unknown')).toBe(1); // |0⟩ always returns '0' → 1 point
+    expect(calculateMeasurementScore('unknown', 'unknown')).toBe(1); // default case returns '0' → 1 point
   });
 });
 
@@ -496,10 +496,10 @@ describe('calculateHandPenalty', () => {
     ];
     
     const penalty = calculateHandPenalty(hand);
-    // 1 gate card: ceil(1/5) * 2 = 2 points
+    // 1 gate card: ceil(1/2) * 1 = 1 point
     // 5 other cards: 5 * 2 = 10 points
-    // Total: 12 points
-    expect(penalty).toBe(12);
+    // Total: 11 points
+    expect(penalty).toBe(11);
   });
 
   it('should return 0 for empty hand', () => {
@@ -821,7 +821,7 @@ describe('determineWinner', () => {
     expect(result.winner.id).toBe('player1');
     expect(result.finalScores).toHaveLength(2);
     expect(result.finalScores[0].finalScore).toBe(10); // 10 - 0 (no cards)
-    expect(result.finalScores[1].finalScore).toBe(6); // 8 - 2 (gate card penalty)
+    expect(result.finalScores[1].finalScore).toBe(7); // 8 - 1 (gate card penalty)
   });
 
   it('should handle tie-breaking by original score', () => {
@@ -879,10 +879,10 @@ describe('Additional Coverage Tests', () => {
       ];
 
       const penalty = calculateHandPenalty(mixedHand);
-      // Gate cards: 6 cards = ceil(6/5) * 2 = 2 * 2 = 4 points penalty
+      // Gate cards: 6 cards = ceil(6/2) * 1 = 3 * 1 = 3 points penalty
       // Other cards: 2 cards = 2 * 2 = 4 points penalty
-      // Total: 8 points penalty
-      expect(penalty).toBe(8);
+      // Total: 7 points penalty
+      expect(penalty).toBe(7);
     });
 
     it('should handle edge case with unknown card types in penalty calculation', () => {

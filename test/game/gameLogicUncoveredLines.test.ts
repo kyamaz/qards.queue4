@@ -108,14 +108,14 @@ describe('GameLogic Uncovered Lines', () => {
   });
 
   describe('calculateMeasurementScore edge cases', () => {
-    it('should return 5 for measurement outcome 1 - line 321', () => {
+    it('should return 3 for measurement outcome 1 - line 321', () => {
       const result = calculateMeasurementScore('|0⟩', '⟨0|');
-      expect(result).toBe(5); // |0⟩ measured with ⟨0| gives result '1' (perfect match)
+      expect(result).toBe(3); // |0⟩ measured with ⟨0| gives result '1' (perfect match)
     });
 
-    it('should return 5 for measurement outcome 1 - line 321', () => {
+    it('should return 3 for measurement outcome 1 - line 321', () => {
       const result = calculateMeasurementScore('|1⟩', '⟨1|');
-      expect(result).toBe(5); // Expected outcome is '1'
+      expect(result).toBe(3); // Expected outcome is '1'
     });
   });
 
@@ -331,18 +331,18 @@ describe('GameLogic Uncovered Lines', () => {
     it('should handle complex quantum state measurement combinations', () => {
       // Test all combinations to cover the switch statement lines 334, 340-357
       const testCases = [
-        { qubit: '|0⟩', measurement: '⟨0|', expected: 5 }, // |0⟩ with ⟨0| → outcome '1' → 5 points (perfect match)
-        { qubit: '|0⟩', measurement: '⟨1|', expected: 3 }, // |0⟩ with ⟨1| → outcome '0' → 3 points (no match)
-        { qubit: '|1⟩', measurement: '⟨0|', expected: 3 }, // |1⟩ with ⟨0| → outcome '0' → 3 points (no match)
-        { qubit: '|1⟩', measurement: '⟨1|', expected: 5 }, // |1⟩ with ⟨1| → outcome '1' → 5 points (perfect match)
-        { qubit: '|+⟩', measurement: '⟨0|', expected: 3 }, // |+⟩ cross-basis → outcome '0' → 3 points
-        { qubit: '|+⟩', measurement: '⟨1|', expected: 3 }, // |+⟩ cross-basis → outcome '0' → 3 points
-        { qubit: '|+⟩', measurement: '⟨+|', expected: 5 }, // |+⟩ with ⟨+| → outcome '1' → 5 points (perfect match)
-        { qubit: '|+⟩', measurement: '⟨-|', expected: 3 }, // |+⟩ with ⟨-| → outcome '0' → 3 points (no match)
-        { qubit: '|-⟩', measurement: '⟨0|', expected: 3 }, // |-⟩ cross-basis → outcome '0' → 3 points
-        { qubit: '|-⟩', measurement: '⟨1|', expected: 3 }, // |-⟩ cross-basis → outcome '0' → 3 points
-        { qubit: '|-⟩', measurement: '⟨+|', expected: 3 }, // |-⟩ with ⟨+| → outcome '0' → 3 points (no match)
-        { qubit: '|-⟩', measurement: '⟨-|', expected: 5 }  // |-⟩ with ⟨-| → outcome '1' → 5 points (perfect match)
+        { qubit: '|0⟩', measurement: '⟨0|', expected: 3 }, // |0⟩ with ⟨0| → outcome '1' → 3 points (perfect match)
+        { qubit: '|0⟩', measurement: '⟨1|', expected: 1 }, // |0⟩ with ⟨1| → outcome '0' → 1 point (no match)
+        { qubit: '|1⟩', measurement: '⟨0|', expected: 1 }, // |1⟩ with ⟨0| → outcome '0' → 1 point (no match)
+        { qubit: '|1⟩', measurement: '⟨1|', expected: 3 }, // |1⟩ with ⟨1| → outcome '1' → 3 points (perfect match)
+        { qubit: '|+⟩', measurement: '⟨0|', expected: 1 }, // |+⟩ cross-basis → outcome '0' → 1 point
+        { qubit: '|+⟩', measurement: '⟨1|', expected: 1 }, // |+⟩ cross-basis → outcome '0' → 1 point
+        { qubit: '|+⟩', measurement: '⟨+|', expected: 3 }, // |+⟩ with ⟨+| → outcome '1' → 3 points (perfect match)
+        { qubit: '|+⟩', measurement: '⟨-|', expected: 1 }, // |+⟩ with ⟨-| → outcome '0' → 1 point (no match)
+        { qubit: '|-⟩', measurement: '⟨0|', expected: 1 }, // |-⟩ cross-basis → outcome '0' → 1 point
+        { qubit: '|-⟩', measurement: '⟨1|', expected: 1 }, // |-⟩ cross-basis → outcome '0' → 1 point
+        { qubit: '|-⟩', measurement: '⟨+|', expected: 1 }, // |-⟩ with ⟨+| → outcome '0' → 1 point (no match)
+        { qubit: '|-⟩', measurement: '⟨-|', expected: 3 }  // |-⟩ with ⟨-| → outcome '1' → 3 points (perfect match)
       ];
       
       testCases.forEach(({ qubit, measurement, expected }) => {

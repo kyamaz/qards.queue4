@@ -313,8 +313,8 @@ export const isValidControlCardPlay = (
 // Calculate measurement score based on measurement outcome
 export const calculateMeasurementScoreFromOutcome = (measurementOutcome: '0' | '1'): number => {
   // New scoring system based on measurement outcomes:
-  // Measurement result '1' = +5 points, measurement result '0' = +3 points
-  return measurementOutcome === '1' ? 5 : 3;
+  // Measurement result '1' = +3 points, measurement result '0' = +1 point
+  return measurementOutcome === '1' ? 3 : 1;
 };
 
 // Get measurement outcome based on quantum state and measurement basis
@@ -658,8 +658,8 @@ export const calculateHandPenalty = (hand: Card[]): number => {
     }
   });
   
-  // Gate cards: 5 cards per -2 points (rounded up)
-  const gatePenalty = Math.ceil(gateCards / 5) * 2;
+  // Gate cards: 2 cards per -1 point (rounded up)
+  const gatePenalty = Math.ceil(gateCards / 2) * 1;
   
   // Other cards: 1 card per -2 points
   const otherPenalty = otherCards * 2;

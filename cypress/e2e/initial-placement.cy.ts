@@ -63,7 +63,7 @@ describe('Initial Placement Phase', () => {
       cy.get('[data-testid^="hand-card-initial-qubit"]').then(($cards) => {
         if ($cards.length > 0) {
           // Place each card
-          $cards.each((index, card) => {
+          $cards.each((index: number, card: any) => {
             if (index < 4) { // Max 4 lanes
               cy.wrap(card).click();
               cy.get(`[data-testid="empty-slot-lane${index}-pos0"]`).click();
@@ -122,6 +122,6 @@ describe('Initial Placement Phase', () => {
     }
     
     // Should eventually transition to normal play
-    cy.shouldExistByTestId('current-player-name', { timeout: 10000 });
+    cy.getByTestId('current-player-name').should('exist');
   });
 });

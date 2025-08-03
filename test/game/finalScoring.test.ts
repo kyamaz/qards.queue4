@@ -25,7 +25,7 @@ describe('Final Scoring System', () => {
   });
 
   describe('Hand Penalty Calculation', () => {
-    it('should apply new penalty system for gate cards: 5 cards per -2 points', () => {
+    it('should apply new penalty system for gate cards: 2 cards per -1 point', () => {
       const players: Player[] = [
         {
           id: 'p1',
@@ -33,7 +33,7 @@ describe('Final Scoring System', () => {
           score: 10, // 10 points from measurements
           passes: 0,
           hand: [
-            // 5 gate cards = -2 points
+            // 5 gate cards = ceil(5/2) * 1 = 3 * 1 = -3 points
             createCard(CardType.GATE, 'I', 'g1'),
             createCard(CardType.GATE, 'X', 'g2'),
             createCard(CardType.GATE, 'Z', 'g3'),
@@ -46,7 +46,7 @@ describe('Final Scoring System', () => {
       const gameState = createMockGameState(players);
       const finalScores = calculateFinalScores(gameState);
 
-      expect(finalScores[0].finalScore).toBe(8); // 10 - 2 = 8
+      expect(finalScores[0].finalScore).toBe(7); // 10 - 3 = 7
     });
 
     it('should apply penalty for partial gate cards: 3 gate cards = -2 points (rounded up)', () => {
@@ -57,7 +57,7 @@ describe('Final Scoring System', () => {
           score: 10,
           passes: 0,
           hand: [
-            // 3 gate cards = -2 points (rounded up from 3/5)
+            // 3 gate cards = ceil(3/2) * 1 = 2 * 1 = -2 points
             createCard(CardType.GATE, 'I', 'g1'),
             createCard(CardType.GATE, 'X', 'g2'),
             createCard(CardType.GATE, 'Z', 'g3'),
@@ -79,7 +79,7 @@ describe('Final Scoring System', () => {
           score: 15,
           passes: 0,
           hand: [
-            // 7 gate cards = ceil(7/5) * 2 = 2 * 2 = -4 points
+            // 7 gate cards = ceil(7/2) * 1 = 4 * 1 = -4 points
             createCard(CardType.GATE, 'I', 'g1'),
             createCard(CardType.GATE, 'X', 'g2'),
             createCard(CardType.GATE, 'Z', 'g3'),
@@ -127,7 +127,7 @@ describe('Final Scoring System', () => {
           score: 20,
           passes: 0,
           hand: [
-            // 3 gate cards = -2 points (rounded up)
+            // 3 gate cards = ceil(3/2) * 1 = 2 * 1 = -2 points
             createCard(CardType.GATE, 'I', 'g1'),
             createCard(CardType.GATE, 'X', 'g2'),
             createCard(CardType.GATE, 'Z', 'g3'),
@@ -195,10 +195,10 @@ describe('Final Scoring System', () => {
       const gameState = createMockGameState(players);
       const result = determineWinner(gameState);
 
-      // Player 1: 15 - 2 = 13
+      // Player 1: 15 - ceil(5/2)*1 = 15 - 3 = 12
       // Player 2: 10 - 4 = 6
       expect(result.winner.id).toBe('p1');
-      expect(result.finalScores[0].finalScore).toBe(13);
+      expect(result.finalScores[0].finalScore).toBe(12);
       expect(result.finalScores[1].finalScore).toBe(6);
     });
   });
@@ -210,37 +210,49 @@ describe('Final Scoring System', () => {
           description: '1 gate card',
           gateCards: 1,
           otherCards: 0,
-          expectedPenalty: 2 // ceil(1/5) * 2 = 1 * 2 = 2
+          expectedPenalty: 1 // ceil(1/2) * 1 = 1 * 1 = 1
+        },
+        {
+          description: '2 gate cards',
+          gateCards: 2,
+          otherCards: 0,
+          expectedPenalty: 1 // ceil(2/2) * 1 = 1 * 1 = 1
+        },
+        {
+          description: '3 gate cards',
+          gateCards: 3,
+          otherCards: 0,
+          expectedPenalty: 2 // ceil(3/2) * 1 = 2 * 1 = 2
         },
         {
           description: '4 gate cards',
           gateCards: 4,
           otherCards: 0,
-          expectedPenalty: 2 // ceil(4/5) * 2 = 1 * 2 = 2
+          expectedPenalty: 2 // ceil(4/2) * 1 = 2 * 1 = 2
         },
         {
           description: '5 gate cards',
           gateCards: 5,
           otherCards: 0,
-          expectedPenalty: 2 // ceil(5/5) * 2 = 1 * 2 = 2
+          expectedPenalty: 3 // ceil(5/2) * 1 = 3 * 1 = 3
         },
         {
           description: '6 gate cards',
           gateCards: 6,
           otherCards: 0,
-          expectedPenalty: 4 // ceil(6/5) * 2 = 2 * 2 = 4
+          expectedPenalty: 3 // ceil(6/2) * 1 = 3 * 1 = 3
         },
         {
           description: '10 gate cards',
           gateCards: 10,
           otherCards: 0,
-          expectedPenalty: 4 // ceil(10/5) * 2 = 2 * 2 = 4
+          expectedPenalty: 5 // ceil(10/2) * 1 = 5 * 1 = 5
         },
         {
           description: '3 gate + 2 other cards',
           gateCards: 3,
           otherCards: 2,
-          expectedPenalty: 6 // ceil(3/5) * 2 + 2 * 2 = 2 + 4 = 6
+          expectedPenalty: 6 // ceil(3/2) * 1 + 2 * 2 = 2 + 4 = 6
         }
       ];
 

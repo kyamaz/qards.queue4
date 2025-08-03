@@ -173,7 +173,7 @@ describe('Card Placement and Game Rules', () => {
         // Pass count should increment for some player
         cy.get('[data-testid$="-pass-count"]').then(($elements) => {
           let foundIncrement = false;
-          $elements.each((index, element) => {
+          $elements.each((index: number, element: any) => {
             const text = Cypress.$(element).text();
             if (text.includes('1')) {
               foundIncrement = true;

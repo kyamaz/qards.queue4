@@ -5,48 +5,48 @@ import { Card, CardType } from '../../src/game/types';
 
 describe('Measurement Card Functionality', () => {
   describe('calculateMeasurementScore', () => {
-    it('should return 5 points for measurement result 1', () => {
+    it('should return 3 points for measurement result 1', () => {
       // |0⟩ measured with ⟨0| gives result '1' (perfect match)
-      expect(calculateMeasurementScore('|0⟩', '⟨0|')).toBe(5);
+      expect(calculateMeasurementScore('|0⟩', '⟨0|')).toBe(3);
       
       // |1⟩ measured with ⟨1| gives result '1' (perfect match)
-      expect(calculateMeasurementScore('|1⟩', '⟨1|')).toBe(5);
+      expect(calculateMeasurementScore('|1⟩', '⟨1|')).toBe(3);
       
       // |+⟩ measured with ⟨+| gives result '1' (perfect match)
-      expect(calculateMeasurementScore('|+⟩', '⟨+|')).toBe(5);
+      expect(calculateMeasurementScore('|+⟩', '⟨+|')).toBe(3);
       
       // |-⟩ measured with ⟨-| gives result '1' (perfect match)
-      expect(calculateMeasurementScore('|-⟩', '⟨-|')).toBe(5);
+      expect(calculateMeasurementScore('|-⟩', '⟨-|')).toBe(3);
     });
 
-    it('should return 3 points for measurement result 0', () => {
+    it('should return 1 point for measurement result 0', () => {
       // |0⟩ measured with ⟨1| gives result '0' (no match)
-      expect(calculateMeasurementScore('|0⟩', '⟨1|')).toBe(3);
+      expect(calculateMeasurementScore('|0⟩', '⟨1|')).toBe(1);
       
       // |1⟩ measured with ⟨0| gives result '0' (no match)
-      expect(calculateMeasurementScore('|1⟩', '⟨0|')).toBe(3);
+      expect(calculateMeasurementScore('|1⟩', '⟨0|')).toBe(1);
       
       // |+⟩ measured with ⟨-| gives result '0' (no match)
-      expect(calculateMeasurementScore('|+⟩', '⟨-|')).toBe(3);
+      expect(calculateMeasurementScore('|+⟩', '⟨-|')).toBe(1);
       
       // |-⟩ measured with ⟨+| gives result '0' (no match)
-      expect(calculateMeasurementScore('|-⟩', '⟨+|')).toBe(3);
+      expect(calculateMeasurementScore('|-⟩', '⟨+|')).toBe(1);
       
       // Cross-basis measurements (50% probability cases default to '0')
-      expect(calculateMeasurementScore('|0⟩', '⟨+|')).toBe(3);
-      expect(calculateMeasurementScore('|0⟩', '⟨-|')).toBe(3);
-      expect(calculateMeasurementScore('|1⟩', '⟨+|')).toBe(5); // |1⟩ in +/- basis defaults to '1'
-      expect(calculateMeasurementScore('|1⟩', '⟨-|')).toBe(5); // |1⟩ in +/- basis defaults to '1'
-      expect(calculateMeasurementScore('|+⟩', '⟨0|')).toBe(3);
-      expect(calculateMeasurementScore('|+⟩', '⟨1|')).toBe(3);
-      expect(calculateMeasurementScore('|-⟩', '⟨0|')).toBe(3);
-      expect(calculateMeasurementScore('|-⟩', '⟨1|')).toBe(3);
+      expect(calculateMeasurementScore('|0⟩', '⟨+|')).toBe(1);
+      expect(calculateMeasurementScore('|0⟩', '⟨-|')).toBe(1);
+      expect(calculateMeasurementScore('|1⟩', '⟨+|')).toBe(3); // |1⟩ in +/- basis defaults to '1'
+      expect(calculateMeasurementScore('|1⟩', '⟨-|')).toBe(3); // |1⟩ in +/- basis defaults to '1'
+      expect(calculateMeasurementScore('|+⟩', '⟨0|')).toBe(1);
+      expect(calculateMeasurementScore('|+⟩', '⟨1|')).toBe(1);
+      expect(calculateMeasurementScore('|-⟩', '⟨0|')).toBe(1);
+      expect(calculateMeasurementScore('|-⟩', '⟨1|')).toBe(1);
     });
 
-    it('should return 3 points for unknown combinations (default to measurement result 0)', () => {
-      expect(calculateMeasurementScore('unknown', '⟨0|')).toBe(3);
-      expect(calculateMeasurementScore('|0⟩', 'unknown')).toBe(3);
-      expect(calculateMeasurementScore('unknown', 'unknown')).toBe(3);
+    it('should return 1 point for unknown combinations (default to measurement result 0)', () => {
+      expect(calculateMeasurementScore('unknown', '⟨0|')).toBe(1);
+      expect(calculateMeasurementScore('|0⟩', 'unknown')).toBe(1);
+      expect(calculateMeasurementScore('unknown', 'unknown')).toBe(1);
     });
   });
 
@@ -136,27 +136,27 @@ describe('Measurement Card Functionality', () => {
   describe('Measurement Card Game Logic', () => {
     it('should calculate correct scores based on measurement outcomes', () => {
       const testCases = [
-        // Perfect matches → measurement result '1' → 5 points
-        { quantum: '|0⟩', measurement: '⟨0|', expectedScore: 5, description: '|0⟩ with ⟨0|, perfect match' },
-        { quantum: '|1⟩', measurement: '⟨1|', expectedScore: 5, description: '|1⟩ with ⟨1|, perfect match' },
-        { quantum: '|+⟩', measurement: '⟨+|', expectedScore: 5, description: '|+⟩ with ⟨+|, perfect match' },
-        { quantum: '|-⟩', measurement: '⟨-|', expectedScore: 5, description: '|-⟩ with ⟨-|, perfect match' },
+        // Perfect matches → measurement result '1' → 3 points
+        { quantum: '|0⟩', measurement: '⟨0|', expectedScore: 3, description: '|0⟩ with ⟨0|, perfect match' },
+        { quantum: '|1⟩', measurement: '⟨1|', expectedScore: 3, description: '|1⟩ with ⟨1|, perfect match' },
+        { quantum: '|+⟩', measurement: '⟨+|', expectedScore: 3, description: '|+⟩ with ⟨+|, perfect match' },
+        { quantum: '|-⟩', measurement: '⟨-|', expectedScore: 3, description: '|-⟩ with ⟨-|, perfect match' },
         
-        // No matches → measurement result '0' → 3 points
-        { quantum: '|0⟩', measurement: '⟨1|', expectedScore: 3, description: '|0⟩ with ⟨1|, no match' },
-        { quantum: '|1⟩', measurement: '⟨0|', expectedScore: 3, description: '|1⟩ with ⟨0|, no match' },
-        { quantum: '|+⟩', measurement: '⟨-|', expectedScore: 3, description: '|+⟩ with ⟨-|, no match' },
-        { quantum: '|-⟩', measurement: '⟨+|', expectedScore: 3, description: '|-⟩ with ⟨+|, no match' },
+        // No matches → measurement result '0' → 1 point
+        { quantum: '|0⟩', measurement: '⟨1|', expectedScore: 1, description: '|0⟩ with ⟨1|, no match' },
+        { quantum: '|1⟩', measurement: '⟨0|', expectedScore: 1, description: '|1⟩ with ⟨0|, no match' },
+        { quantum: '|+⟩', measurement: '⟨-|', expectedScore: 1, description: '|+⟩ with ⟨-|, no match' },
+        { quantum: '|-⟩', measurement: '⟨+|', expectedScore: 1, description: '|-⟩ with ⟨+|, no match' },
         
         // Cross-basis measurements (50% probability, use defaults)
-        { quantum: '|0⟩', measurement: '⟨+|', expectedScore: 3, description: '|0⟩ in +/- basis, default 0' },
-        { quantum: '|0⟩', measurement: '⟨-|', expectedScore: 3, description: '|0⟩ in +/- basis, default 0' },
-        { quantum: '|1⟩', measurement: '⟨+|', expectedScore: 5, description: '|1⟩ in +/- basis, default 1' },
-        { quantum: '|1⟩', measurement: '⟨-|', expectedScore: 5, description: '|1⟩ in +/- basis, default 1' },
-        { quantum: '|+⟩', measurement: '⟨0|', expectedScore: 3, description: '|+⟩ in computational basis, default 0' },
-        { quantum: '|+⟩', measurement: '⟨1|', expectedScore: 3, description: '|+⟩ in computational basis, default 0' },
-        { quantum: '|-⟩', measurement: '⟨0|', expectedScore: 3, description: '|-⟩ in computational basis, default 0' },
-        { quantum: '|-⟩', measurement: '⟨1|', expectedScore: 3, description: '|-⟩ in computational basis, default 0' }
+        { quantum: '|0⟩', measurement: '⟨+|', expectedScore: 1, description: '|0⟩ in +/- basis, default 0' },
+        { quantum: '|0⟩', measurement: '⟨-|', expectedScore: 1, description: '|0⟩ in +/- basis, default 0' },
+        { quantum: '|1⟩', measurement: '⟨+|', expectedScore: 3, description: '|1⟩ in +/- basis, default 1' },
+        { quantum: '|1⟩', measurement: '⟨-|', expectedScore: 3, description: '|1⟩ in +/- basis, default 1' },
+        { quantum: '|+⟩', measurement: '⟨0|', expectedScore: 1, description: '|+⟩ in computational basis, default 0' },
+        { quantum: '|+⟩', measurement: '⟨1|', expectedScore: 1, description: '|+⟩ in computational basis, default 0' },
+        { quantum: '|-⟩', measurement: '⟨0|', expectedScore: 1, description: '|-⟩ in computational basis, default 0' },
+        { quantum: '|-⟩', measurement: '⟨1|', expectedScore: 1, description: '|-⟩ in computational basis, default 0' }
       ];
 
       testCases.forEach(({ quantum, measurement, expectedScore, description }) => {
@@ -169,10 +169,10 @@ describe('Measurement Card Functionality', () => {
       // Test INITIAL_QUBIT cards with correct measurement outcome
       const testCases = [
         // Perfect matches with INITIAL_QUBIT should give same results as regular QUBIT
-        { quantum: '|0⟩', measurement: '⟨0|', expectedScore: 5, description: 'INITIAL_QUBIT |0⟩ with ⟨0|, perfect match' },
-        { quantum: '|0⟩', measurement: '⟨1|', expectedScore: 3, description: 'INITIAL_QUBIT |0⟩ with ⟨1|, no match' },
-        { quantum: '|1⟩', measurement: '⟨1|', expectedScore: 5, description: 'INITIAL_QUBIT |1⟩ with ⟨1|, perfect match' },
-        { quantum: '|1⟩', measurement: '⟨0|', expectedScore: 3, description: 'INITIAL_QUBIT |1⟩ with ⟨0|, no match' },
+        { quantum: '|0⟩', measurement: '⟨0|', expectedScore: 3, description: 'INITIAL_QUBIT |0⟩ with ⟨0|, perfect match' },
+        { quantum: '|0⟩', measurement: '⟨1|', expectedScore: 1, description: 'INITIAL_QUBIT |0⟩ with ⟨1|, no match' },
+        { quantum: '|1⟩', measurement: '⟨1|', expectedScore: 3, description: 'INITIAL_QUBIT |1⟩ with ⟨1|, perfect match' },
+        { quantum: '|1⟩', measurement: '⟨0|', expectedScore: 1, description: 'INITIAL_QUBIT |1⟩ with ⟨0|, no match' },
       ];
 
       testCases.forEach(({ quantum, measurement, expectedScore, description }) => {
@@ -193,13 +193,13 @@ describe('Measurement Card Functionality', () => {
       expect(precedingQubit).not.toBeNull();
       
       if (precedingQubit) {
-        // Test that INITIAL_QUBIT |0⟩ measured with ⟨0| gives 5 points (outcome '1')
+        // Test that INITIAL_QUBIT |0⟩ measured with ⟨0| gives 3 points (outcome '1')
         const score = calculateMeasurementScore(precedingQubit.value, '⟨0|');
-        expect(score).toBe(5);
+        expect(score).toBe(3);
         
-        // Test that INITIAL_QUBIT |0⟩ measured with ⟨1| gives 3 points (outcome '0')
+        // Test that INITIAL_QUBIT |0⟩ measured with ⟨1| gives 1 point (outcome '0')
         const score2 = calculateMeasurementScore(precedingQubit.value, '⟨1|');
-        expect(score2).toBe(3);
+        expect(score2).toBe(1);
       }
     });
   });
